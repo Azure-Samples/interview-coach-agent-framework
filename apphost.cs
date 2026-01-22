@@ -1,9 +1,9 @@
 #:sdk Aspire.AppHost.Sdk@13.1.0
-#:property UserSecretsId=7ae1635d-7ac9-43dd-b458-5f56d1b1ee02
 #:package Aspire.Hosting.GitHub.Models@13.*
 #:package Aspire.Hosting.OpenAI@13.*
 #:project ./src/InterviewCoach.Agent/InterviewCoach.Agent.csproj
 #:project ./src/InterviewCoach.WebUI/InterviewCoach.WebUI.csproj
+#:property UserSecretsId=7ae1635d-7ac9-43dd-b458-5f56d1b1ee02
 
 using Microsoft.Extensions.Configuration;
 
