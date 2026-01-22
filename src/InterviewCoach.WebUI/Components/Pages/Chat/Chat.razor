@@ -1,0 +1,141 @@
+﻿@page "/"
+@using System.ComponentModel
+@inject IChatClient ChatClient
+@inject NavigationManager Nav
+@implements IDisposable
+
+<PageTitle>Chat</PageTitle>
+
+<ChatHeader OnNewChat="@ResetConversationAsync" />
+
+<ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
+    <NoMessagesContent>
+        <div>I'm your friendly interview coach. To get started, upload your resume and job description.</div>
+    </NoMessagesContent>
+</ChatMessageList>
+
+<div class="chat-container">
+    <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
+</div>
+
+@code {
+    private const string SystemPrompt = @"
+        You are an assistant who answers questions about information you retrieve.
+        Do not answer questions about anything else.
+        Use only simple markdown to format your responses.
+
+        Use the LoadDocuments tool to prepare for searches before answering any questions.
+
+        Use the Search tool to find relevant information. When you do this, end your
+        reply with citations in the special XML format:
+
+        <citation filename='string'>exact quote here</citation>
+
+        Always include the citation in your response if there are results.
+
+        The quote must be max 5 words, taken word-for-word from the search result, and is the basis for why the citation is relevant.
+        Don't refer to the presence of citations; just emit these tags right at the end, with no surrounding text.
+        ";
+
+    private int statefulMessageCount;
+    private readonly ChatOptions chatOptions = new();
+    private readonly List<ChatMessage> messages = new();
+    private CancellationTokenSource? currentResponseCancellation;
+    private ChatMessage? currentResponseMessage;
+    private ChatInput? chatInput;
+
+    protected override void OnInitialized()
+    {
+        statefulMessageCount = 0;
+        messages.Add(new(ChatRole.System, SystemPrompt));
+        chatOptions.Tools = [];
+    }
+
+    private async Task AddUserMessageAsync(ChatMessage userMessage)
+    {
+        CancelAnyCurrentResponse();
+
+        messages.Add(userMessage);
+        await chatInput!.FocusAsync();
+
+        var responseText = new TextContent("");
+        currentResponseMessage = new ChatMessage(ChatRole.Assistant, [responseText]);
+        currentResponseCancellation = new();
+
+        await GetStreamingResponseAsync(responseText, currentResponseMessage, currentResponseCancellation.Token);
+
+        messages.Add(currentResponseMessage!);
+        statefulMessageCount = chatOptions.ConversationId is not null ? messages.Count : 0;
+        currentResponseMessage = null;
+    }
+
+    private async Task GetStreamingResponseAsync(TextContent responseText, ChatMessage responseMessage, CancellationToken cancellationToken)
+    {
+        var deferAssistantTextUntilToolResponse = false;
+        var toolResponseSeen = false;
+        await foreach (var update in ChatClient.GetStreamingResponseAsync(messages.Skip(statefulMessageCount), chatOptions, cancellationToken))
+        {
+            await Task.Delay(50);
+
+            messages.AddMessages(update, filter: c => c is not TextContent);
+
+            if (deferAssistantTextUntilToolResponse == false && update.Role == ChatRole.Assistant && ContainsNonTextContent(update))
+            {
+                deferAssistantTextUntilToolResponse = true;
+            }
+
+            if (update.Role == ChatRole.Tool)
+            {
+                toolResponseSeen = true;
+            }
+
+            if ((deferAssistantTextUntilToolResponse == false || toolResponseSeen == true) && update.Role == ChatRole.Assistant)
+            {
+                responseText.Text += update.Text;
+                ChatMessageItem.NotifyChanged(responseMessage);
+            }
+
+            chatOptions.ConversationId = update.ConversationId;
+            StateHasChanged();
+        }
+
+        bool ContainsNonTextContent(ChatResponseUpdate update)
+        {
+            if (update.Contents.Any() == false)
+            {
+                return true;
+            }
+
+            if (update.Contents.Any(c => c is not TextContent) == true)
+            {
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    private void CancelAnyCurrentResponse()
+    {
+        if (currentResponseMessage is not null)
+        {
+            messages.Add(currentResponseMessage);
+        }
+
+        currentResponseCancellation?.Cancel();
+        currentResponseMessage = null;
+    }
+
+    private async Task ResetConversationAsync()
+    {
+        CancelAnyCurrentResponse();
+        messages.Clear();
+        messages.Add(new(ChatRole.System, SystemPrompt));
+        chatOptions.ConversationId = null;
+        statefulMessageCount = 0;
+        await chatInput!.FocusAsync();
+    }
+
+    public void Dispose()
+        => currentResponseCancellation?.Cancel();
+}
