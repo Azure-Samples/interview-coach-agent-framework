@@ -8,18 +8,19 @@ public interface IInterviewSessionRepository
 {
     Task<InterviewSession> AddInterviewSessionAsync(InterviewSession interviewSession);
     Task<IEnumerable<InterviewSession>> GetAllInterviewSessionsAsync();
-    Task<InterviewSession> UpdateInterviewSessionAsync(InterviewSession interviewSession);
-    Task<InterviewSession> CompleteInterviewSessionAsync(InterviewSession interviewSession);
+    Task<InterviewSession?> GetInterviewSessionAsync(Guid id);
+    Task<InterviewSession?> UpdateInterviewSessionAsync(InterviewSession interviewSession);
+    Task<InterviewSession?> CompleteInterviewSessionAsync(Guid id);
 }
 
 public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewSessionRepository
 {
     public async Task<InterviewSession> AddInterviewSessionAsync(InterviewSession interviewSession)
     {
-        await db.InterviewSessions.AddAsync(interviewSession);
+        var added = await db.InterviewSessions.AddAsync(interviewSession);
         await db.SaveChangesAsync();
 
-        return interviewSession;
+        return added.Entity;
     }
 
     public async Task<IEnumerable<InterviewSession>> GetAllInterviewSessionsAsync()
@@ -29,12 +30,19 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
         return items;
     }
 
-    public async Task<InterviewSession> UpdateInterviewSessionAsync(InterviewSession interviewSession)
+    public async Task<InterviewSession?> GetInterviewSessionAsync(Guid id)
+    {
+        var record = await db.InterviewSessions.SingleOrDefaultAsync(p => p.Id == id);
+
+        return record;
+    }
+
+    public async Task<InterviewSession?> UpdateInterviewSessionAsync(InterviewSession interviewSession)
     {
         var record = await db.InterviewSessions.SingleOrDefaultAsync(p => p.Id == interviewSession.Id);
         if (record is null)
         {
-            return default!;
+            return default;
         }
 
         record.ResumeLink = interviewSession.ResumeLink;
@@ -66,18 +74,18 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
         return record;
     }
 
-    public async Task<InterviewSession> CompleteInterviewSessionAsync(InterviewSession interviewSession)
+    public async Task<InterviewSession?> CompleteInterviewSessionAsync(Guid id)
     {
-        var record = await db.InterviewSessions.SingleOrDefaultAsync(p => p.Id == interviewSession.Id);
+        var record = await db.InterviewSessions.SingleOrDefaultAsync(p => p.Id == id);
         if (record is null)
         {
-            return default!;
+            return default;
         }
 
-        record.IsCompleted = interviewSession.IsCompleted;
+        record.IsCompleted = true;
 
-        await db.InterviewSessions.Where(p => p.Id == interviewSession.Id)
-                                  .ExecuteUpdateAsync(p => p.SetProperty(x => x.IsCompleted, interviewSession.IsCompleted));
+        await db.InterviewSessions.Where(p => p.Id == id)
+                                  .ExecuteUpdateAsync(p => p.SetProperty(x => x.IsCompleted, true));
 
         await db.SaveChangesAsync();
 
