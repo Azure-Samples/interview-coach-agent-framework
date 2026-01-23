@@ -1,0 +1,21 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.1.0">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>7ae1635d-7ac9-43dd-b458-5f56d1b1ee02</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.GitHub.Models" Version="13.*" />
+    <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InterviewCoach.Agent\InterviewCoach.Agent.csproj" />
+    <ProjectReference Include="..\InterviewCoach.WebUI\InterviewCoach.WebUI.csproj" />
+  </ItemGroup>
+
+</Project>
