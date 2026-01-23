@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\InterviewCoach.Agent\InterviewCoach.Agent.csproj" />
+    <ProjectReference Include="..\InterviewCoach.Mcp.InterviewData\InterviewCoach.Mcp.InterviewData.csproj" />
     <ProjectReference Include="..\InterviewCoach.WebUI\InterviewCoach.WebUI.csproj" />
   </ItemGroup>
 

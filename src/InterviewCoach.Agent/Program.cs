@@ -7,9 +7,71 @@ using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 
+using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+builder.Services.AddHttpClient("mcp-markitdown", client =>
+{
+    client.BaseAddress = new Uri("https+http://mcp-markitdown");
+});
+
+builder.Services.AddSingleton<McpClient>(sp =>
+{
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>()
+                       .CreateClient("mcp-markitdown");
+
+    var clientTransportOptions = new HttpClientTransportOptions()
+    {
+        Endpoint = new Uri($"{httpClient.BaseAddress!.ToString().Replace("+http", string.Empty).TrimEnd('/')}/mcp")
+    };
+    var clientTransport = new HttpClientTransport(clientTransportOptions, httpClient, loggerFactory);
+
+    var clientOptions = new McpClientOptions()
+    {
+        ClientInfo = new Implementation()
+        {
+            Name = "MCP MarkItDown Client",
+            Version = "1.0.0",
+        }
+    };
+
+    return McpClient.CreateAsync(clientTransport, clientOptions, loggerFactory).GetAwaiter().GetResult();
+});
+
+
+builder.Services.AddHttpClient("mcp-interview-data", client =>
+{
+    client.BaseAddress = new Uri("https+http://mcp-interview-data");
+});
+
+builder.Services.AddSingleton<McpClient>(sp =>
+{
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var httpClient = sp.GetRequiredService<IHttpClientFactory>()
+                       .CreateClient("mcpInterviewData");
+
+    var clientTransportOptions = new HttpClientTransportOptions()
+    {
+        Endpoint = new Uri($"{httpClient.BaseAddress!.ToString().Replace("+http", string.Empty).TrimEnd('/')}/mcp")
+    };
+    var clientTransport = new HttpClientTransport(clientTransportOptions, httpClient, loggerFactory);
+
+    var clientOptions = new McpClientOptions()
+    {
+        ClientInfo = new Implementation()
+        {
+            Name = "MCP Interview Data Client",
+            Version = "1.0.0",
+        }
+    };
+
+    return McpClient.CreateAsync(clientTransport, clientOptions, loggerFactory).GetAwaiter().GetResult();
+});
 
 builder.AddOpenAIClient("chat")
        .AddChatClient();

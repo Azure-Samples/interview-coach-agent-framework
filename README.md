@@ -14,7 +14,31 @@ This is a sample application practicing job interview using [Microsoft Agent Fra
 
 ## Getting Started
 
-TBD
+### Set `REPOSITORY_ROOT`
+
+```bash
+# zsh/bash
+REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
+```
+
+```powershell
+# PowerShell
+$REPOSITORY_ROOT = git rev-parse --show-toplevel
+```
+
+### Download MarkItDown MCP Server
+
+```bash
+# zsh/bash
+mkdir -p $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown && \
+    git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
+```
+
+```powershell
+# PowerShell
+New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown -Force && `
+    git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
+```
 
 ## Additional Resources
 

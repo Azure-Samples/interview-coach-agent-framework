@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Project specific files
+InterviewCoach.Mcp.MarkItDown/

@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/InterviewCoach.Agent/InterviewCoach.Agent.csproj" />
     <Project Path="src/InterviewCoach.AppHost/InterviewCoach.AppHost.csproj" />
+    <Project Path="src/InterviewCoach.Mcp.InterviewData/InterviewCoach.Mcp.InterviewData.csproj" />
     <Project Path="src/InterviewCoach.ServiceDefaults/InterviewCoach.ServiceDefaults.csproj" />
     <Project Path="src/InterviewCoach.WebUI/InterviewCoach.WebUI.csproj" />
   </Folder>
