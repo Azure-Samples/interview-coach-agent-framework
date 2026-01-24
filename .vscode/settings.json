@@ -10,6 +10,7 @@
     "cat": true,
     "cd": true,
     "curl": true,
+    "find": true,
     "grep": true,
     "jq": true,
     "mv": true,
