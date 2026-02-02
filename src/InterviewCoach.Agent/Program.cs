@@ -1,5 +1,3 @@
-using System.ComponentModel;
-
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.DevUI;
 using Microsoft.Agents.AI.Hosting;
@@ -22,7 +20,7 @@ builder.Services.AddHttpClient("mcp-markitdown", client =>
     client.BaseAddress = new Uri("https+http://mcp-markitdown");
 });
 
-builder.Services.AddSingleton<McpClient>(sp =>
+builder.Services.AddKeyedSingleton<McpClient>("mcp-markitdown", (sp, obj) =>
 {
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var httpClient = sp.GetRequiredService<IHttpClientFactory>()
@@ -52,7 +50,7 @@ builder.Services.AddHttpClient("mcp-interview-data", client =>
     client.BaseAddress = new Uri("https+http://mcp-interview-data");
 });
 
-builder.Services.AddSingleton<McpClient>(sp =>
+builder.Services.AddKeyedSingleton<McpClient>("mcp-interview-data", (sp, obj) =>
 {
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var httpClient = sp.GetRequiredService<IHttpClientFactory>()

@@ -1,19 +1,14 @@
 using System.ComponentModel;
+
 using InterviewCoach.Agent.Models;
 using InterviewCoach.Agent.Services;
 
 namespace InterviewCoach.Agent.Tools;
 
-public class InterviewTools
+public class InterviewTools(ISessionStateService sessionStateService, IMcpClientService mcpClientService)
 {
-    private readonly ISessionStateService _sessionStateService;
-    private readonly IMcpClientService _mcpClientService;
-
-    public InterviewTools(ISessionStateService sessionStateService, IMcpClientService mcpClientService)
-    {
-        _sessionStateService = sessionStateService;
-        _mcpClientService = mcpClientService;
-    }
+    private readonly ISessionStateService _sessionStateService = sessionStateService ?? throw new ArgumentNullException(nameof(sessionStateService));
+    private readonly IMcpClientService _mcpClientService = mcpClientService ?? throw new ArgumentNullException(nameof(mcpClientService));
 
     [Description("Records the interview conversation transcript")]
     public async Task<string> RecordTranscript(
@@ -27,9 +22,7 @@ public class InterviewTools
             return "Session not found.";
         }
 
-        await _mcpClientService.UpdateInterviewSessionAsync(
-            sessionId, session.ResumeLink, session.ResumeText, session.ProceedWithoutResume,
-            session.JobDescriptionLink, session.JobDescriptionText, session.ProceedWithoutJobDescription, transcript);
+        await _mcpClientService.UpdateInterviewSessionAsync(session);
 
         return "Transcript recorded successfully.";
     }

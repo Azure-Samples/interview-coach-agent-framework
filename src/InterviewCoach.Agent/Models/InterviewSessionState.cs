@@ -12,14 +12,20 @@ public class InterviewSessionState
     public string? Transcript { get; set; }
     public InterviewPhase CurrentPhase { get; set; } = InterviewPhase.Triage;
     public bool IsAnalysisComplete { get; set; }
-}
 
-public enum InterviewPhase
-{
-    Triage,
-    Analysis,
-    BehavioralInterview,
-    TechnicalInterview,
-    Summary,
-    Completed
+    public static implicit operator InterviewSessionContext(InterviewSessionState state)
+    {
+        return new InterviewSessionContext
+        {
+            SessionId = state.SessionId,
+            ResumeLink = state.ResumeLink,
+            ResumeText = state.ResumeText,
+            ProceedWithoutResume = state.ProceedWithoutResume,
+            JobDescriptionLink = state.JobDescriptionLink,
+            JobDescriptionText = state.JobDescriptionText,
+            ProceedWithoutJobDescription = state.ProceedWithoutJobDescription,
+            Transcript = state.Transcript,
+            IsCompleted = state.CurrentPhase == InterviewPhase.Completed
+        };
+    }
 }

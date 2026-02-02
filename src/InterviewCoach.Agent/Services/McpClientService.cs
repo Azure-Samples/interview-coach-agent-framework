@@ -1,44 +1,32 @@
-using ModelContextProtocol.Client;
 using System.Text.Json;
+
+using InterviewCoach.Agent.Models;
+
+using ModelContextProtocol.Client;
 
 namespace InterviewCoach.Agent.Services;
 
 public interface IMcpClientService
 {
     Task<Guid> CreateInterviewSessionAsync();
-    Task<string?> GetInterviewSessionAsync(Guid sessionId);
-    Task UpdateInterviewSessionAsync(Guid sessionId, string? resumeLink, string? resumeText, bool proceedWithoutResume, 
-        string? jobDescriptionLink, string? jobDescriptionText, bool proceedWithoutJobDescription, string? transcript);
+    Task<InterviewSessionContext?> GetInterviewSessionAsync(Guid sessionId);
+    Task UpdateInterviewSessionAsync(InterviewSessionContext context);
     Task CompleteInterviewSessionAsync(Guid sessionId);
     Task<string> ConvertToMarkdownAsync(string url);
 }
 
-public class McpClientService : IMcpClientService
+public class McpClientService(
+    [FromKeyedServices("mcp-interview-data")] McpClient interviewDataClient,
+    [FromKeyedServices("mcp-markitdown")] McpClient markitdownClient,
+    ILogger<McpClientService> logger) : IMcpClientService
 {
-    private readonly IEnumerable<McpClient> _mcpClients;
-    private readonly ILogger<McpClientService> _logger;
-
-    public McpClientService(IEnumerable<McpClient> mcpClients, ILogger<McpClientService> logger)
-    {
-        _mcpClients = mcpClients;
-        _logger = logger;
-    }
-
-    private McpClient GetInterviewDataClient()
-    {
-        // For now, return the second client (index 1) which should be interview-data
-        return _mcpClients.ElementAtOrDefault(1) ?? throw new InvalidOperationException("Interview Data MCP client not found");
-    }
-
-    private McpClient GetMarkitdownClient()
-    {
-        // For now, return the first client (index 0) which should be markitdown
-        return _mcpClients.ElementAtOrDefault(0) ?? throw new InvalidOperationException("MarkItDown MCP client not found");
-    }
+    private readonly McpClient _interviewDataClient = interviewDataClient ?? throw new ArgumentNullException(nameof(interviewDataClient));
+    private readonly McpClient _markitdownClient = markitdownClient ?? throw new ArgumentNullException(nameof(markitdownClient));
+    private readonly ILogger<McpClientService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<Guid> CreateInterviewSessionAsync()
     {
-        var client = GetInterviewDataClient();
+        var client = _interviewDataClient;
         var sessionId = Guid.NewGuid();
         
         var arguments = new Dictionary<string, object?>
@@ -62,9 +50,9 @@ public class McpClientService : IMcpClientService
         return sessionId;
     }
 
-    public async Task<string?> GetInterviewSessionAsync(Guid sessionId)
+    public async Task<InterviewSessionContext?> GetInterviewSessionAsync(Guid sessionId)
     {
-        var client = GetInterviewDataClient();
+        var client = _interviewDataClient;
         
         var arguments = new Dictionary<string, object?>
         {
@@ -76,17 +64,29 @@ public class McpClientService : IMcpClientService
         if (response.Content.Count > 0 && response.Content[0] is { } content)
         {
             var textContent = content as dynamic;
-            return textContent?.text?.ToString();
+            return JsonSerializer.Deserialize<InterviewSessionContext>(textContent?.text?.ToString() ?? string.Empty);
         }
         
         return null;
     }
 
-    public async Task UpdateInterviewSessionAsync(Guid sessionId, string? resumeLink, string? resumeText, 
-        bool proceedWithoutResume, string? jobDescriptionLink, string? jobDescriptionText, 
-        bool proceedWithoutJobDescription, string? transcript)
+    public async Task UpdateInterviewSessionAsync(InterviewSessionContext context)
     {
-        var client = GetInterviewDataClient();
+        if (context is null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
+        var sessionId = context.SessionId;
+        var resumeLink = context.ResumeLink;
+        var resumeText = context.ResumeText;
+        var proceedWithoutResume = context.ProceedWithoutResume;
+        var jobDescriptionLink = context.JobDescriptionLink;
+        var jobDescriptionText = context.JobDescriptionText;
+        var proceedWithoutJobDescription = context.ProceedWithoutJobDescription;
+        var transcript = context.Transcript;
+        var isCompleted = context.IsCompleted;
+        var client = _interviewDataClient;
         
         var arguments = new Dictionary<string, object?>
         {
@@ -99,7 +99,8 @@ public class McpClientService : IMcpClientService
                 JobDescriptionLink = jobDescriptionLink,
                 JobDescriptionText = jobDescriptionText,
                 ProceedWithoutJobDescription = proceedWithoutJobDescription,
-                Transcript = transcript
+                Transcript = transcript,
+                IsCompleted = isCompleted
             }
         };
 
@@ -108,7 +109,7 @@ public class McpClientService : IMcpClientService
 
     public async Task CompleteInterviewSessionAsync(Guid sessionId)
     {
-        var client = GetInterviewDataClient();
+        var client = _interviewDataClient;
         
         var arguments = new Dictionary<string, object?>
         {
@@ -120,7 +121,7 @@ public class McpClientService : IMcpClientService
 
     public async Task<string> ConvertToMarkdownAsync(string url)
     {
-        var client = GetMarkitdownClient();
+        var client = _markitdownClient;
         
         var arguments = new Dictionary<string, object?>
         {

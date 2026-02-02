@@ -1,19 +1,14 @@
 using System.ComponentModel;
+
 using InterviewCoach.Agent.Models;
 using InterviewCoach.Agent.Services;
 
 namespace InterviewCoach.Agent.Tools;
 
-public class AnalysisTools
+public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientService mcpClientService)
 {
-    private readonly ISessionStateService _sessionStateService;
-    private readonly IMcpClientService _mcpClientService;
-
-    public AnalysisTools(ISessionStateService sessionStateService, IMcpClientService mcpClientService)
-    {
-        _sessionStateService = sessionStateService;
-        _mcpClientService = mcpClientService;
-    }
+    private readonly ISessionStateService _sessionStateService = sessionStateService ?? throw new ArgumentNullException(nameof(sessionStateService));
+    private readonly IMcpClientService _mcpClientService = mcpClientService ?? throw new ArgumentNullException(nameof(mcpClientService));
 
     [Description("Captures the resume link provided by the user")]
     public async Task<string> CaptureResumeLink(
@@ -40,9 +35,7 @@ public class AnalysisTools
         }
 
         await _sessionStateService.UpdateSessionAsync(session);
-        await _mcpClientService.UpdateInterviewSessionAsync(
-            sessionId, session.ResumeLink, session.ResumeText, session.ProceedWithoutResume,
-            session.JobDescriptionLink, session.JobDescriptionText, session.ProceedWithoutJobDescription, null);
+        await _mcpClientService.UpdateInterviewSessionAsync(session);
 
         return "Resume captured successfully. Now, please provide the job description link or tell me you want to proceed without it.";
     }
@@ -61,9 +54,7 @@ public class AnalysisTools
 
         session.ResumeText = resumeText;
         await _sessionStateService.UpdateSessionAsync(session);
-        await _mcpClientService.UpdateInterviewSessionAsync(
-            sessionId, session.ResumeLink, session.ResumeText, session.ProceedWithoutResume,
-            session.JobDescriptionLink, session.JobDescriptionText, session.ProceedWithoutJobDescription, null);
+        await _mcpClientService.UpdateInterviewSessionAsync(session);
 
         return "Resume text captured successfully. Now, please provide the job description link or tell me you want to proceed without it.";
     }
@@ -81,9 +72,7 @@ public class AnalysisTools
 
         session.ProceedWithoutResume = true;
         await _sessionStateService.UpdateSessionAsync(session);
-        await _mcpClientService.UpdateInterviewSessionAsync(
-            sessionId, session.ResumeLink, session.ResumeText, session.ProceedWithoutResume,
-            session.JobDescriptionLink, session.JobDescriptionText, session.ProceedWithoutJobDescription, null);
+        await _mcpClientService.UpdateInterviewSessionAsync(session);
 
         return "Understood, proceeding without resume. Now, please provide the job description link or tell me you want to proceed without it.";
     }
@@ -113,9 +102,7 @@ public class AnalysisTools
         }
 
         await _sessionStateService.UpdateSessionAsync(session);
-        await _mcpClientService.UpdateInterviewSessionAsync(
-            sessionId, session.ResumeLink, session.ResumeText, session.ProceedWithoutResume,
-            session.JobDescriptionLink, session.JobDescriptionText, session.ProceedWithoutJobDescription, null);
+        await _mcpClientService.UpdateInterviewSessionAsync(session);
 
         var isComplete = await _sessionStateService.IsAnalysisCompleteAsync(sessionId);
         if (isComplete)
@@ -143,9 +130,7 @@ public class AnalysisTools
 
         session.JobDescriptionText = jobDescriptionText;
         await _sessionStateService.UpdateSessionAsync(session);
-        await _mcpClientService.UpdateInterviewSessionAsync(
-            sessionId, session.ResumeLink, session.ResumeText, session.ProceedWithoutResume,
-            session.JobDescriptionLink, session.JobDescriptionText, session.ProceedWithoutJobDescription, null);
+        await _mcpClientService.UpdateInterviewSessionAsync(session);
 
         var isComplete = await _sessionStateService.IsAnalysisCompleteAsync(sessionId);
         if (isComplete)
@@ -172,9 +157,7 @@ public class AnalysisTools
 
         session.ProceedWithoutJobDescription = true;
         await _sessionStateService.UpdateSessionAsync(session);
-        await _mcpClientService.UpdateInterviewSessionAsync(
-            sessionId, session.ResumeLink, session.ResumeText, session.ProceedWithoutResume,
-            session.JobDescriptionLink, session.JobDescriptionText, session.ProceedWithoutJobDescription, null);
+        await _mcpClientService.UpdateInterviewSessionAsync(session);
 
         var isComplete = await _sessionStateService.IsAnalysisCompleteAsync(sessionId);
         if (isComplete)

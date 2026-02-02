@@ -1,19 +1,13 @@
 using System.ComponentModel;
-using InterviewCoach.Agent.Models;
+
 using InterviewCoach.Agent.Services;
 
 namespace InterviewCoach.Agent.Tools;
 
-public class TriageTools
+public class TriageTools(ISessionStateService sessionStateService, IMcpClientService mcpClientService)
 {
-    private readonly ISessionStateService _sessionStateService;
-    private readonly IMcpClientService _mcpClientService;
-
-    public TriageTools(ISessionStateService sessionStateService, IMcpClientService mcpClientService)
-    {
-        _sessionStateService = sessionStateService;
-        _mcpClientService = mcpClientService;
-    }
+    private readonly ISessionStateService _sessionStateService = sessionStateService ?? throw new ArgumentNullException(nameof(sessionStateService));
+    private readonly IMcpClientService _mcpClientService = mcpClientService ?? throw new ArgumentNullException(nameof(mcpClientService));
 
     [Description("Creates a new interview session and returns the session ID")]
     public async Task<string> CreateSession()

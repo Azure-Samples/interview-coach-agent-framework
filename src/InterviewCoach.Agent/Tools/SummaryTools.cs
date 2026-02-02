@@ -1,19 +1,14 @@
 using System.ComponentModel;
+
 using InterviewCoach.Agent.Models;
 using InterviewCoach.Agent.Services;
 
 namespace InterviewCoach.Agent.Tools;
 
-public class SummaryTools
+public class SummaryTools(ISessionStateService sessionStateService, IMcpClientService mcpClientService)
 {
-    private readonly ISessionStateService _sessionStateService;
-    private readonly IMcpClientService _mcpClientService;
-
-    public SummaryTools(ISessionStateService sessionStateService, IMcpClientService mcpClientService)
-    {
-        _sessionStateService = sessionStateService;
-        _mcpClientService = mcpClientService;
-    }
+    private readonly ISessionStateService _sessionStateService = sessionStateService ?? throw new ArgumentNullException(nameof(sessionStateService));
+    private readonly IMcpClientService _mcpClientService = mcpClientService ?? throw new ArgumentNullException(nameof(mcpClientService));
 
     [Description("Generates and returns the final interview summary in markdown format")]
     public async Task<string> GenerateSummary(
