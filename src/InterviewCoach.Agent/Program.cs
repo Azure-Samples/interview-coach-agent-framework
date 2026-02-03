@@ -19,7 +19,7 @@ builder.Services.AddHttpClient("mcp-markitdown", client =>
     client.BaseAddress = new Uri("https+http://mcp-markitdown");
 });
 
-builder.Services.AddSingleton<McpClient>(sp =>
+builder.Services.AddKeyedSingleton<McpClient>("mcp-markitdown", (sp, obj) =>
 {
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var httpClient = sp.GetRequiredService<IHttpClientFactory>()
@@ -52,11 +52,11 @@ builder.Services.AddHttpClient("mcp-interview-data", client =>
     client.BaseAddress = new Uri("https+http://mcp-interview-data");
 });
 
-builder.Services.AddSingleton<McpClient>(sp =>
+builder.Services.AddKeyedSingleton<McpClient>("mcp-interview-data", (sp, obj) =>
 {
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var httpClient = sp.GetRequiredService<IHttpClientFactory>()
-                       .CreateClient("mcpInterviewData");
+                       .CreateClient("mcp-interview-data");
 
     var clientTransportOptions = new HttpClientTransportOptions()
     {
@@ -80,33 +80,67 @@ builder.AddOpenAIClient("chat")
        .AddChatClient();
 
 builder.AddAIAgent(
-    name: "writer",
-    instructions: "You write short stories (300 words or less) about the specified topic."
-);
+    name: "coach",
+    createAgentDelegate: (sp, key) =>
+    {
+        var chatClient = sp.GetRequiredService<IChatClient>();
+        var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
+        var interviewData = sp.GetRequiredKeyedService<McpClient>("mcp-interview-data");
 
-builder.AddAIAgent(
-    name: "editor",
-    createAgentDelegate: (sp, key) => new ChatClientAgent(
-        chatClient: sp.GetRequiredService<IChatClient>(),
-        name: key,
-        instructions: """
-            You edit short stories to improve grammar and style, ensuring the stories are less than 300 words. Once finished editing, you select a title and format the story for publishing.
-            """,
-        tools: [ AIFunctionFactory.Create(FormatStory) ]
-    )
-);
+        var markitdownTools = markitdown.ListToolsAsync().GetAwaiter().GetResult();
+        var interviewDataTools = interviewData.ListToolsAsync().GetAwaiter().GetResult();
 
-builder.AddWorkflow(
-    name: "publisher",
-    createWorkflowDelegate: (sp, key) => AgentWorkflowBuilder.BuildSequential(
-        workflowName: key,
-        agents:
-        [
-            sp.GetRequiredKeyedService<AIAgent>("writer"),
-            sp.GetRequiredKeyedService<AIAgent>("editor")
-        ]
-    )
-).AddAsAIAgent();
+        var agent = new ChatClientAgent(
+            chatClient: chatClient,
+            name: key,
+            instructions: """
+                You are an AI Interview Coach designed to help users prepare for job interviews.
+                You will guide them through the interview process, provide feedback, and help them improve their skills.
+                You will be given a session Id to track the interview session progress.
+                Use the provided tools to manage interview sessions, capture resume and job description, ask both behavioral and technical questions, analyze responses, and generate summaries.
+
+                Here's the overall process you should follow:
+                1. Start by creating a new interview session and let the user know their session ID.
+                2. Ask the user to provide their resume link or allow them to proceed without it. The user may provide the resume in text form if they prefer.
+                3. Next, request the job description link or let them proceed without it. The user may provide the job description in text form if they prefer.
+                4. Once you have the necessary information, begin the interview by asking behavioral questions first.
+                5. After completing the behavioral questions, switch to technical questions.
+                6. Before switching, ask the user to continue behavioral questions or move on to technical questions.
+                7. The user may want to stop the interview at any time; in such cases, mark the interview as complete and proceed to summary generation.
+                8. After the interview is complete, generate a comprehensive summary that includes an overview, key highlights, areas for improvement, and recommendations.
+                9. Record all the conversations including greetings, questions, answers and summary as a transcript.
+
+                Always maintain a supportive and encouraging tone.
+                """,
+            tools: [ .. markitdownTools, .. interviewDataTools ]
+        );
+
+        return agent;
+    });
+
+// builder.AddAIAgent(
+//     name: "editor",
+//     createAgentDelegate: (sp, key) => new ChatClientAgent(
+//         chatClient: sp.GetRequiredService<IChatClient>(),
+//         name: key,
+//         instructions: """
+//             You edit short stories to improve grammar and style, ensuring the stories are less than 300 words. Once finished editing, you select a title and format the story for publishing.
+//             """,
+//         tools: [ AIFunctionFactory.Create(FormatStory) ]
+//     )
+// );
+
+// builder.AddWorkflow(
+//     name: "publisher",
+//     createWorkflowDelegate: (sp, key) => AgentWorkflowBuilder.BuildSequential(
+//         workflowName: key,
+//         agents:
+//         [
+//             sp.GetRequiredKeyedService<AIAgent>("writer"),
+//             sp.GetRequiredKeyedService<AIAgent>("editor")
+//         ]
+//     )
+// ).AddAsAIAgent();
 
 builder.Services.AddOpenAIResponses();
 builder.Services.AddOpenAIConversations();
@@ -122,7 +156,8 @@ app.MapOpenAIConversations();
 
 app.MapAGUI(
     pattern: "ag-ui",
-    aiAgent: app.Services.GetRequiredKeyedService<AIAgent>("publisher")
+    aiAgent: app.Services.GetRequiredKeyedService<AIAgent>("coach")
+    // aiAgent: app.Services.GetRequiredKeyedService<AIAgent>("publisher")
 );
 
 if (builder.Environment.IsDevelopment() == false)
