@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.GitHub.Models" Version="13.*" />
     <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.*" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.SQLite" Version="13.*" />
   </ItemGroup>
 
   <ItemGroup>

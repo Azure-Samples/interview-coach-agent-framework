@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Aspire.Microsoft.Data.Sqlite" Version="13.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.*" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.*-*" />
   </ItemGroup>

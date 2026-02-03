@@ -9,12 +9,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-var connection = new SqliteConnection("Filename=:memory:");
-connection.Open();
+builder.AddSqliteConnection("sqlite");
+// var connection = new SqliteConnection("Filename=:memory:");
+// connection.Open();
 
-builder.Services.AddSingleton(connection);
+// builder.Services.AddSingleton(connection);
 
-builder.Services.AddDbContext<InterviewDataDbContext>(options => options.UseSqlite(connection));
+builder.Services.AddDbContext<InterviewDataDbContext>((sp, options) => options.UseSqlite(sp.GetRequiredService<SqliteConnection>()));
+// builder.Services.AddDbContext<InterviewDataDbContext>(options => options.UseSqlite());
 builder.Services.AddScoped<IInterviewSessionRepository, InterviewSessionRepository>();
 
 builder.Services.AddMcpServer()

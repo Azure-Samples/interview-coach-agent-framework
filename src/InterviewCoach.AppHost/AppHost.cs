@@ -6,8 +6,13 @@ var mcpMarkItDown = builder.AddDockerfile(ResourceConstants.McpMarkItDown, "../I
                            .WithHttpEndpoint(3001, 3001)
                            .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001");
 
+var sqlite = builder.AddSqlite("sqlite", databaseFileName: "interviewcoach.db")
+                    .WithSqliteWeb();
+
 var mcpInterviewData = builder.AddProject<Projects.InterviewCoach_Mcp_InterviewData>(ResourceConstants.McpInterviewData)
-                              .WithExternalHttpEndpoints();
+                              .WithExternalHttpEndpoints()
+                              .WithReference(sqlite)
+                              .WaitFor(sqlite);
 
 var agent = builder.AddProject<Projects.InterviewCoach_Agent>(ResourceConstants.Agent)
                    .WithExternalHttpEndpoints()
