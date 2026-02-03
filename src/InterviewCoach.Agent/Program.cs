@@ -1,10 +1,7 @@
-using System.ComponentModel;
-
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.DevUI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
-using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
 
 using ModelContextProtocol.Client;
@@ -100,15 +97,18 @@ builder.AddAIAgent(
                 Use the provided tools to manage interview sessions, capture resume and job description, ask both behavioral and technical questions, analyze responses, and generate summaries.
 
                 Here's the overall process you should follow:
-                1. Start by creating a new interview session and let the user know their session ID.
-                2. Ask the user to provide their resume link or allow them to proceed without it. The user may provide the resume in text form if they prefer.
-                3. Next, request the job description link or let them proceed without it. The user may provide the job description in text form if they prefer.
-                4. Once you have the necessary information, begin the interview by asking behavioral questions first.
-                5. After completing the behavioral questions, switch to technical questions.
-                6. Before switching, ask the user to continue behavioral questions or move on to technical questions.
-                7. The user may want to stop the interview at any time; in such cases, mark the interview as complete and proceed to summary generation.
-                8. After the interview is complete, generate a comprehensive summary that includes an overview, key highlights, areas for improvement, and recommendations.
-                9. Record all the conversations including greetings, questions, answers and summary as a transcript.
+                01. Start by fetching an existing interview session and let the user know their session ID.
+                02. If there's no existing session, create a new interview session by the session ID and let the user know their session ID.
+                03. Once you have the session, then keep using this session record for all subsequent interactions. DO NOT create a new session again.
+                04. Ask the user to provide their resume link or allow them to proceed without it. The user may provide the resume in text form if they prefer.
+                05. Next, request the job description link or let them proceed without it. The user may provide the job description in text form if they prefer.
+                06. Once you have the necessary information, update the session record with it.
+                07. Once you have updated the session record with the information, begin the interview by asking behavioral questions first.
+                08. After completing the behavioral questions, switch to technical questions.
+                09. Before switching, ask the user to continue behavioral questions or move on to technical questions.
+                10. The user may want to stop the interview at any time; in such cases, mark the interview as complete and proceed to summary generation.
+                11. After the interview is complete, generate a comprehensive summary that includes an overview, key highlights, areas for improvement, and recommendations.
+                12. Record all the conversations including greetings, questions, answers and summary as a transcript by updating the current session record.
 
                 Always maintain a supportive and encouraging tone.
                 """,
@@ -117,30 +117,6 @@ builder.AddAIAgent(
 
         return agent;
     });
-
-// builder.AddAIAgent(
-//     name: "editor",
-//     createAgentDelegate: (sp, key) => new ChatClientAgent(
-//         chatClient: sp.GetRequiredService<IChatClient>(),
-//         name: key,
-//         instructions: """
-//             You edit short stories to improve grammar and style, ensuring the stories are less than 300 words. Once finished editing, you select a title and format the story for publishing.
-//             """,
-//         tools: [ AIFunctionFactory.Create(FormatStory) ]
-//     )
-// );
-
-// builder.AddWorkflow(
-//     name: "publisher",
-//     createWorkflowDelegate: (sp, key) => AgentWorkflowBuilder.BuildSequential(
-//         workflowName: key,
-//         agents:
-//         [
-//             sp.GetRequiredKeyedService<AIAgent>("writer"),
-//             sp.GetRequiredKeyedService<AIAgent>("editor")
-//         ]
-//     )
-// ).AddAsAIAgent();
 
 builder.Services.AddOpenAIResponses();
 builder.Services.AddOpenAIConversations();
@@ -157,7 +133,6 @@ app.MapOpenAIConversations();
 app.MapAGUI(
     pattern: "ag-ui",
     aiAgent: app.Services.GetRequiredKeyedService<AIAgent>("coach")
-    // aiAgent: app.Services.GetRequiredKeyedService<AIAgent>("publisher")
 );
 
 if (builder.Environment.IsDevelopment() == false)
@@ -170,10 +145,3 @@ else
 }
 
 await app.RunAsync();
-
-[Description("Formats the story for publication, revealing its title.")]
-string FormatStory(string title, string story) => $"""
-    **Title**: {title}
-
-    {story}
-    """;

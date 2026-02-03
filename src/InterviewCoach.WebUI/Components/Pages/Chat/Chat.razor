@@ -1,7 +1,7 @@
 ﻿@page "/"
 @using System.ComponentModel
 @inject IChatClient ChatClient
-@inject NavigationManager Nav
+@inject ILogger<Chat> Logger
 @implements IDisposable
 
 <PageTitle>Chat</PageTitle>
@@ -26,6 +26,10 @@
     private int statefulMessageCount;
     private readonly ChatOptions chatOptions = new();
     private readonly List<ChatMessage> messages = new();
+    private string sessionId = Guid.Empty.ToString();
+    private string? lastSessionId;
+    private ChatMessage? systemPromptMessage;
+    private ChatMessage? sessionIdMessage;
     private CancellationTokenSource? currentResponseCancellation;
     private ChatMessage? currentResponseMessage;
     private ChatInput? chatInput;
@@ -33,13 +37,20 @@
     protected override void OnInitialized()
     {
         statefulMessageCount = 0;
-        messages.Add(new(ChatRole.System, SystemPrompt));
+        AddSessionSystemMessages();
         chatOptions.Tools = [];
+        chatOptions.ConversationId = sessionId;
     }
 
     private async Task AddUserMessageAsync(ChatMessage userMessage)
     {
         CancelAnyCurrentResponse();
+
+        if (string.Equals(lastSessionId, sessionId, StringComparison.Ordinal) == false)
+        {
+            statefulMessageCount = 0;
+            lastSessionId = sessionId;
+        }
 
         messages.Add(userMessage);
         await chatInput!.FocusAsync();
@@ -48,18 +59,21 @@
         currentResponseMessage = new ChatMessage(ChatRole.Assistant, [responseText]);
         currentResponseCancellation = new();
 
-        await GetStreamingResponseAsync(responseText, currentResponseMessage, currentResponseCancellation.Token);
+        var outboundMessages = BuildOutboundMessages();
+        await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage, currentResponseCancellation.Token);
 
         messages.Add(currentResponseMessage!);
         statefulMessageCount = chatOptions.ConversationId is not null ? messages.Count : 0;
         currentResponseMessage = null;
     }
 
-    private async Task GetStreamingResponseAsync(TextContent responseText, ChatMessage responseMessage, CancellationToken cancellationToken)
+    private async Task GetStreamingResponseAsync(IEnumerable<ChatMessage> outboundMessages, TextContent responseText, ChatMessage responseMessage, CancellationToken cancellationToken)
     {
+        Logger.LogInformation("Getting streaming response for conversation {ConversationId}", chatOptions.ConversationId);
+
         var deferAssistantTextUntilToolResponse = false;
         var toolResponseSeen = false;
-        await foreach (var update in ChatClient.GetStreamingResponseAsync(messages.Skip(statefulMessageCount), chatOptions, cancellationToken))
+        await foreach (var update in ChatClient.GetStreamingResponseAsync(outboundMessages, chatOptions, cancellationToken))
         {
             await Task.Delay(50);
 
@@ -81,7 +95,6 @@
                 ChatMessageItem.NotifyChanged(responseMessage);
             }
 
-            chatOptions.ConversationId = update.ConversationId;
             StateHasChanged();
         }
 
@@ -116,10 +129,39 @@
     {
         CancelAnyCurrentResponse();
         messages.Clear();
-        messages.Add(new(ChatRole.System, SystemPrompt));
-        chatOptions.ConversationId = null;
+        AddSessionSystemMessages();
+        chatOptions.ConversationId = sessionId;
         statefulMessageCount = 0;
         await chatInput!.FocusAsync();
+    }
+
+    private void AddSessionSystemMessages()
+    {
+        sessionId = Guid.NewGuid().ToString();
+
+        systemPromptMessage = new(ChatRole.System, SystemPrompt);
+        sessionIdMessage = new(ChatRole.System, $"SessionId: {sessionId}");
+
+        messages.Add(systemPromptMessage);
+        messages.Add(sessionIdMessage);
+
+        Logger.LogInformation("Started new chat session with SessionId: {SessionId}", sessionId);
+    }
+
+    private IEnumerable<ChatMessage> BuildOutboundMessages()
+    {
+        var baseMessages = messages.Skip(statefulMessageCount);
+
+        if (systemPromptMessage is null || sessionIdMessage is null)
+        {
+            return baseMessages;
+        }
+
+        var outboundMessages = new[] { systemPromptMessage, sessionIdMessage }
+            .Concat(baseMessages.Where(m => ReferenceEquals(m, systemPromptMessage) == false &&
+                                            ReferenceEquals(m, sessionIdMessage) == false));
+
+        return outboundMessages;
     }
 
     public void Dispose()

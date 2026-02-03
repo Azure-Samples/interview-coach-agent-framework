@@ -24,7 +24,7 @@ public class InterviewSessionTool(IInterviewSessionRepository repository, ILogge
     {
         var result = await repository.AddInterviewSessionAsync(record);
 
-        logger.LogInformation("Interview session added: '{record}'", record);
+        logger.LogInformation("Added interview session with ID '{id}'", result.Id);
 
         return result;
     }
