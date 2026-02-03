@@ -18,16 +18,16 @@ public class SummaryTools(ISessionStateService sessionStateService, IMcpClientSe
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found.";
+            return ToolResponseJson.Error("Session not found.");
         }
 
-        var sessionData = await _mcpClientService.GetInterviewSessionAsync(sessionId);
+        _ = await _mcpClientService.GetInterviewSessionAsync(sessionId);
         
         session.CurrentPhase = InterviewPhase.Completed;
         await _sessionStateService.UpdateSessionAsync(session);
         await _mcpClientService.CompleteInterviewSessionAsync(sessionId);
 
-        return "Summary generated and session completed. Please format the summary in markdown with the following sections: Overview, Key Highlights, Areas for Improvement, and Recommendations.";
+        return ToolResponseJson.Ok("Summary generated and session completed. Please format the summary in markdown with the following sections: Overview, Key Highlights, Areas for Improvement, and Recommendations.");
     }
 
     [Description("Formats the final summary in markdown")]
@@ -38,7 +38,7 @@ public class SummaryTools(ISessionStateService sessionStateService, IMcpClientSe
         [Description("The recommendations section")] string recommendations
     )
     {
-        return $"""
+        var summary = $"""
             # Interview Summary
 
             ## Overview
@@ -53,5 +53,6 @@ public class SummaryTools(ISessionStateService sessionStateService, IMcpClientSe
             ## Recommendations
             {recommendations}
             """;
+        return ToolResponseJson.Ok("Summary formatted.", summary);
     }
 }

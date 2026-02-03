@@ -19,7 +19,7 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found. Please start a new interview session.";
+            return ToolResponseJson.Error("Session not found. Please start a new interview session.");
         }
 
         session.ResumeLink = resumeLink;
@@ -31,13 +31,13 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
         }
         catch (Exception ex)
         {
-            return $"Failed to convert resume to markdown: {ex.Message}. Please provide the resume text directly or choose to proceed without it.";
+            return ToolResponseJson.Error($"Failed to convert resume to markdown: {ex.Message}. Please provide the resume text directly or choose to proceed without it.");
         }
 
         await _sessionStateService.UpdateSessionAsync(session);
         await _mcpClientService.UpdateInterviewSessionAsync(session);
 
-        return "Resume captured successfully. Now, please provide the job description link or tell me you want to proceed without it.";
+        return ToolResponseJson.Ok("Resume captured successfully. Now, please provide the job description link or tell me you want to proceed without it.");
     }
 
     [Description("Captures the resume text provided directly by the user")]
@@ -49,14 +49,14 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found. Please start a new interview session.";
+            return ToolResponseJson.Error("Session not found. Please start a new interview session.");
         }
 
         session.ResumeText = resumeText;
         await _sessionStateService.UpdateSessionAsync(session);
         await _mcpClientService.UpdateInterviewSessionAsync(session);
 
-        return "Resume text captured successfully. Now, please provide the job description link or tell me you want to proceed without it.";
+        return ToolResponseJson.Ok("Resume text captured successfully. Now, please provide the job description link or tell me you want to proceed without it.");
     }
 
     [Description("Marks that the user wants to proceed without providing a resume")]
@@ -67,14 +67,14 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found. Please start a new interview session.";
+            return ToolResponseJson.Error("Session not found. Please start a new interview session.");
         }
 
         session.ProceedWithoutResume = true;
         await _sessionStateService.UpdateSessionAsync(session);
         await _mcpClientService.UpdateInterviewSessionAsync(session);
 
-        return "Understood, proceeding without resume. Now, please provide the job description link or tell me you want to proceed without it.";
+        return ToolResponseJson.Ok("Understood, proceeding without resume. Now, please provide the job description link or tell me you want to proceed without it.");
     }
 
     [Description("Captures the job description link provided by the user")]
@@ -86,7 +86,7 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found. Please start a new interview session.";
+            return ToolResponseJson.Error("Session not found. Please start a new interview session.");
         }
 
         session.JobDescriptionLink = jobDescriptionLink;
@@ -98,7 +98,7 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
         }
         catch (Exception ex)
         {
-            return $"Failed to convert job description to markdown: {ex.Message}. Please provide the job description text directly or choose to proceed without it.";
+            return ToolResponseJson.Error($"Failed to convert job description to markdown: {ex.Message}. Please provide the job description text directly or choose to proceed without it.");
         }
 
         await _sessionStateService.UpdateSessionAsync(session);
@@ -110,10 +110,10 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
             session.CurrentPhase = InterviewPhase.BehavioralInterview;
             session.IsAnalysisComplete = true;
             await _sessionStateService.UpdateSessionAsync(session);
-            return "Job description captured successfully. Analysis phase complete. Ready to start the interview. Would you like to begin with behavioral or technical questions?";
+            return ToolResponseJson.Ok("Job description captured successfully. Analysis phase complete. Ready to start the interview. Would you like to begin with behavioral or technical questions?");
         }
 
-        return "Job description captured successfully.";
+        return ToolResponseJson.Ok("Job description captured successfully.");
     }
 
     [Description("Captures the job description text provided directly by the user")]
@@ -125,7 +125,7 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found. Please start a new interview session.";
+            return ToolResponseJson.Error("Session not found. Please start a new interview session.");
         }
 
         session.JobDescriptionText = jobDescriptionText;
@@ -138,10 +138,10 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
             session.CurrentPhase = InterviewPhase.BehavioralInterview;
             session.IsAnalysisComplete = true;
             await _sessionStateService.UpdateSessionAsync(session);
-            return "Job description text captured successfully. Analysis phase complete. Ready to start the interview. Would you like to begin with behavioral or technical questions?";
+            return ToolResponseJson.Ok("Job description text captured successfully. Analysis phase complete. Ready to start the interview. Would you like to begin with behavioral or technical questions?");
         }
 
-        return "Job description text captured successfully.";
+        return ToolResponseJson.Ok("Job description text captured successfully.");
     }
 
     [Description("Marks that the user wants to proceed without providing a job description")]
@@ -152,7 +152,7 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found. Please start a new interview session.";
+            return ToolResponseJson.Error("Session not found. Please start a new interview session.");
         }
 
         session.ProceedWithoutJobDescription = true;
@@ -165,17 +165,18 @@ public class AnalysisTools(ISessionStateService sessionStateService, IMcpClientS
             session.CurrentPhase = InterviewPhase.BehavioralInterview;
             session.IsAnalysisComplete = true;
             await _sessionStateService.UpdateSessionAsync(session);
-            return "Understood, proceeding without job description. Analysis phase complete. Ready to start the interview. Would you like to begin with behavioral or technical questions?";
+            return ToolResponseJson.Ok("Understood, proceeding without job description. Analysis phase complete. Ready to start the interview. Would you like to begin with behavioral or technical questions?");
         }
 
-        return "Understood, proceeding without job description.";
+        return ToolResponseJson.Ok("Understood, proceeding without job description.");
     }
 
     [Description("Checks if the analysis phase is complete (both resume and job description captured or skipped)")]
-    public async Task<bool> IsAnalysisComplete(
+    public async Task<string> IsAnalysisComplete(
         [Description("The session ID")] Guid sessionId
     )
     {
-        return await _sessionStateService.IsAnalysisCompleteAsync(sessionId);
+        var isComplete = await _sessionStateService.IsAnalysisCompleteAsync(sessionId);
+        return ToolResponseJson.Ok("Analysis completion status retrieved.", isComplete);
     }
 }

@@ -19,6 +19,7 @@
     "popd": true,
     "pwd": true,
     "sed": true,
+    "Add-Type": true,
     "Get-ChildItem": true,
     "Get-Content": true,
     "Get-Item": true,

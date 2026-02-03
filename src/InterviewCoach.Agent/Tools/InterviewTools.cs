@@ -19,12 +19,12 @@ public class InterviewTools(ISessionStateService sessionStateService, IMcpClient
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found.";
+            return ToolResponseJson.Error("Session not found.");
         }
 
         await _mcpClientService.UpdateInterviewSessionAsync(session);
 
-        return "Transcript recorded successfully.";
+        return ToolResponseJson.Ok("Transcript recorded successfully.");
     }
 
     [Description("Switches the interview phase to behavioral interview")]
@@ -35,13 +35,13 @@ public class InterviewTools(ISessionStateService sessionStateService, IMcpClient
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found.";
+            return ToolResponseJson.Error("Session not found.");
         }
 
         session.CurrentPhase = InterviewPhase.BehavioralInterview;
         await _sessionStateService.UpdateSessionAsync(session);
 
-        return "Switched to behavioral interview phase.";
+        return ToolResponseJson.Ok("Switched to behavioral interview phase.");
     }
 
     [Description("Switches the interview phase to technical interview")]
@@ -52,13 +52,13 @@ public class InterviewTools(ISessionStateService sessionStateService, IMcpClient
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found.";
+            return ToolResponseJson.Error("Session not found.");
         }
 
         session.CurrentPhase = InterviewPhase.TechnicalInterview;
         await _sessionStateService.UpdateSessionAsync(session);
 
-        return "Switched to technical interview phase.";
+        return ToolResponseJson.Ok("Switched to technical interview phase.");
     }
 
     [Description("Marks the interview as complete and ready for summary")]
@@ -69,12 +69,12 @@ public class InterviewTools(ISessionStateService sessionStateService, IMcpClient
         var session = await _sessionStateService.GetSessionAsync(sessionId);
         if (session is null)
         {
-            return "Session not found.";
+            return ToolResponseJson.Error("Session not found.");
         }
 
         session.CurrentPhase = InterviewPhase.Summary;
         await _sessionStateService.UpdateSessionAsync(session);
 
-        return "Interview marked as complete. Ready to generate summary.";
+        return ToolResponseJson.Ok("Interview marked as complete. Ready to generate summary.");
     }
 }

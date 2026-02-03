@@ -8,7 +8,7 @@ namespace InterviewCoach.Agent.Services;
 
 public interface IMcpClientService
 {
-    Task<Guid> CreateInterviewSessionAsync();
+    Task<Guid> CreateInterviewSessionAsync(Guid? sessionId = null);
     Task<InterviewSessionContext?> GetInterviewSessionAsync(Guid sessionId);
     Task UpdateInterviewSessionAsync(InterviewSessionContext context);
     Task CompleteInterviewSessionAsync(Guid sessionId);
@@ -24,10 +24,10 @@ public class McpClientService(
     private readonly McpClient _markitdownClient = markitdownClient ?? throw new ArgumentNullException(nameof(markitdownClient));
     private readonly ILogger<McpClientService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Guid> CreateInterviewSessionAsync()
+    public async Task<Guid> CreateInterviewSessionAsync(Guid? sessionId = null)
     {
         var client = _interviewDataClient;
-        var sessionId = Guid.NewGuid();
+        sessionId ??= Guid.NewGuid();
         
         var arguments = new Dictionary<string, object?>
         {
@@ -47,7 +47,7 @@ public class McpClientService(
 
         await client.CallToolAsync("add_interview_session", arguments);
         
-        return sessionId;
+        return sessionId.Value;
     }
 
     public async Task<InterviewSessionContext?> GetInterviewSessionAsync(Guid sessionId)
@@ -128,7 +128,7 @@ public class McpClientService(
             ["source"] = url
         };
 
-        var response = await client.CallToolAsync("markitdown", arguments);
+        var response = await client.CallToolAsync("convert_to_markdown", arguments);
         
         if (response.Content.Count > 0 && response.Content[0] is { } content)
         {

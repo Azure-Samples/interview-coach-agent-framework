@@ -4,7 +4,7 @@ namespace InterviewCoach.Agent.Services;
 
 public interface ISessionStateService
 {
-    Task<InterviewSessionState> CreateSessionAsync();
+    Task<InterviewSessionState> CreateSessionAsync(Guid? sessionId = null);
     Task<InterviewSessionState?> GetSessionAsync(Guid sessionId);
     Task UpdateSessionAsync(InterviewSessionState session);
     Task<bool> IsAnalysisCompleteAsync(Guid sessionId);
@@ -14,11 +14,11 @@ public class SessionStateService : ISessionStateService
 {
     private readonly Dictionary<Guid, InterviewSessionState> _sessions = new();
 
-    public Task<InterviewSessionState> CreateSessionAsync()
+    public Task<InterviewSessionState> CreateSessionAsync(Guid? sessionId = null)
     {
         var session = new InterviewSessionState
         {
-            SessionId = Guid.NewGuid(),
+            SessionId = sessionId ?? Guid.NewGuid(),
             CurrentPhase = InterviewPhase.Triage
         };
         _sessions[session.SessionId] = session;

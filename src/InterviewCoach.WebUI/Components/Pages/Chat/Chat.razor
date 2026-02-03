@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using System.ComponentModel
 @inject IChatClient ChatClient
+@inject IJSRuntime JS
 @inject NavigationManager Nav
 @implements IDisposable
 
@@ -10,7 +11,9 @@
 
 <ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
     <NoMessagesContent>
-        <div>I'm your friendly interview coach. To get started, upload your resume and job description.</div>
+        <div>
+            I'm your friendly interview coach. To get started, upload your resume and job description.
+        </div>
     </NoMessagesContent>
 </ChatMessageList>
 
@@ -20,22 +23,12 @@
 
 @code {
     private const string SystemPrompt = @"
-        You are an assistant who answers questions about information you retrieve.
-        Do not answer questions about anything else.
-        Use only simple markdown to format your responses.
-
-        Use the LoadDocuments tool to prepare for searches before answering any questions.
-
-        Use the Search tool to find relevant information. When you do this, end your
-        reply with citations in the special XML format:
-
-        <citation filename='string'>exact quote here</citation>
-
-        Always include the citation in your response if there are results.
-
-        The quote must be max 5 words, taken word-for-word from the search result, and is the basis for why the citation is relevant.
-        Don't refer to the presence of citations; just emit these tags right at the end, with no surrounding text.
+        You are an professional interview coach.
+        Your goal is to help users prepare for job interviews by providing insightful feedback, asking relevant questions, and offering constructive criticism.
+        Always maintain a supportive and encouraging tone.
         ";
+
+    private const string SessionStorageKey = "interview-coach.session-id";
 
     private int statefulMessageCount;
     private readonly ChatOptions chatOptions = new();
@@ -43,12 +36,53 @@
     private CancellationTokenSource? currentResponseCancellation;
     private ChatMessage? currentResponseMessage;
     private ChatInput? chatInput;
+    private Guid interviewSessionId;
+    private bool sessionInitialized;
 
     protected override void OnInitialized()
     {
         statefulMessageCount = 0;
-        messages.Add(new(ChatRole.System, SystemPrompt));
         chatOptions.Tools = [];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await EnsureSessionInitializedAsync();
+        }
+    }
+
+    private async Task EnsureSessionInitializedAsync()
+    {
+        if (sessionInitialized)
+        {
+            return;
+        }
+
+        var storedSessionId = await JS.InvokeAsync<string>("sessionStorage.getItem", SessionStorageKey);
+        if (Guid.TryParse(storedSessionId, out var parsedSessionId))
+        {
+            interviewSessionId = parsedSessionId;
+        }
+        else
+        {
+            interviewSessionId = Guid.NewGuid();
+            await JS.InvokeVoidAsync("sessionStorage.setItem", SessionStorageKey, interviewSessionId.ToString());
+        }
+
+        InitializeConversation(interviewSessionId);
+        sessionInitialized = true;
+        StateHasChanged();
+    }
+
+    private void InitializeConversation(Guid sessionId)
+    {
+        messages.Clear();
+        messages.Add(new(ChatRole.System, SystemPrompt));
+        messages.Add(new(ChatRole.System, $"<sessionId>{sessionId}</sessionId>"));
+        messages.Add(new(ChatRole.Assistant, $"I'm your friendly interview coach. To get started, upload your resume and job description. Here's your interview session ID: {sessionId}"));
+        statefulMessageCount = 0;
     }
 
     private async Task AddUserMessageAsync(ChatMessage userMessage)
@@ -71,6 +105,9 @@
 
     private async Task GetStreamingResponseAsync(TextContent responseText, ChatMessage responseMessage, CancellationToken cancellationToken)
     {
+        var currentResponseText = responseText;
+        var currentResponseMessage = responseMessage;
+        var currentAuthorName = responseMessage.AuthorName;
         var deferAssistantTextUntilToolResponse = false;
         var toolResponseSeen = false;
         await foreach (var update in ChatClient.GetStreamingResponseAsync(messages.Skip(statefulMessageCount), chatOptions, cancellationToken))
@@ -79,39 +116,87 @@
 
             messages.AddMessages(update, filter: c => c is not TextContent);
 
-            if (deferAssistantTextUntilToolResponse == false && update.Role == ChatRole.Assistant && ContainsNonTextContent(update))
+            if (update.Role == ChatRole.Assistant)
+            {
+                var updateAuthorName = string.IsNullOrWhiteSpace(update.AuthorName) ? null : update.AuthorName;
+
+                if (updateAuthorName is not null && currentAuthorName is not null &&
+                    string.Equals(updateAuthorName, currentAuthorName, StringComparison.Ordinal) == false)
+                {
+                    messages.Add(currentResponseMessage);
+
+                    currentResponseText = new TextContent("");
+                    currentResponseMessage = new ChatMessage(ChatRole.Assistant, [currentResponseText])
+                    {
+                        AuthorName = updateAuthorName
+                    };
+                    currentAuthorName = updateAuthorName;
+                    this.currentResponseMessage = currentResponseMessage;
+                    ChatMessageItem.NotifyChanged(currentResponseMessage);
+                }
+                else if (currentAuthorName is null && updateAuthorName is not null)
+                {
+                    currentResponseMessage.AuthorName = updateAuthorName;
+                    currentAuthorName = updateAuthorName;
+                    ChatMessageItem.NotifyChanged(currentResponseMessage);
+                }
+            }
+
+            if (deferAssistantTextUntilToolResponse == false && update.Role == ChatRole.Assistant && ContainsFunctionCall(update))
             {
                 deferAssistantTextUntilToolResponse = true;
             }
 
-            if (update.Role == ChatRole.Tool)
+            if (update.Role == ChatRole.Tool || ContainsFunctionResult(update))
             {
                 toolResponseSeen = true;
             }
 
             if ((deferAssistantTextUntilToolResponse == false || toolResponseSeen == true) && update.Role == ChatRole.Assistant)
             {
-                responseText.Text += update.Text;
-                ChatMessageItem.NotifyChanged(responseMessage);
+                AppendAssistantText(update, currentResponseText, currentResponseMessage);
             }
 
             chatOptions.ConversationId = update.ConversationId;
             StateHasChanged();
         }
 
-        bool ContainsNonTextContent(ChatResponseUpdate update)
+        static bool ContainsFunctionCall(ChatResponseUpdate update)
         {
             if (update.Contents.Any() == false)
             {
-                return true;
+                return false;
             }
 
-            if (update.Contents.Any(c => c is not TextContent) == true)
+            return update.Contents.Any(c => c is FunctionCallContent);
+        }
+
+        static bool ContainsFunctionResult(ChatResponseUpdate update)
+        {
+            if (update.Contents.Any() == false)
             {
-                return true;
+                return false;
             }
 
-            return false;
+            return update.Contents.Any(c => c is FunctionResultContent);
+        }
+
+        static void AppendAssistantText(ChatResponseUpdate update, TextContent targetText, ChatMessage targetMessage)
+        {
+            if (update.Contents.Any() == false)
+            {
+                return;
+            }
+
+            foreach (var content in update.Contents)
+            {
+                if (content is TextContent { Text: { Length: > 0 } text })
+                {
+                    targetText.Text += text;
+                }
+            }
+
+            ChatMessageItem.NotifyChanged(targetMessage);
         }
     }
 
@@ -129,10 +214,10 @@
     private async Task ResetConversationAsync()
     {
         CancelAnyCurrentResponse();
-        messages.Clear();
-        messages.Add(new(ChatRole.System, SystemPrompt));
+        interviewSessionId = Guid.NewGuid();
+        await JS.InvokeVoidAsync("sessionStorage.setItem", SessionStorageKey, interviewSessionId.ToString());
+        InitializeConversation(interviewSessionId);
         chatOptions.ConversationId = null;
-        statefulMessageCount = 0;
         await chatInput!.FocusAsync();
     }
 

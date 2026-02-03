@@ -14,7 +14,7 @@ else if (Message.Role == ChatRole.Assistant)
     {
         if (content is TextContent { Text: { Length: > 0 } text })
         {
-            <div class="assistant-message">
+            <div class="@AssistantMessageClass">
                 <div>
                     <div class="assistant-message-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -22,7 +22,7 @@ else if (Message.Role == ChatRole.Assistant)
                         </svg>
                     </div>
                 </div>
-                <div class="assistant-message-header">Assistant</div>
+                <div class="assistant-message-header">@AssistantName</div>
                 <div class="assistant-message-text">
                     <assistant-message markdown="@text"></assistant-message>
                 </div>
@@ -74,6 +74,13 @@ else if (Message.Role == ChatRole.Assistant)
     [Parameter]
     public bool InProgress { get; set;}
 
+    private string AssistantName => string.IsNullOrWhiteSpace(Message.AuthorName)
+        ? "Assistant"
+        : Message.AuthorName;
+
+    private string AssistantMessageClass
+        => $"assistant-message {GetAgentClass()}".Trim();
+
     protected override void OnInitialized()
     {
         SubscribersLookup.AddOrUpdate(Message, this);
@@ -99,4 +106,15 @@ else if (Message.Role == ChatRole.Assistant)
             ? matches.Select(m => (m.Groups["file"].Value, m.Groups["quote"].Value)).ToList()
             : null;
     }
+
+    private string GetAgentClass()
+        => Message.AuthorName?.ToLowerInvariant() switch
+        {
+            "triage" => "assistant-message--triage",
+            "analysis" => "assistant-message--analysis",
+            "behavioral" => "assistant-message--behavioral",
+            "technical" => "assistant-message--technical",
+            "summary" => "assistant-message--summary",
+            _ => string.Empty
+        };
 }

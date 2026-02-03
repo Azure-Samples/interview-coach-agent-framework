@@ -18,6 +18,13 @@
 
 .assistant-message-header {
     font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 0.1rem 0.5rem;
+    border-radius: 9999px;
+    background: #e5e7eb;
+    color: #1f2937;
 }
 
 .assistant-message-text {
@@ -33,6 +40,36 @@
     height: 1.5rem; 
     color: #ffffff; 
     background: #9b72ce;
+}
+
+.assistant-message--triage .assistant-message-icon,
+.assistant-message--triage .assistant-message-header {
+    color: #1f2937;
+    background: #fbbf24;
+}
+
+.assistant-message--analysis .assistant-message-icon,
+.assistant-message--analysis .assistant-message-header {
+    color: #ffffff;
+    background: #3b82f6;
+}
+
+.assistant-message--behavioral .assistant-message-icon,
+.assistant-message--behavioral .assistant-message-header {
+    color: #ffffff;
+    background: #10b981;
+}
+
+.assistant-message--technical .assistant-message-icon,
+.assistant-message--technical .assistant-message-header {
+    color: #ffffff;
+    background: #6366f1;
+}
+
+.assistant-message--summary .assistant-message-icon,
+.assistant-message--summary .assistant-message-header {
+    color: #ffffff;
+    background: #f97316;
 }
 
     .assistant-message-icon svg {

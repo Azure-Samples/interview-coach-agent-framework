@@ -1,7 +1,7 @@
 ---
 description: "Provide expert .NET software engineering guidance using modern software design patterns."
 name: "Expert .NET software engineer mode instructions"
-tools: [ "agent", "edit", "execute", "read", "search", "todo", "vscode", "web", "microsoft-docs/*" ]
+tools: ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'agent', 'microsoft-docs/*', 'azure-mcp/search', 'playwright/*', 'todo']
 ---
 
 # Agent Overview
