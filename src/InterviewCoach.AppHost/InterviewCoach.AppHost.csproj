@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.1.0">
+<Project Sdk="Aspire.AppHost.Sdk/13.1.1">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,6 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure" Version="13.*" />
+    <!-- <PackageReference Include="Aspire.Hosting.Azure.AIFoundry" Version="13.*-*" /> -->
     <PackageReference Include="Aspire.Hosting.GitHub.Models" Version="13.*" />
     <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.*" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.SQLite" Version="13.*" />

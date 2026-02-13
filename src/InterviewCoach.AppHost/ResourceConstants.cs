@@ -1,5 +1,6 @@
 public class ResourceConstants
 {
+    public const string LlmProvider = "LlmProvider";
     public const string McpMarkItDown = "mcp-markitdown";
     public const string McpInterviewData = "mcp-interview-data";
     public const string Sqlite = "sqlite";

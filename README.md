@@ -40,52 +40,43 @@ New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDow
     git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
 ```
 
-### Use GitHub Models
+### Set Connection to LLM
 
-1. Get the [GitHub Personal Access Token (PAT)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) to access to [GitHub Models](https://github.com/marketplace?type=models).
+<details open>
+<summary><strong>Use Microsoft Foundry</strong></summary>
 
-1. Store the GitHub PAT to user secrets.
+1. Get the project endpoint and API key from [Foundry Portal](https://ai.azure.com).
+1. Store both endpoint and API key to user secrets.
 
     ```bash
-    dotnet user-secrets --file ./apphost.cs set GitHub:Token {{GITHUB_PAT}}
+    dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint $MICROSOFT_FOUNDRY_PROJECT_ENDPOINT
+    dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey $MICROSOFT_FOUNDRY_PROJECT_API_KEY
     ```
 
-1. Make sure that `src/InterviewCoach.AppHost/appsettings.json` or `apphost.settings.json` points to use GitHub Models. You can change the default model from `openai/gpt-5-mini` to your preferred one.
+1. Make sure that `src/InterviewCoach.AppHost/appsettings.json` or `apphost.settings.json` points to use Azure OpenAI. You can change the default model from `model-router` to your preferred one.
 
     ```jsonc
     {
-      "LlmProvider": "GitHubModels",
+      "LlmProvider": "MicrosoftFoundry",
 
-      "GitHub": {
-        "Endpoint": "https://models.github.ai/inference",
-        "Token": "{{GITHUB_PAT}}",
-        "Model": "openai/gpt-5-mini"
+      "MicrosoftFoundry": {
+        "Project": {
+          "Endpoint": "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}",
+          "ApiKey": "{{MICROSOFT_FOUNDRY_PROJECT_API_KEY}}",
+          "DeploymentName": "model-router"
+        }
       }
     }
     ```
 
-### Use Azure OpenAI
+   > **NOTE**: You can find more about [Model Router](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router?view=foundry) on Microsoft Foundry.
 
-1. Login to Azure
+</details>
 
-    ```bash
-    az login
-    ```
+<details>
+<summary><strong>Use Azure OpenAI</strong></summary>
 
-1. Assuming you've already got an active [Azure OpenAI](https://azure.microsoft.com/products/ai-foundry/models/openai) instance. Get both endpoint and API from that instance.
-
-    ```bash
-    # zsh/bash
-    AZURE_OPENAI_ENDPOINT=$(az cognitiveservices account show -g rg-juyoo-aoai -n openai-6heq7tc4w2ols --query "properties.endpoint" -o tsv)
-    AZURE_OPENAI_API_KEY=$(az cognitiveservices account keys list -g rg-juyoo-aoai -n openai-6heq7tc4w2ols --query "key1" -o tsv)
-    ```
-
-    ```powershell
-    # PowerShell
-    $AZURE_OPENAI_ENDPOINT = az cognitiveservices account show -g rg-juyoo-aoai -n openai-6heq7tc4w2ols --query "properties.endpoint" -o tsv
-    $AZURE_OPENAI_API_KEY = az cognitiveservices account keys list -g rg-juyoo-aoai -n openai-6heq7tc4w2ols --query "key1" -o tsv
-    ```
-
+1. Get the endpoint and API key from [Foundry Portal](https://ai.azure.com).
 1. Store both endpoint and API key to user secrets.
 
     ```bash
@@ -109,6 +100,34 @@ New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDow
     }
     ```
 
+</details>
+
+<details>
+<summary><strong>Use GitHub Models</strong></summary>
+
+1. Get the [GitHub Personal Access Token (PAT)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) to access to [GitHub Models](https://github.com/marketplace?type=models).
+1. Store the GitHub PAT to user secrets.
+
+    ```bash
+    dotnet user-secrets --file ./apphost.cs set GitHub:Token {{GITHUB_PAT}}
+    ```
+
+1. Make sure that `src/InterviewCoach.AppHost/appsettings.json` or `apphost.settings.json` points to use GitHub Models. You can change the default model from `openai/gpt-5-mini` to your preferred one.
+
+    ```jsonc
+    {
+      "LlmProvider": "GitHubModels",
+
+      "GitHub": {
+        "Endpoint": "https://models.github.ai/inference",
+        "Token": "{{GITHUB_PAT}}",
+        "Model": "openai/gpt-5-mini"
+      }
+    }
+    ```
+
+</details>
+
 ### Run Aspire
 
 You can run Aspire from either way - file-based `apphost.cs` or project-based `AppHost.csproj`.
@@ -116,13 +135,13 @@ You can run Aspire from either way - file-based `apphost.cs` or project-based `A
 1. Run Aspire from the file-based `apphost.cs`.
 
     ```bash
-    dotnet run --file ./apphost.cs
+    aspire run --file ./apphost.cs
     ```
 
 1. Run Aspire from the project-based `AppHost.csproj`.
 
     ```bash
-    dotnet run --project ./src/InterviewCoach.AppHost
+    aspire run --project ./src/InterviewCoach.AppHost
     ```
 
 1. Open Aspire dashboard then navigate to the `webui` instance to run the interview coach app.
@@ -153,11 +172,25 @@ You can run Aspire from either way - file-based `apphost.cs` or project-based `A
 
 ## Additional Resources
 
+### Microsoft Foundry
+
+- [Microsoft Foundry](https://learn.microsoft.com/azure/ai-foundry/what-is-foundry?view=foundry)
+- [Microsoft Foundry Agent Service](https://learn.microsoft.com/azure/ai-foundry/agents/overview?view=foundry)
+- [Microsoft Foundry Model Router](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router?view=foundry)
+
+### Microsoft Agent Framework
+
 - [Microsoft Agent Framework](https://aka.ms/agent-framework)
 - [Multi-Agent Orchestration Pattern](https://learn.microsoft.com/agent-framework/user-guide/workflows/orchestrations/overview)
 - [AG-UI Protocol](https://docs.ag-ui.com/introduction)
+
+### MCP Server
+
 - [MarkItDown MCP Server](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp)
-- [Aspire](https://aspire.dev)
 <!-- - [Outlook Email MCP Server](https://github.com/microsoft/mcp-dotnet-samples/tree/main/outlook-email)
 - [OneDrive Download MCP Server](https://github.com/microsoft/mcp-dotnet-samples/tree/main/onedrive-download)
 - [Google Drive Download MCP Server](https://github.com/microsoft/mcp-dotnet-samples/tree/main/googledrive-download) -->
+
+### Aspire
+
+- [Aspire](https://aspire.dev)
