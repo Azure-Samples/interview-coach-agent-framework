@@ -40,10 +40,10 @@ New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDow
     git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
 ```
 
-<details open>
-<summary><h3>Use Microsoft Foundry</h3></summary>
+### Set Connection to LLM
 
-<!-- ### Use Microsoft Foundry -->
+<details open>
+<summary><strong>Use Microsoft Foundry</strong></summary>
 
 1. Get the project endpoint and API key from [Foundry Portal](https://ai.azure.com).
 1. Store both endpoint and API key to user secrets.
@@ -74,9 +74,7 @@ New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDow
 </details>
 
 <details>
-<summary><h3>Use Azure OpenAI</h3></summary>
-
-<!-- ### Use Azure OpenAI -->
+<summary><strong>Use Azure OpenAI</strong></summary>
 
 1. Get the endpoint and API key from [Foundry Portal](https://ai.azure.com).
 1. Store both endpoint and API key to user secrets.
@@ -105,9 +103,7 @@ New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDow
 </details>
 
 <details>
-<summary><h3>Use GitHub Models</h3></summary>
-
-<!-- ### Use GitHub Models -->
+<summary><strong>Use GitHub Models</strong></summary>
 
 1. Get the [GitHub Personal Access Token (PAT)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) to access to [GitHub Models](https://github.com/marketplace?type=models).
 1. Store the GitHub PAT to user secrets.
