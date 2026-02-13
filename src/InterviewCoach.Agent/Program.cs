@@ -1,3 +1,10 @@
+using System.ClientModel.Primitives;
+using System.Data.Common;
+
+using Azure.Identity;
+
+using InterviewCoach.Agent;
+
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.DevUI;
 using Microsoft.Agents.AI.Hosting;
@@ -7,7 +14,12 @@ using Microsoft.Extensions.AI;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 
+using OpenAI;
+
+#pragma warning disable OPENAI001
+
 var builder = WebApplication.CreateBuilder(args);
+var config = builder.Configuration;
 
 builder.AddServiceDefaults();
 
@@ -73,8 +85,28 @@ builder.Services.AddKeyedSingleton<McpClient>("mcp-interview-data", (sp, obj) =>
     return McpClient.CreateAsync(clientTransport, clientOptions, loggerFactory).GetAwaiter().GetResult();
 });
 
-builder.AddOpenAIClient("chat")
-       .AddChatClient();
+if (config[Constants.LlmProvider] != "MicrosoftFoundry")
+{
+    builder.AddOpenAIClient("chat")
+           .AddChatClient();
+}
+else
+{
+    builder.AddOpenAIClient("chat")
+           .AddChatClient();
+
+//     var connection = new DbConnectionStringBuilder() { ConnectionString = config.GetConnectionString("foundry") };
+//     var endpoint = connection.TryGetValue("Endpoint", out var endpointValue) ? endpointValue?.ToString() : throw new InvalidOperationException("Missing Foundry Endpoint");
+//     // var accessKey = connection.TryGetValue("Key", out var accessKeyValue) ? accessKeyValue?.ToString() : throw new InvalidOperationException("Missing Foundry Key");
+//     var model = connection.TryGetValue("Model", out var modelValue) ? modelValue?.ToString() : throw new InvalidOperationException("Missing Foundry Model");
+//     var options = new OpenAIClientOptions() { Endpoint = new Uri(endpoint!) };
+//     var credential = new DefaultAzureCredential();
+//     var client = new OpenAIClient(new BearerTokenPolicy(credential, "https://ai.azure.com/.default"), options)
+//                     .GetResponsesClient(model!)
+//                     .AsIChatClient();
+
+//     builder.Services.AddSingleton<IChatClient>(client);
+}
 
 builder.AddAIAgent(
     name: "coach",
