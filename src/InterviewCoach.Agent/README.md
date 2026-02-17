@@ -1,129 +1,354 @@
-# AI Agent Web API
+# Interview Coach Agent
 
-This is an AI Agent Web API application created from the `aiagent-webapi` template. This template is currently in a preview stage. If you have feedback, please take a [brief survey](https://aka.ms/dotnet/aiagent-webapi/preview1/survey).
+This is the core AI agent service that conducts interview coaching sessions using [Microsoft Agent Framework](https://aka.ms/agent-framework).
 
-## Prerequisites
+## Purpose
 
-- A GitHub Models API token (free to get started)
+The Interview Coach Agent orchestrates the interview preparation process by:
 
-## Getting Started
+- Managing conversational flow through structured instructions
+- Collecting resumes and job descriptions
+- Asking behavioral and technical questions
+- Analyzing responses
+- Generating comprehensive summaries and feedback
+- Maintaining session state through MCP tools
 
-### 1. Configure Your AI Service
+## Architecture Role
 
-#### GitHub Models Configuration
+This service acts as the **brain** of the application:
 
-This application uses GitHub Models (model: gpt-4o-mini) for AI functionality. You'll need to configure your GitHub Models API token:
+- Receives user messages from the WebUI
+- Calls MCP servers for capabilities (document parsing, session management)
+- Communicates with LLM provider (Foundry, Azure OpenAI, or GitHub Models)
+- Returns intelligent responses based on instructions and context
 
-**Option A: Using User Secrets (Recommended for Development)**
+**[See overall architecture →](../../docs/ARCHITECTURE.md)**
 
-```bash
-dotnet user-secrets set "GITHUB_TOKEN" "your-github-models-token-here"
+## Key Files
+
+### Program.cs
+
+**[View source](Program.cs)**
+
+The main application file containing:
+
+**Lines 17-66**: MCP client setup
+
+- Connects to MarkItDown MCP (document parsing)
+- Connects to InterviewData MCP (session management)
+- Configures HTTP transports
+
+**Lines 68-79**: LLM provider configuration
+
+- Loads chat client from Aspire-configured provider
+- Supports Foundry, Azure OpenAI, and GitHub Models
+
+**Lines 81-119**: Agent definition
+
+```csharp
+var agent = new ChatClientAgent(
+    chatClient: chatClient,
+    name: "coach",
+    instructions: """ ... """,
+    tools: [ .. markitdownTools, .. interviewDataTools ]
+);
 ```
 
-**Option B: Using Environment Variables**
+Key aspects of the agent:
 
-Set the `GITHUB_TOKEN` environment variable:
+- **Instructions**: Natural language defining agent behavior and interview flow
+- **Tools**: MCP tools for document parsing and data management
+- **Chat client**: Provider-agnostic LLM interface
 
-- **Windows (PowerShell)**:
-  ```powershell
-  $env:GITHUB_TOKEN = "your-github-models-token-here"
-  ```
+**Lines 121-135**: API endpoint mapping
 
-- **Linux/macOS**:
-  ```bash
-  export GITHUB_TOKEN="your-github-models-token-here"
-  ```
+- `/responses` - OpenAI-compatible responses API
+- `/conversations` - Multi-turn conversation management
+- `/ag-ui` - Agent Framework AGUI protocol
+- `/devui/` - Development UI (dev only)
 
-#### Get a GitHub Models Token
+### Constants.cs
 
-1. Visit [GitHub Models](https://github.com/marketplace/models)
-2. Sign in with your GitHub account
-3. Select a model (e.g., gpt-4o-mini)
-4. Click "Get API Key" or follow the authentication instructions
-5. Copy your personal access token
+**[View source](Constants.cs)**
 
+Defines configuration keys used throughout the application.
 
-### 2. Run the Application
+### appsettings.json
 
-```bash
-dotnet run -lp https
+**[View source](appsettings.json)**
+
+Default configuration including logging levels and placeholder values for credentials.
+
+## Agent Instructions
+
+The heart of the agent is its instructions (defined in [Program.cs](Program.cs#L95-L125)):
+
+```csharp
+instructions: """
+    You are an AI Interview Coach designed to help users prepare for job interviews.
+    You will guide them through the interview process, provide feedback, and help them improve their skills.
+    You will be given a session Id to track the interview session progress.
+    Use the provided tools to manage interview sessions, capture resume and job description, 
+    ask both behavioral and technical questions, analyze responses, and generate summaries.
+
+    Here's the overall process you should follow:
+    01. Start by fetching an existing interview session and let the user know their session ID.
+    02. If there's no existing session, create a new interview session...
+    03-12. [Complete interview flow]
+    
+    Always maintain a supportive and encouraging tone.
+    """
 ```
 
-The application will start and listen on:
-- HTTP: `http://localhost:5152`
-- HTTPS: `https://localhost:7048`
+**Why this matters**: The instructions define agent behavior through natural language, not code. Changing the flow is as simple as editing this text.
 
-### 3. Test the Application
+**[Learn more about instruction engineering →](../../docs/TUTORIALS.md#tutorial-1-understanding-the-interview-flow)**
 
-The application exposes OpenAI-compatible API endpoints. You can interact with the AI agents using any OpenAI-compatible client or tools.
+## MCP Tool Integration
 
-In development environments, a `/devui/` route is mapped to the Agent Framework development UI (DevUI), and when the app is launched through an IDE a browser will open to this URL. DevUI provides a web-based UI for interacting with agents and workflows. DevUI operates as an OpenAI-compatible client using the Responses and Conversations endpoints.
+The agent uses two MCP servers:
 
-## How It Works
+### 1. MarkItDown MCP
 
-This application demonstrates Agent Framework with:
+- **Purpose**: Parse resumes and job descriptions from PDF/DOCX to markdown
+- **Tools**: `convert_to_markdown`
+- **Source**: External Python server from [microsoft/markitdown](https://github.com/microsoft/markitdown)
 
-1. **Writer Agent**: Writes short stories (300 words or less) about specified topics
-2. **Editor Agent**: Edits stories to improve grammar and style, ensuring they stay under 300 words
-3. **Publisher Workflow Agent**: A sequential workflow agent that combines the writer and editor agents
+### 2. InterviewData MCP
 
-The agents are exposed through OpenAI-compatible API endpoints, making them easy to integrate with existing tools and applications.
+- **Purpose**: Manage interview session state and persistence
+- **Tools**: `create_interview_session`, `get_interview_session`, `update_interview_session`
+- **Source**: Custom .NET server in [../InterviewCoach.Mcp.InterviewData/](../InterviewCoach.Mcp.InterviewData/)
 
-## Template Parameters
+**[Deep dive into MCP servers →](../../docs/MCP-SERVERS.md)**
 
-When creating a new project, you can customize it using template parameters:
+## API Endpoints
+
+When running, the agent exposes:
+
+| Endpoint | Purpose | Protocol |
+|----------|---------|----------|
+| `/responses` | Single-turn completions | OpenAI-compatible |
+| `/conversations` | Multi-turn conversations | OpenAI-compatible |
+| `/ag-ui` | Agent UI protocol | AGUI |
+| `/devui/` | Development UI | HTTP (dev only) |
+
+The WebUI connects to `/conversations` for the chat interface.
+
+## Local Development
+
+### Run Standalone
 
 ```bash
-# Specify AI service provider
-dotnet new aiagent-webapi --provider azureopenai
+# Set environment variables for provider
+export LlmProvider=MicrosoftFoundry
+export MicrosoftFoundry__Project__Endpoint="https://your-project.azure.ai"
+export MicrosoftFoundry__Project__ApiKey="your-key"
 
-# Specify a custom chat model
-dotnet new aiagent-webapi --chat-model gpt-4o
-
-# Use API key authentication for Azure OpenAI
-dotnet new aiagent-webapi --provider azureopenai --managed-identity false
-
-# Use Ollama with a different model
-dotnet new aiagent-webapi --provider ollama --chat-model llama3.1
+# Run
+cd src/InterviewCoach.Agent
+dotnet run
 ```
 
-### Available Parameters
+**Note**: Running standalone requires MCP servers to be running separately. Easier to use Aspire orchestration.
 
-- **`--provider`**: Choose the AI service provider
-  - `githubmodels` (default) - GitHub Models
-  - `azureopenai` - Azure OpenAI
-  - `openai` - OpenAI Platform
-  - `ollama` - Ollama (local development)
+### Run with Aspire (Recommended)
 
-- **`--chat-model`**: Specify the chat model/deployment name
-  - Default for OpenAI/Azure OpenAI/GitHub Models: `gpt-4o-mini`
-  - Default for Ollama: `llama3.2`
+```bash
+# From repository root
+aspire run --file ./apphost.cs
+```
 
-- **`--managed-identity`**: Use managed identity for Azure services (default: `true`)
-  - Only applicable when `--provider azureopenai`
+Aspire automatically:
 
-- **`--framework`**: Target framework (default: `net10.0`)
-  - Options: `net10.0`, `net9.0`, `net8.0`
+- Starts all dependencies (MCP servers, database)
+- Configures service discovery
+- Provides dashboard at `https://localhost:17xxx`
 
-## Project Structure
+### Development UI
 
-- `Program.cs` - Application entry point and configuration
-- `appsettings.json` - Application configuration
-- `Properties/launchSettings.json` - Launch profiles for development
+When running in development, access DevUI at:
 
-## Learn More
+```
+https://localhost:<port>/devui/
+```
 
-- [AI apps for .NET developers](https://learn.microsoft.com/dotnet/ai)
-- [Microsoft Agent Framework Documentation](https://aka.ms/dotnet/agent-framework/docs)
-- [GitHub Models](https://github.com/marketplace/models)
+This provides a test interface for interacting with the agent without the WebUI.
+
+## Configuration
+
+### Provider Selection
+
+Set in `apphost.settings.json` or via environment variable:
+
+```json
+{
+  "LlmProvider": "MicrosoftFoundry"  // or "AzureOpenAI" or "GitHubModels"
+}
+```
+
+**[Provider setup guides →](../../docs/providers/README.md)**
+
+### Logging
+
+Adjust verbosity in `appsettings.json`:
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",  // Information, Debug, Trace
+      "Microsoft.Agents.AI": "Debug"  // Agent framework logs
+    }
+  }
+}
+```
+
+## Customization
+
+### Modify Interview Flow
+
+Edit the agent instructions in [Program.cs](Program.cs#L95-L125):
+
+```csharp
+instructions: """
+    Your customizations here...
+    """
+```
+
+Examples:
+
+- Change question order (technical before behavioral)
+- Add new interview stages (coding challenges, case studies)
+- Modify tone (more formal, less formal)
+- Add domain specialization (frontend, backend, data science)
+
+**[Tutorial: Customizing the Agent →](../../docs/TUTORIALS.md#tutorial-3-customizing-the-agent)**
+
+### Add New MCP Tools
+
+1. Create or reference MCP server
+2. Register HTTP client in [Program.cs](Program.cs)
+3. Register MCP client
+4. List tools and add to agent
+
+**[Tutorial: Creating Custom MCP Server →](../../docs/TUTORIALS.md#tutorial-2-creating-a-custom-mcp-server)**
+
+## Deployment
+
+### With Aspire (`azd`)
+
+The agent deploys as a container to Azure Container Apps:
+
+```bash
+azd up
+```
+
+### Standalone Container
+
+```bash
+# Build
+docker build -t interview-coach-agent .
+
+# Run
+docker run -p 8080:8080 \
+  -e LlmProvider=MicrosoftFoundry \
+  -e MicrosoftFoundry__Project__Endpoint=... \
+  -e MicrosoftFoundry__Project__ApiKey=... \
+  interview-coach-agent
+```
+
+## Observability
+
+### Logs
+
+The agent emits structured logs:
+
+- User messages received
+- Tool calls made
+- LLM requests/responses
+- Errors and warnings
+
+View in Aspire Dashboard or Azure Application Insights.
+
+### Traces
+
+OpenTelemetry distributed tracing tracks:
+
+- Request flow through agent
+- MCP tool invocations
+- LLM latency
+
+### Metrics
+
+Built-in metrics:
+
+- Request count
+- Response latency
+- Token usage (via provider)
+- Error rates
 
 ## Troubleshooting
 
-**Problem**: Application fails with "Missing configuration: GITHUB_TOKEN"
+### Agent Not Responding
 
-**Solution**: Make sure you've configured your GitHub Models API token using one of the methods described above.
+**Symptoms**: Timeout or no response
 
-**Problem**: API requests fail with authentication errors
+**Possible causes**:
 
-**Solution**: Verify your GitHub Models token is valid and hasn't expired. You may need to regenerate it from the GitHub Models website.
+1. LLM provider not configured correctly
+2. MCP servers not running
+3. Network connectivity issues
 
+**Solutions**:
+
+- Check Aspire Dashboard - all services should be "Running"
+- Verify provider credentials in user secrets
+- Review agent logs for errors
+
+### Tool Calls Failing
+
+**Symptoms**: Agent says it can't perform actions
+
+**Possible causes**:
+
+1. MCP server unreachable
+2. MCP tool errors
+3. Tool not registered with agent
+
+**Solutions**:
+
+- Check MCP server logs in Aspire Dashboard
+- Verify MCP clients are registered in [Program.cs](Program.cs#L17-L66)
+- Ensure tools are added to agent: `tools: [ .. markitdownTools, .. interviewDataTools ]`
+
+### High Token Usage
+
+**Symptoms**: Unexpected costs
+
+**Possible causes**:
+
+1. Long conversations
+2. Verbose instructions
+3. Large documents being parsed
+
+**Solutions**:
+
+- Monitor usage in Foundry Portal or Azure OpenAI Studio
+- Reduce instruction length
+- Set max_tokens limits
+- Use model-router (Foundry) for cost optimization
+
+## Next Steps
+
+- 📖 [Understand the Architecture](../../docs/ARCHITECTURE.md)
+- 🛠️ [Follow Tutorials](../../docs/TUTORIALS.md)
+- 🔧 [Customize Agent Instructions](../../docs/TUTORIALS.md#tutorial-3-customizing-the-agent)
+- 🎯 [Learn About MCP](../../docs/MCP-SERVERS.md)
+
+## Resources
+
+- [Microsoft Agent Framework Docs](https://aka.ms/agent-framework)
+- [Agent Framework Samples](https://github.com/microsoft/agent-framework)
+- [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling)
+- [Model Context Protocol](https://modelcontextprotocol.io)

@@ -1,196 +1,254 @@
 # Interview Coach with Microsoft Agent Framework
 
-This is a sample application practicing job interview using [Microsoft Agent Framework](https://aka.ms/agent-framework).
+An AI-powered interview preparation application demonstrating production-ready patterns with [Microsoft Agent Framework](https://aka.ms/agent-framework), Model Context Protocol (MCP) integration, and .NET Aspire orchestration.
+
+## What You'll Learn
+
+This sample teaches modern AI agent development patterns:
+
+- ✅ **Building production AI agents** with Microsoft Agent Framework
+- ✅ **Model Context Protocol (MCP)** for extensible agent capabilities
+- ✅ **Multi-service orchestration** with .NET Aspire
+- ✅ **Stateful conversation management** across sessions
+- ✅ **Multi-provider LLM support** (Foundry, Azure OpenAI, GitHub Models)
+- ✅ **Azure deployment** with one command using `azd`
+
+**[Read more about learning objectives →](docs/LEARNING-OBJECTIVES.md)**
 
 ## Architecture
 
 ![Overall architecture](./assets/architecture.png)
 
+The application uses a **microservices architecture** with:
+
+- **Interview Coach Agent**: Conducts interviews using Microsoft Agent Framework
+- **MCP Servers**: Extensible tools for document parsing and session management
+- **Web UI**: Blazor-based chat interface
+- **.NET Aspire**: Service orchestration and local development
+- **Microsoft Foundry**: Production AI service with model-router
+
+**[Explore the architecture in detail →](docs/ARCHITECTURE.md)**
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
 - [Visual Studio 2026](https://visualstudio.microsoft.com/downloads/) or [VS Code](http://code.visualstudio.com/download) + [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit)
-- [Azure Subscription (Free)](http://azure.microsoft.com/free)
+- [Azure Subscription](http://azure.microsoft.com/free) (free account works)
+- [Microsoft Foundry Project](https://ai.azure.com) (create free at ai.azure.com)
+
+**Using a different LLM provider?** See [Provider Setup Guides](docs/providers/README.md) for Azure OpenAI or GitHub Models.
 
 ## Getting Started
 
-### Set `REPOSITORY_ROOT`
+### 1. Clone Repository
 
 ```bash
-# zsh/bash
+git clone https://github.com/Azure-Samples/interview-coach-agent-framework.git
+cd interview-coach-agent-framework
+```
+
+### 2. Download MCP Server
+
+The application uses [MarkItDown MCP](https://github.com/microsoft/markitdown) for document parsing.
+
+**Bash/zsh:**
+
+```bash
 REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
-```
-
-```powershell
-# PowerShell
-$REPOSITORY_ROOT = git rev-parse --show-toplevel
-```
-
-### Download MarkItDown MCP Server
-
-```bash
-# zsh/bash
 mkdir -p $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown && \
     git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
 ```
 
+**PowerShell:**
+
 ```powershell
-# PowerShell
-New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown -Force && `
-    git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
+$REPOSITORY_ROOT = git rev-parse --show-toplevel
+New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown -Force
+git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
 ```
 
-### Set Connection to LLM
+### 3. Configure Microsoft Foundry
 
-<details open>
-<summary><strong>Use Microsoft Foundry</strong></summary>
+#### Create Foundry Project
 
-1. Get the project endpoint and API key from [Foundry Portal](https://ai.azure.com).
-1. Store both endpoint and API key to user secrets.
+1. Navigate to [Azure AI Foundry Portal](https://ai.azure.com)
+2. Sign in with your Azure account
+3. Click **New project** and follow the wizard
+4. Note your **Project Endpoint** and **API Key** from Project Settings
 
-    ```bash
-    dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint $MICROSOFT_FOUNDRY_PROJECT_ENDPOINT
-    dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey $MICROSOFT_FOUNDRY_PROJECT_API_KEY
-    ```
+**[Detailed Foundry setup guide →](docs/providers/MICROSOFT-FOUNDRY.md)**
 
-1. Make sure that `src/InterviewCoach.AppHost/appsettings.json` or `apphost.settings.json` points to use Azure OpenAI. You can change the default model from `model-router` to your preferred one.
+#### Store Credentials
 
-    ```jsonc
-    {
-      "LlmProvider": "MicrosoftFoundry",
+Use .NET user secrets to keep credentials secure:
 
-      "MicrosoftFoundry": {
-        "Project": {
-          "Endpoint": "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}",
-          "ApiKey": "{{MICROSOFT_FOUNDRY_PROJECT_API_KEY}}",
-          "DeploymentName": "model-router"
-        }
-      }
+```bash
+dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint "https://your-project.azure.ai"
+dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey "your-api-key"
+```
+
+#### Verify Configuration
+
+Ensure `apphost.settings.json` contains:
+
+```json
+{
+  "LlmProvider": "MicrosoftFoundry",
+  "MicrosoftFoundry": {
+    "Project": {
+      "Endpoint": "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}",
+      "ApiKey": "{{MICROSOFT_FOUNDRY_PROJECT_API_KEY}}",
+      "DeploymentName": "model-router"
     }
-    ```
+  }
+}
+```
 
-   > **NOTE**: You can find more about [Model Router](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router?view=foundry) on Microsoft Foundry.
+The `model-router` automatically selects optimal models for cost/quality balance. **[Learn about Model Router →](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router)**
 
-</details>
+### 4. Run the Application
 
-<details>
-<summary><strong>Use Azure OpenAI</strong></summary>
+Start all services with .NET Aspire:
 
-1. Get the endpoint and API key from [Foundry Portal](https://ai.azure.com).
-1. Store both endpoint and API key to user secrets.
+```bash
+aspire run --file ./apphost.cs
+```
 
-    ```bash
-    dotnet user-secrets --file ./apphost.cs set Azure:OpenAI:Endpoint $AZURE_OPENAI_ENDPOINT
-    dotnet user-secrets --file ./apphost.cs set Azure:OpenAI:ApiKey $AZURE_OPENAI_API_KEY
-    ```
+**What happens next:**
 
-1. Make sure that `src/InterviewCoach.AppHost/appsettings.json` or `apphost.settings.json` points to use Azure OpenAI. You can change the default model from `gpt-5-mini` to your preferred one.
+1. Aspire Dashboard opens automatically (~`https://localhost:17xxx`)
+2. All services start (Agent, WebUI, MCP servers, SQLite)
+3. Look for ✅ "Running" status on all resources
+4. Click the **webui** endpoint to open the interview coach
 
-    ```jsonc
-    {
-      "LlmProvider": "AzureOpenAI",
+**Having issues?** See [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
 
-      "Azure": {
-        "OpenAI": {
-          "Endpoint": "{{AZURE_OPENAI_ENDPOINT}}",
-          "ApiKey": "{{AZURE_OPENAI_API_KEY}}",
-          "DeploymentName": "gpt-5-mini"
-        }
-      }
-    }
-    ```
+## Deploy to Azure
 
-</details>
+Deploy the entire application to Azure Container Apps with one command:
 
-<details>
-<summary><strong>Use GitHub Models</strong></summary>
+```bash
+# Login to Azure
+azd auth login
 
-1. Get the [GitHub Personal Access Token (PAT)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) to access to [GitHub Models](https://github.com/marketplace?type=models).
-1. Store the GitHub PAT to user secrets.
+# Provision resources and deploy
+azd up
+```
 
-    ```bash
-    dotnet user-secrets --file ./apphost.cs set GitHub:Token {{GITHUB_PAT}}
-    ```
+This will:
 
-1. Make sure that `src/InterviewCoach.AppHost/appsettings.json` or `apphost.settings.json` points to use GitHub Models. You can change the default model from `openai/gpt-5-mini` to your preferred one.
+- ✅ Create Azure Container Apps Environment
+- ✅ Deploy all services as containers
+- ✅ Configure Foundry connection with Managed Identity
+- ✅ Set up observability (Application Insights, Log Analytics)
+- ✅ Output public URL for your application
 
-    ```jsonc
-    {
-      "LlmProvider": "GitHubModels",
+**Deployment details:** The `azd up` command reads `azure.yaml` and provisions infrastructure defined in the `infra/` directory.
 
-      "GitHub": {
-        "Endpoint": "https://models.github.ai/inference",
-        "Token": "{{GITHUB_PAT}}",
-        "Model": "openai/gpt-5-mini"
-      }
-    }
-    ```
+### Clean Up Resources
 
-</details>
+When finished, remove all Azure resources:
 
-### Run Aspire
+```bash
+azd down --force --purge
+```
 
-You can run Aspire from either way - file-based `apphost.cs` or project-based `AppHost.csproj`.
+## Understanding This Sample
 
-1. Run Aspire from the file-based `apphost.cs`.
+### What Makes This Sample Valuable?
 
-    ```bash
-    aspire run --file ./apphost.cs
-    ```
+This isn't just a chatbot—it's a **reference implementation** of production patterns:
 
-1. Run Aspire from the project-based `AppHost.csproj`.
+1. **MCP Architecture**: Learn how to extend agents without modifying code
+2. **Aspire Orchestration**: Multi-service development with production parity
+3. **Provider Abstraction**: Switch between Foundry, Azure OpenAI, or GitHub Models via configuration
+4. **Stateful Sessions**: Manage conversational context across interactions
+5. **Tool Integration**: Give agents capabilities through function calling
 
-    ```bash
-    aspire run --project ./src/InterviewCoach.AppHost
-    ```
+**[Deep dive into learning objectives →](docs/LEARNING-OBJECTIVES.md)**
 
-1. Open Aspire dashboard then navigate to the `webui` instance to run the interview coach app.
+### Key Code Locations
 
-### Deploy to Azure
+| What | Where | Why It Matters |
+|------|-------|----------------|
+| Agent Instructions | [src/InterviewCoach.Agent/Program.cs#L95-L125](src/InterviewCoach.Agent/Program.cs) | Defines agent behavior through natural language |
+| MCP Integration | [src/InterviewCoach.Agent/Program.cs#L17-L90](src/InterviewCoach.Agent/Program.cs) | Shows how to connect external tools |
+| Provider Factory | [src/InterviewCoach.AppHost/LlmResourceFactory.cs](src/InterviewCoach.AppHost/LlmResourceFactory.cs) | Demonstrates multi-provider abstraction |
+| Service Orchestration | [src/InterviewCoach.AppHost/AppHost.cs](src/InterviewCoach.AppHost/AppHost.cs) | Aspire dependency management |
+| Custom MCP Server | [src/InterviewCoach.Mcp.InterviewData/](src/InterviewCoach.Mcp.InterviewData/) | Build your own MCP tools |
 
-1. Login to Azure.
+**[Explore architecture details →](docs/ARCHITECTURE.md)**
 
-    ```bash
-    azd auth login
-    ```
+### Real-World Applications
 
-   > **NOTE**: You might have to use the option `--scope https://storage.azure.com/.default`.
+These patterns apply to:
 
-1. Publish to Azure.
+- 🎯 Customer service automation
+- 🔧 Technical support agents
+- 📚 Educational tutoring systems
+- 🏥 Healthcare intake interviews
+- 💼 Sales assistant bots
+- 🔬 Research assistants
 
-    ```bash
-    azd up
-    ```
+## Next Steps
 
-1. Open the `webui` container app instance to run the interview coach app.
+### 📖 Learn
 
-1. Once completed delete all the resources to avoid unexpected billing shock.
+- **[Learning Objectives](docs/LEARNING-OBJECTIVES.md)** - What you'll master by studying this sample
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Deep dive into system design
+- **[MCP Servers Explained](docs/MCP-SERVERS.md)** - Understanding extensibility patterns
+- **[Tutorials](docs/TUTORIALS.md)** - Hands-on customization exercises
 
-    ```bash
-    azd down --force --purge
-    ```
+### 🔧 Customize
+
+- **[Tutorial 1: Understanding Interview Flow](docs/TUTORIALS.md#tutorial-1-understanding-the-interview-flow)** - Trace agent behavior
+- **[Tutorial 2: Creating Custom MCP Server](docs/TUTORIALS.md#tutorial-2-creating-a-custom-mcp-server)** - Build your own tools
+- **[Tutorial 3: Customizing the Agent](docs/TUTORIALS.md#tutorial-3-customizing-the-agent)** - Modify interview behavior
+- **[FAQ](docs/FAQ.md)** - Common questions answered
+
+### 🔄 Alternative Providers
+
+This sample defaults to Microsoft Foundry (recommended for production), but also supports:
+
+- **[Azure OpenAI](docs/providers/AZURE-OPENAI.md)** - Direct AOAI integration
+- **[GitHub Models](docs/providers/GITHUB-MODELS.md)** - Free tier for prototyping
+
+**[Compare providers →](docs/providers/README.md)**
 
 ## Additional Resources
 
 ### Microsoft Foundry
 
-- [Microsoft Foundry](https://learn.microsoft.com/azure/ai-foundry/what-is-foundry?view=foundry)
-- [Microsoft Foundry Agent Service](https://learn.microsoft.com/azure/ai-foundry/agents/overview?view=foundry)
-- [Microsoft Foundry Model Router](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router?view=foundry)
+- [What is Microsoft Foundry?](https://learn.microsoft.com/azure/ai-foundry/what-is-foundry)
+- [Foundry Agent Service](https://learn.microsoft.com/azure/ai-foundry/agents/overview)
+- [Model Router Deep Dive](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router)
 
 ### Microsoft Agent Framework
 
-- [Microsoft Agent Framework](https://aka.ms/agent-framework)
-- [Multi-Agent Orchestration Pattern](https://learn.microsoft.com/agent-framework/user-guide/workflows/orchestrations/overview)
+- [Framework Documentation](https://aka.ms/agent-framework)
+- [Multi-Agent Orchestration](https://learn.microsoft.com/agent-framework/user-guide/workflows/orchestrations/overview)
 - [AG-UI Protocol](https://docs.ag-ui.com/introduction)
 
-### MCP Server
+### Model Context Protocol
 
-- [MarkItDown MCP Server](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp)
-<!-- - [Outlook Email MCP Server](https://github.com/microsoft/mcp-dotnet-samples/tree/main/outlook-email)
-- [OneDrive Download MCP Server](https://github.com/microsoft/mcp-dotnet-samples/tree/main/onedrive-download)
-- [Google Drive Download MCP Server](https://github.com/microsoft/mcp-dotnet-samples/tree/main/googledrive-download) -->
+- [MarkItDown MCP Server](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp) (used in this sample)
+- [MCP Specification](https://modelcontextprotocol.io)
+- [MCP Server Registry](https://github.com/modelcontextprotocol/servers)
 
-### Aspire
+### .NET Aspire
 
-- [Aspire](https://aspire.dev)
+- [Aspire Documentation](https://aspire.dev)
+- [Service Discovery](https://learn.microsoft.com/dotnet/aspire/service-discovery/overview)
+- [Deployment with azd](https://learn.microsoft.com/dotnet/aspire/deployment/azure/aca-deployment)
+
+## Contributing
+
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+This project is licensed under the MIT License - see [LICENSE.md](LICENSE.md) for details.
+
+---
+
+**Built with ❤️ by the Azure Samples team** | **Questions?** Check the [FAQ](docs/FAQ.md) or open an issue
