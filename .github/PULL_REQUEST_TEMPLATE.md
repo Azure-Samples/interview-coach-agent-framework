@@ -10,6 +10,7 @@
 ```
 
 ## Pull Request Type
+
 What kind of change does this Pull Request introduce?
 
 <!-- Please check the one that applies to this PR using "x". -->
@@ -23,22 +24,29 @@ What kind of change does this Pull Request introduce?
 ```
 
 ## How to Test
-*  Get the code
 
-```
+* Get the code
+
+```bash
 git clone [repo-address]
 cd [repo-name]
 git checkout [branch-name]
-npm install
+dotnet restore
+dotnet build
 ```
 
 * Test the code
 <!-- Add steps to run the tests suite and/or manually test -->
-```
+```bash
+aspire run --file ./apphost.cs
+# OR
+aspire run --project ./src/InterviewCoach.AppHost
 ```
 
 ## What to Check
+
 Verify that the following are valid
+
 * ...
 
 ## Other Information
