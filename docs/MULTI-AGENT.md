@@ -132,8 +132,48 @@ Same 5-agent handoff topology as Mode 2, but each agent is backed by the **GitHu
 ### Prerequisites
 
 - [GitHub Copilot CLI](https://github.com/github/copilot-sdk) installed
-- Authenticated via `gh auth login`
+- A **GitHub Personal Access Token (PAT)** with Copilot access, **or** authenticated via `gh auth login`
 - NuGet package: `Microsoft.Agents.AI.GitHub.Copilot`
+
+### Setting Up the GitHub Token
+
+Mode 3 requires a GitHub token to authenticate the Copilot SDK. The token is configured as an **Aspire secret parameter** and passed to the Agent project as the `GITHUB_TOKEN` environment variable.
+
+#### 1. Create a GitHub Personal Access Token
+
+1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
+2. Click **Generate new token (classic)** or **Fine-grained token**
+3. Select the **copilot** scope (for classic tokens) or appropriate permissions
+4. Copy the generated token
+
+#### 2. Set the Token Value
+
+You have three options:
+
+**Option A: Aspire Dashboard (recommended for development)**
+
+When you run the AppHost, the Aspire Dashboard will prompt you to enter values for any unresolved secret parameters. Enter your GitHub token when prompted for `github-token`.
+
+**Option B: `apphost.settings.json`**
+
+Add the token to `src/InterviewCoach.AppHost/apphost.settings.json`:
+
+```json
+{
+  "Parameters": {
+    "github-token": "ghp_your_token_here"
+  }
+}
+```
+
+> ⚠️ Do not commit this file with a real token. It is listed in `.gitignore`.
+
+**Option C: .NET User Secrets**
+
+```bash
+cd src/InterviewCoach.AppHost
+dotnet user-secrets set "Parameters:github-token" "ghp_your_token_here"
+```
 
 ### How It Differs from Mode 2
 
@@ -147,7 +187,18 @@ Same 5-agent handoff topology as Mode 2, but each agent is backed by the **GitHu
 ### How It Works in Code
 
 ```csharp
-var copilotClient = new CopilotClient();
+// Read the GitHub token from the GITHUB_TOKEN environment variable
+// (set by the Aspire AppHost from the secret parameter)
+var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+var copilotOptions = new CopilotClientOptions();
+if (!string.IsNullOrEmpty(githubToken))
+{
+    copilotOptions.Environment = new Dictionary<string, string>
+    {
+        ["GITHUB_TOKEN"] = githubToken
+    };
+}
+var copilotClient = new CopilotClient(copilotOptions);
 await copilotClient.StartAsync();
 
 var triageAgent = copilotClient.AsAIAgent(

@@ -7,4 +7,5 @@ public class ResourceConstants
     public const string DatabaseName = "interviewcoach.db";
     public const string Agent = "agent";
     public const string WebUI = "webui";
+    public const string GitHubToken = "github-token";
 }

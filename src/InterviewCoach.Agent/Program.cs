@@ -371,8 +371,20 @@ static AIAgent CreateCopilotHandoffAgents(IServiceProvider sp, string key)
     var markitdownTools = markitdown.ListToolsAsync().GetAwaiter().GetResult();
     var interviewDataTools = interviewData.ListToolsAsync().GetAwaiter().GetResult();
 
-    // Create a shared CopilotClient for all agents
-    var copilotClient = new CopilotClient();
+    // Create a shared CopilotClient for all agents.
+    // The GitHub token is passed from the Aspire AppHost as the GITHUB_TOKEN
+    // environment variable. When provided, it authenticates the Copilot SDK
+    // without requiring the user to be logged in via `gh auth login`.
+    var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
+    var copilotOptions = new CopilotClientOptions();
+    if (!string.IsNullOrEmpty(githubToken))
+    {
+        copilotOptions.Environment = new Dictionary<string, string>
+        {
+            ["GITHUB_TOKEN"] = githubToken
+        };
+    }
+    var copilotClient = new CopilotClient(copilotOptions);
     copilotClient.StartAsync().GetAwaiter().GetResult();
 
     // --- Triage Agent ---
