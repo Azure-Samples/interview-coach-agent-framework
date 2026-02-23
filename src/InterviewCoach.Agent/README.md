@@ -32,40 +32,30 @@ This service acts as the **brain** of the application:
 
 The main application file containing:
 
-**Lines 17-66**: MCP client setup
+**MCP client setup** (lines 26-86): Connects to MarkItDown MCP (document parsing) and InterviewData MCP (session management) via HTTP transports.
 
-- Connects to MarkItDown MCP (document parsing)
-- Connects to InterviewData MCP (session management)
-- Configures HTTP transports
+**LLM provider configuration** (lines 88-109): Loads chat client from Aspire-configured provider (Foundry, Azure OpenAI, or GitHub Models).
 
-**Lines 68-79**: LLM provider configuration
-
-- Loads chat client from Aspire-configured provider
-- Supports Foundry, Azure OpenAI, and GitHub Models
-
-**Lines 81-119**: Agent definition
+**Agent mode toggle** (lines 111-123): A single commented/uncommented line selects the agent mode:
 
 ```csharp
-var agent = new ChatClientAgent(
-    chatClient: chatClient,
-    name: "coach",
-    instructions: """ ... """,
-    tools: [ .. markitdownTools, .. interviewDataTools ]
-);
+// ============================================================================
+// AGENT MODE TOGGLE — Uncomment exactly ONE line
+// ============================================================================
+builder.AddAIAgent("coach", createAgentDelegate: CreateSingleAgent);              // Mode 1: Single agent
+// builder.AddAIAgent("coach", createAgentDelegate: CreateHandoffAgents);         // Mode 2: Multi-agent handoff (ChatClient)
+// builder.AddAIAgent("coach", createAgentDelegate: CreateCopilotHandoffAgents);  // Mode 3: Multi-agent handoff (GitHub Copilot)
 ```
 
-Key aspects of the agent:
+| Mode | Factory Method | Description |
+|------|---------------|-------------|
+| 1 | `CreateSingleAgent` | One monolithic agent with all tools and instructions |
+| 2 | `CreateHandoffAgents` | 5 specialized agents using `ChatClientAgent` + your LLM provider |
+| 3 | `CreateCopilotHandoffAgents` | 5 specialized agents using `CopilotClient.AsAIAgent()` via GitHub Copilot SDK |
 
-- **Instructions**: Natural language defining agent behavior and interview flow
-- **Tools**: MCP tools for document parsing and data management
-- **Chat client**: Provider-agnostic LLM interface
+**[Learn more about multi-agent architecture →](../../docs/MULTI-AGENT.md)**
 
-**Lines 121-135**: API endpoint mapping
-
-- `/responses` - OpenAI-compatible responses API
-- `/conversations` - Multi-turn conversation management
-- `/ag-ui` - Agent Framework AGUI protocol
-- `/devui/` - Development UI (dev only)
+**API endpoint mapping** (lines 125-145): `/responses`, `/conversations`, `/ag-ui`, `/devui/`
 
 ### Constants.cs
 

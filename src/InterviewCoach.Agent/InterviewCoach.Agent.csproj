@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.*-*" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.*-*" />
     <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.*-*" />
+    <PackageReference Include="Microsoft.Agents.AI.GitHub.Copilot" Version="1.*-*" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.*-*" />
   </ItemGroup>
 

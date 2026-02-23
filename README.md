@@ -7,6 +7,7 @@ An AI-powered interview preparation application demonstrating production-ready p
 This sample teaches modern AI agent development patterns:
 
 - ✅ **Building production AI agents** with Microsoft Agent Framework
+- ✅ **Multi-agent handoff orchestration** — single agent vs 5 specialized agents ([learn more](docs/MULTI-AGENT.md))
 - ✅ **Model Context Protocol (MCP)** for extensible agent capabilities
 - ✅ **Multi-service orchestration** with .NET Aspire
 - ✅ **Stateful conversation management** across sessions
