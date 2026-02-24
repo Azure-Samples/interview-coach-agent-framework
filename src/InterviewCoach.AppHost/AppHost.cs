@@ -24,8 +24,8 @@ var agent = builder.AddProject<Projects.InterviewCoach_Agent>(ResourceConstants.
                    .WithExternalHttpEndpoints()
                    .WithLlmReference(builder.Configuration)
                    .WithEnvironment(ResourceConstants.LlmProvider, builder.Configuration[ResourceConstants.LlmProvider] ?? string.Empty)
-                   .WithEnvironment("GITHUB_TOKEN", githubToken)
-                   .WithReference(mcpMarkItDown.GetEndpoint("http"))
+                   .WithEnvironment("GITHUB_TOKEN", githubToken)                   
+                   .WithEnvironment("MARKITDOWN_MCP_URL", mcpMarkItDown.GetEndpoint("http"))
                    .WithReference(mcpInterviewData)
                    .WaitFor(mcpMarkItDown)
                    .WaitFor(mcpInterviewData);

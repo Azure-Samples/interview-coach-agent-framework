@@ -36,13 +36,11 @@ builder.Services.AddKeyedSingleton<McpClient>("mcp-markitdown", (sp, obj) =>
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var httpClient = sp.GetRequiredService<IHttpClientFactory>()
                        .CreateClient("mcp-markitdown");
-    var endpoint = builder.Environment.IsDevelopment() == true
-                 ? $"{httpClient.BaseAddress!.ToString().Replace("https+", string.Empty).TrimEnd('/')}"
-                 : $"{httpClient.BaseAddress!.ToString().Replace("+http", string.Empty).TrimEnd('/')}";
+    var endpoint = GetMarkItDownMcpServerUrl();
 
     var clientTransportOptions = new HttpClientTransportOptions()
     {
-        Endpoint = new Uri($"{endpoint}/sse")
+        Endpoint = new Uri($"{endpoint}sse")
     };
     var clientTransport = new HttpClientTransport(clientTransportOptions, httpClient, loggerFactory);
 
@@ -122,9 +120,9 @@ else
 //         by the GitHub Copilot SDK. Requires Copilot CLI installed & authenticated.
 // ============================================================================
 
-// builder.AddAIAgent("coach", createAgentDelegate: CreateSingleAgent);              // Mode 1: Single agent
+builder.AddAIAgent("coach", createAgentDelegate: CreateSingleAgent);              // Mode 1: Single agent
 
-builder.AddAIAgent("coach", createAgentDelegate: CreateHandoffAgents);         // Mode 2: Multi-agent handoff (ChatClient + LLM)
+//builder.AddAIAgent("coach", createAgentDelegate: CreateHandoffAgents);         // Mode 2: Multi-agent handoff (ChatClient + LLM)
 // builder.AddAIAgent("coach", createAgentDelegate: CreateCopilotHandoffAgents);  // Mode 3: Multi-agent handoff (GitHub Copilot)
 
 builder.Services.AddOpenAIResponses();
@@ -498,4 +496,10 @@ static AIAgent CreateCopilotHandoffAgents(IServiceProvider sp, string key)
         .Build();
 
     return workflow.AsAIAgent(name: "coach");
+}
+
+static Uri GetMarkItDownMcpServerUrl()
+{
+    var markItDownMcpUrl = $"{Environment.GetEnvironmentVariable("MARKITDOWN_MCP_URL")}";
+    return new Uri(markItDownMcpUrl);
 }
