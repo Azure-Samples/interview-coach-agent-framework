@@ -10,13 +10,14 @@
 
 <ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
     <NoMessagesContent>
-        <div>I'm your friendly interview coach. To get started, enter the link or text of your resume and job description.</div>
-    </NoMessagesContent>
-</ChatMessageList>
+        <div>I'm your friendly interview coach. To get started, enter the link or text of your resume and job
+            description.</div>
+        </NoMessagesContent>
+    </ChatMessageList>
 
-<div class="chat-container">
-    <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
-</div>
+    <div class="chat-container">
+        <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
+    </div>
 
 @code {
     private const string SystemPrompt = """
@@ -60,57 +61,32 @@
         currentResponseCancellation = new();
 
         var outboundMessages = BuildOutboundMessages();
-        await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage, currentResponseCancellation.Token);
+        await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage,
+currentResponseCancellation.Token);
 
         messages.Add(currentResponseMessage!);
         statefulMessageCount = chatOptions.ConversationId is not null ? messages.Count : 0;
         currentResponseMessage = null;
     }
 
-    private async Task GetStreamingResponseAsync(IEnumerable<ChatMessage> outboundMessages, TextContent responseText, ChatMessage responseMessage, CancellationToken cancellationToken)
+    private async Task GetStreamingResponseAsync(IEnumerable<ChatMessage> outboundMessages, TextContent responseText,
+ChatMessage responseMessage, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting streaming response for conversation {ConversationId}", chatOptions.ConversationId);
 
-        var deferAssistantTextUntilToolResponse = false;
-        var toolResponseSeen = false;
         await foreach (var update in ChatClient.GetStreamingResponseAsync(outboundMessages, chatOptions, cancellationToken))
         {
             await Task.Delay(50);
 
             messages.AddMessages(update, filter: c => c is not TextContent);
 
-            if (deferAssistantTextUntilToolResponse == false && update.Role == ChatRole.Assistant && ContainsNonTextContent(update))
-            {
-                deferAssistantTextUntilToolResponse = true;
-            }
-
-            if (update.Role == ChatRole.Tool)
-            {
-                toolResponseSeen = true;
-            }
-
-            if ((deferAssistantTextUntilToolResponse == false || toolResponseSeen == true) && update.Role == ChatRole.Assistant)
+            if (update.Role == ChatRole.Assistant)
             {
                 responseText.Text += update.Text;
                 ChatMessageItem.NotifyChanged(responseMessage);
             }
 
             StateHasChanged();
-        }
-
-        bool ContainsNonTextContent(ChatResponseUpdate update)
-        {
-            if (update.Contents.Any() == false)
-            {
-                return true;
-            }
-
-            if (update.Contents.Any(c => c is not TextContent) == true)
-            {
-                return true;
-            }
-
-            return false;
         }
     }
 

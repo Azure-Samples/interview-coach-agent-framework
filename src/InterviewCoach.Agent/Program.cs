@@ -120,9 +120,10 @@ else
 //         by the GitHub Copilot SDK. Requires Copilot CLI installed & authenticated.
 // ============================================================================
 
-builder.AddAIAgent("coach", createAgentDelegate: CreateSingleAgent);              // Mode 1: Single agent
+//builder.AddAIAgent("coach", createAgentDelegate: CreateSingleAgent);              // Mode 1: Single agent
 
-//builder.AddAIAgent("coach", createAgentDelegate: CreateHandoffAgents);         // Mode 2: Multi-agent handoff (ChatClient + LLM)
+builder.AddAIAgent("coach", createAgentDelegate: CreateHandoffAgents);         // Mode 2: Multi-agent handoff (ChatClient + LLM)
+
 // builder.AddAIAgent("coach", createAgentDelegate: CreateCopilotHandoffAgents);  // Mode 3: Multi-agent handoff (GitHub Copilot)
 
 builder.Services.AddOpenAIResponses();
