@@ -48,25 +48,10 @@ git clone https://github.com/Azure-Samples/interview-coach-agent-framework.git
 cd interview-coach-agent-framework
 ```
 
-### 2. Download MCP Server
+### 2. MarkItDown MCP Server
 
 The application uses [MarkItDown MCP](https://github.com/microsoft/markitdown) for document parsing.
-
-**Bash/zsh:**
-
-```bash
-REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
-mkdir -p $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown && \
-    git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
-```
-
-**PowerShell:**
-
-```powershell
-$REPOSITORY_ROOT = git rev-parse --show-toplevel
-New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown -Force
-git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
-```
+This will be automatically downloaded and run as a container when you start the application with Aspire. No manual setup needed! (see `[AppHost.cs](src\InterviewCoach.AppHost\AppHost.cs)` for details)
 
 ### 3. Configure Microsoft Foundry
 

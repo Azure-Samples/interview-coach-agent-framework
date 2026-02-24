@@ -7,11 +7,10 @@ var builder = DistributedApplication.CreateBuilder(args);
 // as a user secret, or enter it in the Aspire Dashboard when prompted.
 var githubToken = builder.AddParameter(ResourceConstants.GitHubToken, secret: true);
 
-var mcpMarkItDown = builder.AddDockerfile(ResourceConstants.McpMarkItDown, "../InterviewCoach.Mcp.MarkItDown/packages/markitdown-mcp")
-                           .WithExternalHttpEndpoints()
-                           .WithImageTag("latest")
-                           .WithHttpEndpoint(3001, 3001)
-                           .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001");
+var mcpMarkItDown = builder.AddContainer("markitdown", "mcp/markitdown")
+    .WithExternalHttpEndpoints()
+    .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001")
+    .WithHttpEndpoint(targetPort: 3001, name: "http");
 
 var sqlite = builder.AddSqlite(ResourceConstants.Sqlite, databaseFileName: ResourceConstants.DatabaseName)
                     .WithSqliteWeb();
