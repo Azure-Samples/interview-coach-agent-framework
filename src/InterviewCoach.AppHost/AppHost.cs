@@ -10,7 +10,8 @@ var githubToken = builder.AddParameter(ResourceConstants.GitHubToken, secret: tr
 var mcpMarkItDown = builder.AddContainer("markitdown", "mcp/markitdown")
     .WithExternalHttpEndpoints()
     .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001")
-    .WithHttpEndpoint(targetPort: 3001, name: "http");
+    .WithHttpEndpoint(targetPort: 3001, name: "http")
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var sqlite = builder.AddSqlite(ResourceConstants.Sqlite, databaseFileName: ResourceConstants.DatabaseName)
                     .WithSqliteWeb();
