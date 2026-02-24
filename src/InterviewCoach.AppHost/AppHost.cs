@@ -2,16 +2,11 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 // var foundry = builder.AddBicepTemplate("foundry", "../../infra/foundry.bicep");
 
-// GitHub Token — required for Mode 3 (Multi-Agent Handoff with GitHub Copilot SDK).
-// Set the value in apphost.settings.json under "Parameters:github-token",
-// as a user secret, or enter it in the Aspire Dashboard when prompted.
-var githubToken = builder.AddParameter(ResourceConstants.GitHubToken, secret: true);
-
-var mcpMarkItDown = builder.AddContainer("markitdown", "mcp/markitdown")
-    .WithExternalHttpEndpoints()
-    .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001")
-    .WithHttpEndpoint(targetPort: 3001, name: "http")
-    .WithLifetime(ContainerLifetime.Persistent);
+var mcpMarkItDown = builder.AddDockerfile(ResourceConstants.McpMarkItDown, "../InterviewCoach.Mcp.MarkItDown/packages/markitdown-mcp")
+                           .WithExternalHttpEndpoints()
+                           .WithImageTag("latest")
+                           .WithHttpEndpoint(3001, 3001)
+                           .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001");
 
 var sqlite = builder.AddSqlite(ResourceConstants.Sqlite, databaseFileName: ResourceConstants.DatabaseName)
                     .WithSqliteWeb();
@@ -23,10 +18,9 @@ var mcpInterviewData = builder.AddProject<Projects.InterviewCoach_Mcp_InterviewD
 
 var agent = builder.AddProject<Projects.InterviewCoach_Agent>(ResourceConstants.Agent)
                    .WithExternalHttpEndpoints()
-                   .WithLlmReference(builder.Configuration)
+                   .WithLlmReference(builder.Configuration, args)
                    .WithEnvironment(ResourceConstants.LlmProvider, builder.Configuration[ResourceConstants.LlmProvider] ?? string.Empty)
-                   .WithEnvironment("GITHUB_TOKEN", githubToken)                   
-                   .WithEnvironment("MARKITDOWN_MCP_URL", mcpMarkItDown.GetEndpoint("http"))
+                   .WithReference(mcpMarkItDown.GetEndpoint("http"))
                    .WithReference(mcpInterviewData)
                    .WaitFor(mcpMarkItDown)
                    .WaitFor(mcpInterviewData);
