@@ -1,7 +1,7 @@
-#:sdk Aspire.AppHost.Sdk@13.1.1
-#:package Aspire.Hosting.Azure@13.*
-#:package Aspire.Hosting.GitHub.Models@13.*
-#:package Aspire.Hosting.OpenAI@13.*
+﻿#:sdk Aspire.AppHost.Sdk@13.1.1
+#:package Aspire.Hosting.Azure@13.1.1
+#:package Aspire.Hosting.GitHub.Models@13.1.1
+#:package Aspire.Hosting.OpenAI@13.1.1
 #:package CommunityToolkit.Aspire.Hosting.SQLite@13.*
 #:project ./src/InterviewCoach.Agent/InterviewCoach.Agent.csproj
 #:project ./src/InterviewCoach.Mcp.InterviewData/InterviewCoach.Mcp.InterviewData.csproj

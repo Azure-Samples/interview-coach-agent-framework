@@ -36,13 +36,11 @@ builder.Services.AddKeyedSingleton<McpClient>("mcp-markitdown", (sp, obj) =>
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var httpClient = sp.GetRequiredService<IHttpClientFactory>()
                        .CreateClient("mcp-markitdown");
-    var endpoint = builder.Environment.IsDevelopment() == true
-                 ? $"{httpClient.BaseAddress!.ToString().Replace("https+", string.Empty).TrimEnd('/')}"
-                 : $"{httpClient.BaseAddress!.ToString().Replace("+http", string.Empty).TrimEnd('/')}";
+    var endpoint = GetMarkItDownMcpServerUrl();
 
     var clientTransportOptions = new HttpClientTransportOptions()
     {
-        Endpoint = new Uri($"{endpoint}/sse")
+        Endpoint = new Uri($"{endpoint}sse")
     };
     var clientTransport = new HttpClientTransport(clientTransportOptions, httpClient, loggerFactory);
 
