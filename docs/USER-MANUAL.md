@@ -54,14 +54,24 @@ Coach: Welcome! I've created a new interview session for you.
 
 ### Step 2: Share Your Resume
 
-Provide your resume in one of three ways:
+Provide your resume in one of four ways:
 
-| Method | What to type |
-|--------|-------------|
+| Method | What to do |
+|--------|------------|
+| **Attach a file** | Click the 📎 button next to the text box, select a PDF/DOCX file from your computer |
 | **URL link** | `Here's my resume: https://www.linkedin.com/in/elbruno/` |
 | **File link** | `My resume is at https://example.com/resume.pdf` |
 | **Paste text** | Paste the full text of your resume directly into the chat |
 | **Skip** | `I'd like to proceed without a resume` |
+
+**Example using file upload:**
+
+```
+You:   [click 📎, select resume.pdf] Here's my resume, I attached it
+Coach: Thanks! I've received your file and parsed your resume.
+       I can see you have experience in AI, Cloud Architecture, and DevOps.
+       Would you like to provide a job description as well?
+```
 
 **Example using a LinkedIn profile:**
 
@@ -70,6 +80,58 @@ You:   Hi, my CV is here: https://www.linkedin.com/in/elbruno/
 Coach: Thanks! Let me parse your profile...
        I can see you have experience in AI, Innovation, and Microsoft technologies.
        Would you like to provide a job description as well?
+```
+
+**Example pasting resume text directly:**
+
+```
+You:   Here's my resume:
+
+       JORDAN MITCHELL
+       Senior Software Engineer | Seattle, WA
+       jordan.mitchell@email.com | github.com/jmitchell
+
+       SUMMARY
+       Experienced software engineer with 8+ years of expertise in cloud-native
+       application development, distributed systems, and machine learning
+       integration. Proven track record of leading cross-functional teams to
+       deliver scalable solutions on Azure and AWS. Passionate about developer
+       tools, open-source contributions, and building AI-powered products.
+
+       EXPERIENCE
+       Senior Software Engineer — Contoso Ltd, Seattle, WA (2021–Present)
+       - Architected and deployed a microservices platform serving 2M+ daily
+         active users using .NET 8, Kubernetes, and Azure Service Bus.
+       - Led a team of 6 engineers to migrate a monolithic application to an
+         event-driven architecture, reducing latency by 40%.
+       - Designed and integrated an ML-based recommendation engine using
+         Azure OpenAI and Semantic Kernel, increasing user engagement by 25%.
+
+       Software Engineer — Fabrikam Inc, Redmond, WA (2018–2021)
+       - Developed RESTful APIs and real-time data pipelines using C#, Python,
+         and Apache Kafka for a financial analytics platform.
+       - Implemented CI/CD pipelines with GitHub Actions and Azure DevOps,
+         cutting release cycles from 2 weeks to 2 days.
+       - Contributed to internal developer CLI tools adopted by 300+ engineers.
+
+       Junior Developer — Northwind Traders, Portland, OR (2016–2018)
+       - Built full-stack web applications using ASP.NET Core and React.
+       - Maintained SQL Server databases and optimized query performance,
+         reducing report generation time by 60%.
+
+       EDUCATION
+       B.S. Computer Science — University of Washington, 2016
+
+       SKILLS
+       Languages: C#, Python, TypeScript, Go
+       Cloud: Azure (Certified Solutions Architect), AWS
+       Frameworks: .NET, ASP.NET Core, React, Semantic Kernel
+       Tools: Docker, Kubernetes, Terraform, GitHub Actions
+
+Coach: Great, I've reviewed your resume! You have a strong background in
+       cloud-native development, .NET, and AI integration. I can see 8+ years
+       of experience with leadership and distributed systems expertise.
+       Would you like to provide a job description to target the practice?
 ```
 
 The coach uses the **MarkItDown MCP server** to convert documents (PDF, DOCX, web pages) into readable text. Supported formats include PDF, Word documents, web URLs, and LinkedIn profile pages.
@@ -85,13 +147,63 @@ The coach uses the **MarkItDown MCP server** to convert documents (PDF, DOCX, we
 
 Next, provide the job description for the role you're preparing for. The same input methods apply (URL, file link, text, or skip).
 
-**Example:**
+**Example using a URL:**
 
 ```
 You:   The job description is here: https://example.com/jobs/cloud-architect
 Coach: Got it! I've parsed the job description. The role is looking for
        experience in cloud architecture, Azure services, and team leadership.
        I'll tailor the interview questions to this role.
+       Ready to start the behavioral interview?
+```
+
+**Example pasting a job description directly:**
+
+```
+You:   Here's the job description:
+
+       SENIOR CLOUD SOLUTIONS ARCHITECT
+       Contoso Ltd — Seattle, WA (Hybrid)
+
+       ABOUT THE ROLE
+       We are looking for a Senior Cloud Solutions Architect to join our
+       Platform Engineering team. You will design and implement cloud-native
+       solutions on Microsoft Azure, drive technical strategy for our
+       enterprise customers, and mentor a team of 4 engineers. This is a
+       high-impact role at the intersection of architecture, AI integration,
+       and developer experience.
+
+       RESPONSIBILITIES
+       - Design scalable, resilient cloud architectures using Azure services
+         (AKS, Azure Functions, Cosmos DB, Service Bus, Azure OpenAI).
+       - Lead technical discovery sessions with enterprise clients to translate
+         business requirements into cloud-native solutions.
+       - Build proof-of-concept applications and reference architectures that
+         showcase best practices for microservices and event-driven design.
+       - Mentor and grow a team of cloud engineers, conducting code reviews
+         and establishing engineering standards.
+       - Collaborate with Product and DevRel teams to shape the developer
+         platform roadmap and publish technical content.
+
+       QUALIFICATIONS
+       - 7+ years of software engineering experience, with 3+ years focused
+         on cloud architecture (Azure preferred, AWS acceptable).
+       - Strong proficiency in C#/.NET, Python, or Go for backend services.
+       - Hands-on experience with Kubernetes, Terraform, and CI/CD pipelines.
+       - Familiarity with AI/ML integration patterns (Azure OpenAI, Semantic
+         Kernel, or similar frameworks).
+       - Excellent communication skills — able to present to both technical
+         and executive audiences.
+       - Microsoft Azure certifications (Solutions Architect Expert or
+         equivalent) preferred.
+
+       COMPENSATION
+       $165,000 – $210,000 base + annual bonus + equity
+
+Coach: Perfect! I've reviewed the job description. This is a Senior Cloud
+       Solutions Architect role focused on Azure, microservices, AI integration,
+       and team leadership. I'll tailor the interview to cover cloud architecture
+       decisions, stakeholder communication, and mentoring scenarios.
        Ready to start the behavioral interview?
 ```
 
@@ -257,7 +369,15 @@ You: Hi my cv is here: https://www.linkedin.com/in/elbruno/
 
 The coach uses MarkItDown to extract your profile information and tailors questions to your experience in AI, developer advocacy, and Microsoft technologies.
 
-### Resume from a PDF file
+### Resume from a local PDF file
+
+Click the 📎 (paperclip) button in the chat input, select your PDF or Word document, and send. The coach will upload and parse the file automatically. Supported formats: `.pdf`, `.docx`, `.doc`, `.txt`, `.md`, `.html` (max 10 MB).
+
+```
+You: [click 📎, select my-resume.pdf] Here's my resume
+```
+
+### Resume from a hosted PDF file
 
 ```
 You: My resume is at https://mysite.com/resume.pdf
