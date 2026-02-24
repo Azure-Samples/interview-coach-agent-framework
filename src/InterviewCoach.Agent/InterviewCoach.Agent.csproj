@@ -23,6 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="InterviewCoach.Agent.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\InterviewCoach.ServiceDefaults\InterviewCoach.ServiceDefaults.csproj" />
   </ItemGroup>
 

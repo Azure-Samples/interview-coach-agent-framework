@@ -1,7 +1,5 @@
 using System.ClientModel.Primitives;
 using System.Data.Common;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
 
 using Azure.Identity;
 
@@ -348,7 +346,7 @@ static AIAgent CreateHandoffAgents(IServiceProvider sp, string key)
         .WithHandoff(summariserAgent, triageAgent)
         .Build();
 
-    return WrapWithHandoffToolResultFix(workflow.AsAIAgent(name: "coach"));
+    return HandoffToolResultFix.Apply(workflow.AsAIAgent(name: "coach"));
 }
 
 // ============================================================================
@@ -498,43 +496,7 @@ static AIAgent CreateCopilotHandoffAgents(IServiceProvider sp, string key)
         .WithHandoff(summariserAgent, triageAgent)
         .Build();
 
-    return WrapWithHandoffToolResultFix(workflow.AsAIAgent(name: "coach"));
-}
-
-// ============================================================================
-// Workaround for https://github.com/microsoft/agent-framework/issues/2775
-// Handoff tools return plain string content (e.g. "Transferred.") which causes
-// AGUIChatClient to throw JsonException in DeserializeResultIfAvailable.
-// Fix: wrap string FunctionResultContent.Result values as JsonElement before
-// the AGUI serialization pipeline processes them.
-// Remove this once the upstream fix is released.
-// ============================================================================
-static AIAgent WrapWithHandoffToolResultFix(AIAgent agent)
-{
-    return new AIAgentBuilder(agent)
-        .Use(
-            runFunc: null,
-            runStreamingFunc: static (messages, session, options, inner, ct) =>
-                FixHandoffToolResults(inner.RunStreamingAsync(messages, session, options, ct)))
-        .Build();
-}
-
-static async IAsyncEnumerable<AgentResponseUpdate> FixHandoffToolResults(
-    IAsyncEnumerable<AgentResponseUpdate> updates,
-    [EnumeratorCancellation] CancellationToken ct = default)
-{
-    await foreach (var update in updates.WithCancellation(ct))
-    {
-        foreach (var content in update.Contents)
-        {
-            if (content is FunctionResultContent frc && frc.Result is string s)
-            {
-                frc.Result = JsonSerializer.SerializeToElement(s);
-            }
-        }
-
-        yield return update;
-    }
+    return HandoffToolResultFix.Apply(workflow.AsAIAgent(name: "coach"));
 }
 
 static Uri GetMarkItDownMcpServerUrl()
