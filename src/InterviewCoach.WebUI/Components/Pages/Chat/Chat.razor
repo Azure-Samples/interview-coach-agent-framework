@@ -74,18 +74,28 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting streaming response for conversation {ConversationId}", chatOptions.ConversationId);
 
-        await foreach (var update in ChatClient.GetStreamingResponseAsync(outboundMessages, chatOptions, cancellationToken))
+        try
         {
-            await Task.Delay(50);
-
-            messages.AddMessages(update, filter: c => c is not TextContent);
-
-            if (update.Role == ChatRole.Assistant)
+            await foreach (var update in ChatClient.GetStreamingResponseAsync(outboundMessages, chatOptions, cancellationToken))
             {
-                responseText.Text += update.Text;
-                ChatMessageItem.NotifyChanged(responseMessage);
-            }
+                await Task.Delay(50);
 
+                messages.AddMessages(update, filter: c => c is not TextContent);
+
+                if (update.Role == ChatRole.Assistant)
+                {
+                    responseText.Text += update.Text;
+                    ChatMessageItem.NotifyChanged(responseMessage);
+                }
+
+                StateHasChanged();
+            }
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            Logger.LogError(ex, "JSON parsing error at position {Position}. The response from the agent endpoint is not valid JSON. This usually means the endpoint is returning plain text or HTML instead of the expected streaming format.", ex.BytePositionInLine);
+            responseText.Text = "Error: The interview coach service returned an unexpected response format. Please check the agent service logs for details.";
+            ChatMessageItem.NotifyChanged(responseMessage);
             StateHasChanged();
         }
     }

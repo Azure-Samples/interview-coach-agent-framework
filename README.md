@@ -180,6 +180,7 @@ These patterns apply to:
 
 ### 📖 Learn
 
+- **[User Manual](docs/USER-MANUAL.md)** - Step-by-step guide to using the app once it's running
 - **[Learning Objectives](docs/LEARNING-OBJECTIVES.md)** - What you'll master by studying this sample
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Deep dive into system design
 - **[MCP Servers Explained](docs/MCP-SERVERS.md)** - Understanding extensibility patterns
