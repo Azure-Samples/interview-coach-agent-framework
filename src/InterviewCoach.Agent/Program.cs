@@ -1,3 +1,11 @@
+using System.Collections.Concurrent;
+using System.ClientModel.Primitives;
+using System.Data.Common;
+
+using Azure.Identity;
+
+using GitHub.Copilot.SDK;
+
 using InterviewCoach.Agent;
 
 using Microsoft.Agents.AI;
@@ -125,5 +133,50 @@ else
 {
     app.MapDevUI();
 }
+
+// --- File Upload Endpoints ---
+// In-memory store for uploaded files (ephemeral, session-scoped).
+var uploadedFiles = new ConcurrentDictionary<string, (byte[] Content, string ContentType, string FileName)>();
+
+var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+{
+    ".pdf", ".docx", ".doc", ".txt", ".md", ".html"
+};
+
+app.MapPost("/upload", async (HttpRequest request) =>
+{
+    if (!request.HasFormContentType)
+        return Results.BadRequest("Expected multipart/form-data.");
+
+    var form = await request.ReadFormAsync();
+    var file = form.Files.GetFile("file");
+
+    if (file is null || file.Length == 0)
+        return Results.BadRequest("No file provided.");
+
+    if (file.Length > 10 * 1024 * 1024)
+        return Results.Problem("File size exceeds 10 MB limit.", statusCode: 413);
+
+    var ext = Path.GetExtension(file.FileName);
+    if (!allowedExtensions.Contains(ext))
+        return Results.Problem($"File type '{ext}' is not supported.", statusCode: 415);
+
+    var fileId = Guid.NewGuid().ToString("N");
+    using var ms = new MemoryStream();
+    await file.CopyToAsync(ms);
+
+    uploadedFiles[fileId] = (ms.ToArray(), file.ContentType, file.FileName);
+
+    var url = $"{request.Scheme}://{request.Host}/uploads/{fileId}/{Uri.EscapeDataString(file.FileName)}";
+    return Results.Ok(new { url });
+});
+
+app.MapGet("/uploads/{fileId}/{fileName}", (string fileId, string fileName) =>
+{
+    if (!uploadedFiles.TryGetValue(fileId, out var entry))
+        return Results.NotFound();
+
+    return Results.File(entry.Content, entry.ContentType, entry.FileName);
+});
 
 await app.RunAsync();

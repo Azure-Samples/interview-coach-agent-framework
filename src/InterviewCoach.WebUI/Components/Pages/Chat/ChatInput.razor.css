@@ -55,3 +55,28 @@ textarea {
         background-color: #f0f0f0;
         color: black;
     }
+
+.file-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: #f0f0f0;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+    .file-chip button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #888;
+        padding: 0;
+        font-size: 0.85rem;
+        line-height: 1;
+    }
+
+        .file-chip button:hover {
+            color: black;
+        }

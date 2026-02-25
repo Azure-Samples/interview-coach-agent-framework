@@ -1,7 +1,9 @@
 ﻿@page "/"
 @using System.ComponentModel
+@using InterviewCoach.WebUI.Services
 @inject IChatClient ChatClient
 @inject ILogger<Chat> Logger
+@inject FileUploadService FileUploadService
 @implements IDisposable
 
 <PageTitle>Chat</PageTitle>
@@ -51,6 +53,30 @@
         {
             statefulMessageCount = 0;
             lastSessionId = sessionId;
+        }
+
+        // If a file is attached, upload it and append the URL to the message
+        var file = chatInput?.AttachedFile;
+        if (file is not null)
+        {
+            try
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                var url = await FileUploadService.UploadFileAsync(stream, file.Name, file.ContentType);
+                var messageText = userMessage.Text?.Trim();
+                var combined = string.IsNullOrEmpty(messageText)
+                    ? $"I've attached my file: {url}"
+                    : $"{messageText}\n[Attached file: {url}]";
+                userMessage = new ChatMessage(ChatRole.User, combined);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to upload file {FileName}", file.Name);
+            }
+            finally
+            {
+                chatInput?.ClearAttachment();
+            }
         }
 
         messages.Add(userMessage);
