@@ -9,14 +9,16 @@ namespace InterviewCoach.Agent.Tests;
 
 public class HandoffToolResultFixTests
 {
-    [Fact]
-    public async Task Apply_StringToolResult_ConvertedToJsonElement()
+    [Theory]
+    [InlineData("Transferred.")]
+    [InlineData("Exception thrown in tool.")]
+    public async Task Apply_StringToolResult_ConvertedToJsonElement(string result)
     {
         // Arrange — create a mock agent that yields one update with a string tool result
         var innerAgent = CreateMockAgent(
             new AgentResponseUpdate(ChatRole.Tool,
             [
-                new FunctionResultContent("call_1", "Transferred.")
+                new FunctionResultContent("call_1", result)
             ]));
 
         // Act
@@ -30,7 +32,7 @@ public class HandoffToolResultFixTests
         // Assert
         var frc = updates.SelectMany(u => u.Contents).OfType<FunctionResultContent>().Single();
         Assert.IsType<JsonElement>(frc.Result);
-        Assert.Equal("Transferred.", ((JsonElement)frc.Result!).GetString());
+        Assert.Equal(result, ((JsonElement)frc.Result!).GetString());
     }
 
     [Fact]
@@ -92,14 +94,16 @@ public class HandoffToolResultFixTests
         Assert.Equal("Hello, I'm the interview coach!", updates[0].Text);
     }
 
-    [Fact]
-    public async Task Apply_MixedContent_OnlyFixesStringResults()
+    [Theory]
+    [InlineData("Transferred.")]
+    [InlineData("Exception thrown in tool.")]
+    public async Task Apply_MixedContent_OnlyFixesStringResults(string result)
     {
         var innerAgent = CreateMockAgent(
             new AgentResponseUpdate(ChatRole.Tool,
             [
                 new TextContent("some text"),
-                new FunctionResultContent("call_1", "Transferred.")
+                new FunctionResultContent("call_1", result)
             ]));
 
         var fixedAgent = HandoffToolResultFix.Apply(innerAgent);
@@ -115,7 +119,7 @@ public class HandoffToolResultFixTests
 
         var frc = contents.OfType<FunctionResultContent>().Single();
         Assert.IsType<JsonElement>(frc.Result);
-        Assert.Equal("Transferred.", ((JsonElement)frc.Result!).GetString());
+        Assert.Equal(result, ((JsonElement)frc.Result!).GetString());
     }
 
     [Fact]
