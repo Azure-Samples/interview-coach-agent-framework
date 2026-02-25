@@ -106,7 +106,7 @@ public static class AgentDelegateFactory
         return builder.AddAIAgent(key, (sp, name) =>
         {
             var workflow = sp.GetRequiredKeyedService<Workflow>(name);
-            return workflow.AsAIAgent(name: name);
+            return workflow.AsAIAgent(name: name).CreateFixedAgent();
         });
     }
     public static Workflow CreateLlmHandOffWorkflow(IServiceProvider sp, string key, string name)
