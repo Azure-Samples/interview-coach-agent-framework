@@ -7,7 +7,7 @@ A step-by-step guide to using the Interview Coach application once it's running.
 The application must be running. Start it with:
 
 ```bash
-aspire run --file ./apphost.cs
+aspire run
 ```
 
 Once all services show ✅ **Running** in the Aspire Dashboard, click the **webui** endpoint to open the Interview Coach chat interface.
