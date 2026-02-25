@@ -31,6 +31,11 @@ namespace InterviewCoach.Agent;
 /// </summary>
 internal static class HandoffToolResultFix
 {
+    public static AIAgent CreateFixedAgent(this AIAgent innerAgent)
+    {
+        return Apply(innerAgent);
+    }
+
     /// <summary>
     /// Wraps the given <paramref name="agent"/> with a streaming middleware
     /// that fixes plain-string <see cref="FunctionResultContent.Result"/>

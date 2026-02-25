@@ -2,11 +2,16 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 // var foundry = builder.AddBicepTemplate("foundry", "../../infra/foundry.bicep");
 
-var mcpMarkItDown = builder.AddDockerfile(ResourceConstants.McpMarkItDown, "../InterviewCoach.Mcp.MarkItDown/packages/markitdown-mcp")
+var mcpMarkItDown = builder.AddContainer(ResourceConstants.McpMarkItDown, "mcp/markitdown", "latest")
                            .WithExternalHttpEndpoints()
-                           .WithImageTag("latest")
                            .WithHttpEndpoint(3001, 3001)
                            .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001");
+
+// var mcpMarkItDown = builder.AddDockerfile(ResourceConstants.McpMarkItDown, "../InterviewCoach.Mcp.MarkItDown/packages/markitdown-mcp")
+//                            .WithExternalHttpEndpoints()
+//                            .WithImageTag("latest")
+//                            .WithHttpEndpoint(3001, 3001)
+//                            .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001");
 
 var sqlite = builder.AddSqlite(ResourceConstants.Sqlite, databaseFileName: ResourceConstants.DatabaseName)
                     .WithSqliteWeb();

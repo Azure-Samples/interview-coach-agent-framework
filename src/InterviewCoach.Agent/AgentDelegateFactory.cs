@@ -227,7 +227,7 @@ public static class AgentDelegateFactory
                        .WithHandoff(summariserAgent, triageAgent)
                        .Build();
 
-        return workflow.AsAIAgent(name: key);
+        return workflow.AsAIAgent(name: key).CreateFixedAgent();
     }
 
     // ============================================================================
@@ -378,7 +378,7 @@ public static class AgentDelegateFactory
                        .WithHandoff(summariserAgent, triageAgent)
                        .Build();
 
-        return workflow.AsAIAgent(name: key);
+        return workflow.AsAIAgent(name: key).CreateFixedAgent();
     }
 }
 
