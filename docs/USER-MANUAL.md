@@ -85,7 +85,7 @@ Coach: Thanks! Let me parse your profile...
 **Example pasting resume text directly:**
 
 ```
-You:   Here's my resume:
+Here's my resume:
 
        JORDAN MITCHELL
        Senior Software Engineer | Seattle, WA
@@ -127,16 +127,12 @@ You:   Here's my resume:
        Cloud: Azure (Certified Solutions Architect), AWS
        Frameworks: .NET, ASP.NET Core, React, Semantic Kernel
        Tools: Docker, Kubernetes, Terraform, GitHub Actions
-
-Coach: Great, I've reviewed your resume! You have a strong background in
-       cloud-native development, .NET, and AI integration. I can see 8+ years
-       of experience with leadership and distributed systems expertise.
-       Would you like to provide a job description to target the practice?
 ```
 
 The coach uses the **MarkItDown MCP server** to convert documents (PDF, DOCX, web pages) into readable text. Supported formats include PDF, Word documents, web URLs, and LinkedIn profile pages.
 
 > **Tip:** The `samples/` folder includes sample resumes and job descriptions you can reference:
+>
 > - `samples/resume-natasha-romanoff.pdf`
 > - `samples/resume-peter-parker.pdf`
 > - `samples/jd-cloud-solution-architect.pdf`
@@ -160,7 +156,7 @@ Coach: Got it! I've parsed the job description. The role is looking for
 **Example pasting a job description directly:**
 
 ```
-You:   Here's the job description:
+Here's the job description:
 
        SENIOR CLOUD SOLUTIONS ARCHITECT
        Contoso Ltd — Seattle, WA (Hybrid)
@@ -199,12 +195,6 @@ You:   Here's the job description:
 
        COMPENSATION
        $165,000 – $210,000 base + annual bonus + equity
-
-Coach: Perfect! I've reviewed the job description. This is a Senior Cloud
-       Solutions Architect role focused on Azure, microservices, AI integration,
-       and team leadership. I'll tailor the interview to cover cloud architecture
-       decisions, stakeholder communication, and mentoring scenarios.
-       Ready to start the behavioral interview?
 ```
 
 If you skip both the resume and job description, the coach will ask general interview questions.
