@@ -7,6 +7,8 @@
     }
   },
 
+  "AgentMode": "Single",
+
   "LlmProvider": "MicrosoftFoundry",
 
   "GitHub": {
@@ -29,5 +31,9 @@
       "ApiKey": "{{MICROSOFT_FOUNDRY_PROJECT_API_KEY}}",
       "DeploymentName": "model-router"
     }
+  },
+
+  "GitHubCopilot": {
+    "Token": "{{GITHUB_PAT}}"
   }
 }

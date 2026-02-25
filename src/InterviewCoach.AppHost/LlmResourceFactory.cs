@@ -167,6 +167,6 @@ public static class LlmResourceFactory
 
         return source.WithEnvironment(AGENT_MODE_KEY, mode)
                      .WithEnvironment(LLM_PROVIDER_KEY, provider)
-                     .WithEnvironment(GITHUB_TOKEN_KEY, token);
+                     .WithEnvironment(GITHUB_TOKEN_KEY, apiKey);
     }
 }

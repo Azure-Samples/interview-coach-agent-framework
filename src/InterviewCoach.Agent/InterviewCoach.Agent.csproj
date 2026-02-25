@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.OpenAI" Version="13.1.1-preview.1.26105.8" />
+    <PackageReference Include="Aspire.OpenAI" Version="13.*-*" />
     <PackageReference Include="Azure.Identity" Version="1.*" />
     <PackageReference Include="Microsoft.Agents.AI" Version="1.*-*" />
     <PackageReference Include="Microsoft.Agents.AI.AzureAI.Persistent" Version="1.*-*" />
