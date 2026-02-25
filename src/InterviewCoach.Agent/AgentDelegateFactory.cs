@@ -6,6 +6,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Client;
 
@@ -24,10 +25,13 @@ public static class AgentDelegateFactory
                  ? parsed
                  : throw new InvalidOperationException($"Agent mode not specified or invalid. Please set the '{Constants.AgentMode}' configuration value.");
 
-        var agentBuilder = mode switch
+        var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger(nameof(AgentDelegateFactory));
+        logger.LogInformation("Agent mode: {AgentMode}", mode);
+
+        IHostedAgentBuilder agentBuilder = mode switch
         {
             AgentMode.Single => builder.AddAIAgent(name, CreateSingleAgent),
-            AgentMode.LlmHandOff => builder.AddAIAgent(name, CreateLlmHandOffAgents),
+            AgentMode.LlmHandOff => CreateLlmHandOffAgents(builder, name),
             AgentMode.CopilotHandOff => builder.AddAIAgent(name, CreateCopilotHandOffAgents),
             _ => throw new NotSupportedException($"The specified agent mode '{mode}' is not supported.")
         };
@@ -86,17 +90,26 @@ public static class AgentDelegateFactory
     // Splits the interview coach into 5 specialized agents connected via the
     // handoff orchestration pattern from Microsoft Agent Framework.
     //
-    // Topology:
-    //   User → Triage ⇄ Receptionist
-    //          Triage ⇄ BehaviouralInterviewer
-    //          Triage ⇄ TechnicalInterviewer
-    //          Triage ⇄ Summariser
+    // Topology (sequential chain with Triage as fallback):
+    //   User → Triage → Receptionist → BehaviouralInterviewer → TechnicalInterviewer → Summariser
+    //          Triage ← (any specialist, for out-of-order requests)
     //
-    // Each agent has scoped tools and focused instructions. The Triage agent
-    // routes user messages to the appropriate specialist. Specialists hand
-    // control back to Triage when their part is complete.
+    // Each agent has scoped tools and focused instructions. Specialists hand
+    // off directly to the next agent in sequence for the happy path, avoiding
+    // a stateless Triage re-routing loop. Triage acts as the initial entry
+    // point and fallback for out-of-order user requests.
     // ============================================================================
-    public static AIAgent CreateLlmHandOffAgents(IServiceProvider sp, string key)
+    public static IHostedAgentBuilder CreateLlmHandOffAgents(this IHostApplicationBuilder builder, string key)
+    {
+        builder.AddWorkflow(key, (sp, name) => CreateLlmHandOffWorkflow(sp, key, name));
+
+        return builder.AddAIAgent(key, (sp, name) =>
+        {
+            var workflow = sp.GetRequiredKeyedService<Workflow>(name);
+            return workflow.AsAIAgent(name: name);
+        });
+    }
+    public static Workflow CreateLlmHandOffWorkflow(IServiceProvider sp, string key, string name)
     {
         var chatClient = sp.GetRequiredService<IChatClient>();
         var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
@@ -107,26 +120,48 @@ public static class AgentDelegateFactory
 
         // --- Triage Agent ---
         // Routes user messages to the correct specialist. No tools — pure routing.
+        // FIX: Made state-aware to prevent re-routing loops. The old instructions
+        // were purely keyword-driven, causing Triage to repeatedly send users back
+        // to the Receptionist when the original message mentioned "resume" or "job
+        // description" — even after document intake was already complete.
         var triageAgent = new ChatClientAgent(
             chatClient: chatClient,
             name: "triage",
             instructions: """
                 You are the Triage agent for an AI Interview Coach system.
-                Your ONLY job is to analyze the user's message and hand off to the right specialist agent.
+                Your ONLY job is to analyze the conversation and hand off to the right specialist agent.
                 You do NOT answer questions or conduct interviews yourself.
 
-                Routing rules:
-                - If the user wants to start a session, provide a resume, or provide a job description → hand off to "receptionist"
-                - If the user is ready for or is in a behavioural interview → hand off to "behavioural_interviewer"
-                - If the user is ready for or is in a technical interview → hand off to "technical_interviewer"
-                - If the user wants a summary, wants to end the interview, or the interview is complete → hand off to "summariser"
+                IMPORTANT: Before routing, review the FULL conversation history to determine
+                which phases have already been completed. Do NOT re-route to an agent that
+                has already finished its work. The interview follows this sequence:
+                  1. Receptionist (session setup, document intake)
+                  2. Behavioural Interviewer
+                  3. Technical Interviewer
+                  4. Summariser
+
+                Routing rules (apply in order, skipping completed phases):
+                - If the receptionist has NOT yet collected the resume and job description
+                  → hand off to "receptionist"
+                - If document intake is complete and behavioural interview has NOT started
+                  → hand off to "behavioural_interviewer"
+                - If behavioural interview is complete and technical interview has NOT started
+                  → hand off to "technical_interviewer"
+                - If technical interview is complete or the user wants to end
+                  → hand off to "summariser"
+                - If the user explicitly requests a specific phase, honour that request.
                 - If unclear, ask the user to clarify what they'd like to do.
+
+                When a specialist hands back to you, they have COMPLETED their phase.
+                Advance to the next phase in the sequence.
 
                 Always be brief and supportive. Let the specialists do the detailed work.
                 """);
 
         // --- Receptionist Agent ---
         // Handles session creation and document intake. Has all MCP tools.
+        // FIX: Now hands off directly to behavioural_interviewer (next phase)
+        // instead of back to Triage, to avoid the re-routing loop.
         var receptionistAgent = new ChatClientAgent(
             chatClient: chatClient,
             name: "receptionist",
@@ -139,7 +174,8 @@ public static class AgentDelegateFactory
                 2. Ask the user to provide their resume (link or text). Use MarkItDown to parse document links into markdown.
                 3. Ask the user to provide the job description (link or text). Use MarkItDown to parse document links into markdown.
                 4. Store the resume and job description in the session record.
-                5. Once document intake is complete, let the user know and hand off back to triage.
+                5. Once document intake is complete, let the user know and hand off directly to "behavioural_interviewer"
+                   to begin the interview. Only hand off to "triage" if the user wants to do something unexpected.
 
                 The user may choose to proceed without a resume or job description — that's fine.
                 Always maintain a supportive and encouraging tone.
@@ -148,6 +184,8 @@ public static class AgentDelegateFactory
 
         // --- Behavioural Interviewer Agent ---
         // Conducts the behavioural part of the interview.
+        // FIX: Now hands off directly to technical_interviewer (next phase)
+        // instead of back to Triage.
         var behaviouralAgent = new ChatClientAgent(
             chatClient: chatClient,
             name: "behavioural_interviewer",
@@ -161,7 +199,8 @@ public static class AgentDelegateFactory
                 3. After each answer, provide constructive feedback and analysis.
                 4. Append all questions, answers, and analysis to the transcript by updating the session record.
                 5. After a few questions (typically 3-5), ask if the user wants to continue or move on.
-                6. When done, hand off back to triage.
+                6. When done, hand off directly to "technical_interviewer" to continue the interview.
+                   Only hand off to "triage" if the user wants to do something unexpected.
 
                 Use the STAR method (Situation, Task, Action, Result) to guide your questions.
                 Always maintain a supportive and encouraging tone.
@@ -170,6 +209,8 @@ public static class AgentDelegateFactory
 
         // --- Technical Interviewer Agent ---
         // Conducts the technical part of the interview.
+        // FIX: Now hands off directly to summariser (next phase)
+        // instead of back to Triage.
         var technicalAgent = new ChatClientAgent(
             chatClient: chatClient,
             name: "technical_interviewer",
@@ -183,7 +224,8 @@ public static class AgentDelegateFactory
                 3. After each answer, provide constructive feedback, correct any misconceptions, and suggest improvements.
                 4. Append all questions, answers, and analysis to the transcript by updating the session record.
                 5. After a few questions (typically 3-5), ask if the user wants to continue or wrap up.
-                6. When done, hand off back to triage.
+                6. When done, hand off directly to "summariser" to generate the interview summary.
+                   Only hand off to "triage" if the user wants to do something unexpected.
 
                 Focus on practical, real-world scenarios relevant to the job.
                 Always maintain a supportive and encouraging tone.
@@ -192,6 +234,7 @@ public static class AgentDelegateFactory
 
         // --- Summariser Agent ---
         // Generates the final interview summary.
+        // Hands back to Triage only after summary — this is the end of the sequence.
         var summariserAgent = new ChatClientAgent(
             chatClient: chatClient,
             name: "summariser",
@@ -216,18 +259,26 @@ public static class AgentDelegateFactory
                 """,
             tools: [.. interviewDataTools]);
 
-        // Build the handoff workflow — Triage is the entry point (hub).
-        // All specialists can hand off back to Triage for re-routing.
+        // Build the handoff workflow — sequential chain with Triage as fallback.
+        // FIX: Changed from pure hub-and-spoke (every specialist → Triage → next)
+        // to a sequential chain (Receptionist → Behavioural → Technical → Summariser).
+        // This prevents the stateless Triage from re-routing to an already-completed
+        // phase based on keywords in the original user message.
+        // Each specialist can still fall back to Triage for out-of-order requests.
         var workflow = AgentWorkflowBuilder
                        .CreateHandoffBuilderWith(triageAgent)
-                       .WithHandoffs(triageAgent, [ receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent ])
-                       .WithHandoff(receptionistAgent, triageAgent)
-                       .WithHandoff(behaviouralAgent, triageAgent)
-                       .WithHandoff(technicalAgent, triageAgent)
+                       .WithHandoffs(triageAgent, [receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent])
+                       .WithHandoffs(receptionistAgent, [behaviouralAgent, triageAgent])
+                       .WithHandoffs(behaviouralAgent, [technicalAgent, triageAgent])
+                       .WithHandoffs(technicalAgent, [summariserAgent, triageAgent])
                        .WithHandoff(summariserAgent, triageAgent)
                        .Build();
 
-        return workflow.AsAIAgent(name: key).CreateFixedAgent();
+        // debugging the worflow to test the correct handoff
+        //workflow.SetName("HandOffWorkflow");
+        workflow.SetName(name);
+        return workflow;
+        //return workflow.AsAIAgent(name: key).CreateFixedAgent();
     }
 
     // ============================================================================
@@ -269,24 +320,42 @@ public static class AgentDelegateFactory
         copilotClient.StartAsync().GetAwaiter().GetResult();
 
         // --- Triage Agent ---
+        // FIX: Made state-aware to prevent re-routing loops (see Mode 2 comments).
         var triageAgent = copilotClient.AsAIAgent(
             name: "triage",
             instructions: """
                 You are the Triage agent for an AI Interview Coach system.
-                Your ONLY job is to analyze the user's message and hand off to the right specialist agent.
+                Your ONLY job is to analyze the conversation and hand off to the right specialist agent.
                 You do NOT answer questions or conduct interviews yourself.
 
-                Routing rules:
-                - If the user wants to start a session, provide a resume, or provide a job description → hand off to "receptionist"
-                - If the user is ready for or is in a behavioural interview → hand off to "behavioural_interviewer"
-                - If the user is ready for or is in a technical interview → hand off to "technical_interviewer"
-                - If the user wants a summary, wants to end the interview, or the interview is complete → hand off to "summariser"
+                IMPORTANT: Before routing, review the FULL conversation history to determine
+                which phases have already been completed. Do NOT re-route to an agent that
+                has already finished its work. The interview follows this sequence:
+                  1. Receptionist (session setup, document intake)
+                  2. Behavioural Interviewer
+                  3. Technical Interviewer
+                  4. Summariser
+
+                Routing rules (apply in order, skipping completed phases):
+                - If the receptionist has NOT yet collected the resume and job description
+                  → hand off to "receptionist"
+                - If document intake is complete and behavioural interview has NOT started
+                  → hand off to "behavioural_interviewer"
+                - If behavioural interview is complete and technical interview has NOT started
+                  → hand off to "technical_interviewer"
+                - If technical interview is complete or the user wants to end
+                  → hand off to "summariser"
+                - If the user explicitly requests a specific phase, honour that request.
                 - If unclear, ask the user to clarify what they'd like to do.
+
+                When a specialist hands back to you, they have COMPLETED their phase.
+                Advance to the next phase in the sequence.
 
                 Always be brief and supportive. Let the specialists do the detailed work.
                 """);
 
         // --- Receptionist Agent ---
+        // FIX: Now hands off directly to behavioural_interviewer (see Mode 2 comments).
         var receptionistAgent = copilotClient.AsAIAgent(
             name: "receptionist",
             instructions: """
@@ -298,7 +367,8 @@ public static class AgentDelegateFactory
                 2. Ask the user to provide their resume (link or text). Use MarkItDown to parse document links into markdown.
                 3. Ask the user to provide the job description (link or text). Use MarkItDown to parse document links into markdown.
                 4. Store the resume and job description in the session record.
-                5. Once document intake is complete, let the user know and hand off back to triage.
+                5. Once document intake is complete, let the user know and hand off directly to "behavioural_interviewer"
+                   to begin the interview. Only hand off to "triage" if the user wants to do something unexpected.
 
                 The user may choose to proceed without a resume or job description — that's fine.
                 Always maintain a supportive and encouraging tone.
@@ -306,6 +376,7 @@ public static class AgentDelegateFactory
             tools: [.. markitdownTools, .. interviewDataTools]);
 
         // --- Behavioural Interviewer Agent ---
+        // FIX: Now hands off directly to technical_interviewer (see Mode 2 comments).
         var behaviouralAgent = copilotClient.AsAIAgent(
             name: "behavioural_interviewer",
             instructions: """
@@ -318,7 +389,8 @@ public static class AgentDelegateFactory
                 3. After each answer, provide constructive feedback and analysis.
                 4. Append all questions, answers, and analysis to the transcript by updating the session record.
                 5. After a few questions (typically 3-5), ask if the user wants to continue or move on.
-                6. When done, hand off back to triage.
+                6. When done, hand off directly to "technical_interviewer" to continue the interview.
+                   Only hand off to "triage" if the user wants to do something unexpected.
 
                 Use the STAR method (Situation, Task, Action, Result) to guide your questions.
                 Always maintain a supportive and encouraging tone.
@@ -326,6 +398,7 @@ public static class AgentDelegateFactory
             tools: [.. interviewDataTools]);
 
         // --- Technical Interviewer Agent ---
+        // FIX: Now hands off directly to summariser (see Mode 2 comments).
         var technicalAgent = copilotClient.AsAIAgent(
             name: "technical_interviewer",
             instructions: """
@@ -338,7 +411,8 @@ public static class AgentDelegateFactory
                 3. After each answer, provide constructive feedback, correct any misconceptions, and suggest improvements.
                 4. Append all questions, answers, and analysis to the transcript by updating the session record.
                 5. After a few questions (typically 3-5), ask if the user wants to continue or wrap up.
-                6. When done, hand off back to triage.
+                6. When done, hand off directly to "summariser" to generate the interview summary.
+                   Only hand off to "triage" if the user wants to do something unexpected.
 
                 Focus on practical, real-world scenarios relevant to the job.
                 Always maintain a supportive and encouraging tone.
@@ -346,6 +420,7 @@ public static class AgentDelegateFactory
             tools: [.. interviewDataTools]);
 
         // --- Summariser Agent ---
+        // Hands back to Triage only after summary — end of the sequence.
         var summariserAgent = copilotClient.AsAIAgent(
             name: "summariser",
             instructions: """
@@ -369,12 +444,14 @@ public static class AgentDelegateFactory
                 """,
             tools: [.. interviewDataTools]);
 
+        // Build the handoff workflow — sequential chain with Triage as fallback.
+        // FIX: Same topology change as Mode 2 (see comments above).
         var workflow = AgentWorkflowBuilder
                        .CreateHandoffBuilderWith(triageAgent)
-                       .WithHandoffs(triageAgent, [ receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent ])
-                       .WithHandoff(receptionistAgent, triageAgent)
-                       .WithHandoff(behaviouralAgent, triageAgent)
-                       .WithHandoff(technicalAgent, triageAgent)
+                       .WithHandoffs(triageAgent, [receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent])
+                       .WithHandoffs(receptionistAgent, [behaviouralAgent, triageAgent])
+                       .WithHandoffs(behaviouralAgent, [technicalAgent, triageAgent])
+                       .WithHandoffs(technicalAgent, [summariserAgent, triageAgent])
                        .WithHandoff(summariserAgent, triageAgent)
                        .Build();
 
