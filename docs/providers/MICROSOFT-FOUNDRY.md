@@ -33,27 +33,17 @@ This is the **recommended configuration** for production deployments of the Inte
 5. Click **Create**
 6. Wait for deployment to complete (~2-3 minutes)
 
-### Option B: Via Azure CLI
+### Option B: Via Azure Developer CLI
 
 ```bash
+# Navigate to the resource directory
+cd resources-foundry
+
 # Login to Azure
-az login
+azd auth login
 
-# Set your subscription (if you have multiple)
-az account set --subscription "Your Subscription Name"
-
-# Create resource group
-az group create \
-  --name rg-interview-coach \
-  --location eastus2
-
-# Create AI Foundry project (using Azure AI CLI extension)
-az extension add --name ml
-az ml workspace create \
-  --name interview-coach \
-  --resource-group rg-interview-coach \
-  --location eastus2 \
-  --kind project
+# Provision resources
+azd up
 ```
 
 ## Step 2: Get Project Endpoint and API Key
@@ -70,13 +60,17 @@ az ml workspace create \
 ### Via Azure CLI
 
 ```bash
-# Get workspace details
-az ml workspace show \
-  --name interview-coach \
-  --resource-group rg-interview-coach
+# Navigate to the resource directory
+cd resources-foundry
 
-# Get endpoint (look for "mlflow_tracking_uri" or "discovery_url")
-# API key retrieval via CLI may require additional steps depending on auth setup
+# Login to Azure
+az login
+
+# Get endpoint
+azd env get-value 'FOUNDRY_PROJECT_ENDPOINT'
+
+# Get API key
+az cognitiveservices account keys list -g rg-$(azd env get-value AZURE_ENV_NAME) -n $(azd env get-value FOUNDRY_NAME) --query "key1" -o tsv
 ```
 
 ## Step 3: Configure Application
@@ -92,10 +86,10 @@ Use .NET user secrets to keep credentials out of source control:
 cd /path/to/interview-coach-agent-framework
 
 # Store endpoint
-dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint "https://your-project.azure.ai"
+dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}"
 
 # Store API key
-dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey "your-api-key-here"
+dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey "{{MICROSOFT_FOUNDRY_API_KEY}}"
 ```
 
 **For Production Deployment**:
@@ -115,13 +109,16 @@ Edit `apphost.settings.json` (or create if it doesn't exist):
     }
   },
 
+  "AgentMode": "Single",
+
   "LlmProvider": "MicrosoftFoundry",
 
   "MicrosoftFoundry": {
     "Project": {
       "Endpoint": "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}",
       "ApiKey": "{{MICROSOFT_FOUNDRY_PROJECT_API_KEY}}",
-      "DeploymentName": "model-router"
+      // "DeploymentName": "model-router"
+      "DeploymentName": "gpt-5-mini"
     }
   }
 }
@@ -129,7 +126,7 @@ Edit `apphost.settings.json` (or create if it doesn't exist):
 
 **Note**: The `{{...}}` placeholders are automatically replaced with user secrets during local development or environment variables during deployment.
 
-## Step 4: Understanding Model Router
+<!-- ## Step 4: Understanding Model Router
 
 The default `DeploymentName` is set to `model-router`, which is a special Foundry feature.
 
@@ -152,7 +149,7 @@ Complex request (e.g., detailed code review)
     → Routes to gpt-4o (higher quality)
 
 All requests appear identical to your application!
-```
+``` -->
 
 ### Using Specific Models Instead
 
@@ -191,13 +188,16 @@ aspire run --project ./src/InterviewCoach.AppHost
 
 ### Verify Configuration
 
-1. Aspire Dashboard will open automatically (usually `https://localhost:17XXX`)
+1. Open Aspire Dashboard `https://localhost:17053`
 2. Check the **Console Logs** for the Agent service
 3. Look for confirmation:
 
    ```
-   info: Using MicrosoftFoundry: model-router
+   info: Using MicrosoftFoundry: gpt-5-mini
    ```
+   <!-- ```
+   info: Using MicrosoftFoundry: model-router
+   ``` -->
 
 4. Navigate to the **webui** endpoint
 5. Start a conversation to test the agent
