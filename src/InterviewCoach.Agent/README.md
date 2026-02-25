@@ -32,6 +32,41 @@ This service acts as the **brain** of the application:
 
 The main application file containing:
 
+**MCP client setup** (lines 26-86): Connects to MarkItDown MCP (document parsing) and InterviewData MCP (session management) via HTTP transports.
+
+**LLM provider configuration** (lines 88-109): Loads chat client from Aspire-configured provider (Foundry, Azure OpenAI, or GitHub Models).
+
+**Agent mode toggle** (lines 111-123): A single commented/uncommented line selects the agent mode:
+
+```csharp
+// ============================================================================
+// AGENT MODE TOGGLE — Uncomment exactly ONE line
+// ============================================================================
+builder.AddAIAgent("coach", createAgentDelegate: CreateSingleAgent);              // Mode 1: Single agent
+// builder.AddAIAgent("coach", createAgentDelegate: CreateHandoffAgents);         // Mode 2: Multi-agent handoff (ChatClient)
+// builder.AddAIAgent("coach", createAgentDelegate: CreateCopilotHandoffAgents);  // Mode 3: Multi-agent handoff (GitHub Copilot)
+```
+
+| Mode | Factory Method | Description |
+|------|---------------|-------------|
+| 1 | `CreateSingleAgent` | One monolithic agent with all tools and instructions |
+| 2 | `CreateHandoffAgents` | 5 specialized agents using `ChatClientAgent` + your LLM provider |
+| 3 | `CreateCopilotHandoffAgents` | 5 specialized agents using `CopilotClient.AsAIAgent()` via GitHub Copilot SDK |
+
+**[Learn more about multi-agent architecture →](../../docs/MULTI-AGENT.md)**
+
+**API endpoint mapping** (lines 125-145): `/responses`, `/conversations`, `/ag-ui`, `/devui/`
+
+### Constants.cs
+
+**[View source](Constants.cs)**
+
+Defines configuration keys used throughout the application.
+
+### appsettings.json
+
+**[View source](appsettings.json)**
+
 **Lines 17-66**: MCP client setup
 
 - Connects to MarkItDown MCP (document parsing)
@@ -137,6 +172,38 @@ The WebUI connects to `/conversations` for the chat interface.
 
 ## Local Development
 
+
+The agent uses two MCP servers:
+
+### 1. MarkItDown MCP
+
+- **Purpose**: Parse resumes and job descriptions from PDF/DOCX to markdown
+- **Tools**: `convert_to_markdown`
+- **Source**: External Python server from [microsoft/markitdown](https://github.com/microsoft/markitdown)
+
+### 2. InterviewData MCP
+
+- **Purpose**: Manage interview session state and persistence
+- **Tools**: `create_interview_session`, `get_interview_session`, `update_interview_session`
+- **Source**: Custom .NET server in [../InterviewCoach.Mcp.InterviewData/](../InterviewCoach.Mcp.InterviewData/)
+
+**[Deep dive into MCP servers →](../../docs/MCP-SERVERS.md)**
+
+## API Endpoints
+
+When running, the agent exposes:
+
+| Endpoint | Purpose | Protocol |
+|----------|---------|----------|
+| `/responses` | Single-turn completions | OpenAI-compatible |
+| `/conversations` | Multi-turn conversations | OpenAI-compatible |
+| `/ag-ui` | Agent UI protocol | AGUI |
+| `/devui/` | Development UI | HTTP (dev only) |
+
+The WebUI connects to `/conversations` for the chat interface.
+
+## Local Development
+
 ### Run Standalone
 
 ```bash
@@ -168,6 +235,117 @@ Aspire automatically:
 ### Development UI
 
 When running in development, access DevUI at:
+
+```
+https://localhost:<port>/devui/
+```
+
+This provides a test interface for interacting with the agent without the WebUI.
+
+## Configuration
+
+### Provider Selection
+
+Set in `apphost.settings.json` or via environment variable:
+
+```json
+{
+  "LlmProvider": "MicrosoftFoundry"  // or "AzureOpenAI" or "GitHubModels"
+}
+```
+
+**[Provider setup guides →](../../docs/providers/README.md)**
+
+### Logging
+
+Adjust verbosity in `appsettings.json`:
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",  // Information, Debug, Trace
+      "Microsoft.Agents.AI": "Debug"  // Agent framework logs
+    }
+  }
+}
+```
+
+## Customization
+
+### Modify Interview Flow
+
+Edit the agent instructions in [Program.cs](Program.cs#L95-L125):
+
+```csharp
+instructions: """
+    Your customizations here...
+    """
+```
+
+Examples:
+
+- Change question order (technical before behavioral)
+- Add new interview stages (coding challenges, case studies)
+- Modify tone (more formal, less formal)
+- Add domain specialization (frontend, backend, data science)
+
+**[Tutorial: Customizing the Agent →](../../docs/TUTORIALS.md#tutorial-3-customizing-the-agent)**
+
+### Add New MCP Tools
+
+1. Create or reference MCP server
+2. Register HTTP client in [Program.cs](Program.cs)
+3. Register MCP client
+4. List tools and add to agent
+
+**[Tutorial: Creating Custom MCP Server →](../../docs/TUTORIALS.md#tutorial-2-creating-a-custom-mcp-server)**
+
+## Deployment
+
+### With Aspire (`azd`)
+
+The agent deploys as a container to Azure Container Apps:
+
+```bash
+azd up
+```
+
+### Standalone Container
+
+```bash
+# Build
+docker build -t interview-coach-agent .
+
+# Run
+docker run -p 8080:8080 \
+  -e LlmProvider=MicrosoftFoundry \
+  -e MicrosoftFoundry__Project__Endpoint=... \
+  -e MicrosoftFoundry__Project__ApiKey=... \
+  interview-coach-agent
+```
+
+## Observability
+
+### Logs
+
+The agent emits structured logs:
+
+- User messages received
+- Tool calls made
+- LLM requests/responses
+- Errors and warnings
+
+View in Aspire Dashboard or Azure Application Insights.
+
+### Traces
+
+OpenTelemetry distributed tracing tracks:
+
+- Request flow through agent
+- MCP tool invocations
+- LLM latency
+
 
 ```
 https://localhost:<port>/devui/

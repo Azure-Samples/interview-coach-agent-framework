@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: interview-coach-foundry
+
+metadata:
+  template: interview-coach-foundry@1.0.0
+  author: Justin Yoo
+  description: Minimal Microsoft Foundry project with gpt-5-mini deployment using Azure Developer CLI

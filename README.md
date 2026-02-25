@@ -7,10 +7,11 @@ An AI-powered interview preparation application demonstrating production-ready p
 This sample teaches modern AI agent development patterns:
 
 - ✅ **Building production AI agents** with Microsoft Agent Framework
+- ✅ **Multi-agent handoff orchestration** — single agent vs 5 specialized agents ([learn more](docs/MULTI-AGENT.md))
 - ✅ **Model Context Protocol (MCP)** for extensible agent capabilities
 - ✅ **Multi-service orchestration** with .NET Aspire
 - ✅ **Stateful conversation management** across sessions
-- ✅ **Multi-provider LLM support** (Foundry, Azure OpenAI, GitHub Models)
+- ✅ **Multi-provider LLM support** (Microsoft Foundry, Azure OpenAI, GitHub Models)
 - ✅ **Azure deployment** with one command using `azd`
 
 **[Read more about learning objectives →](docs/LEARNING-OBJECTIVES.md)**
@@ -47,44 +48,31 @@ git clone https://github.com/Azure-Samples/interview-coach-agent-framework.git
 cd interview-coach-agent-framework
 ```
 
-### 2. Download MCP Server
+### 2. Configure Microsoft Foundry
 
-The application uses [MarkItDown MCP](https://github.com/microsoft/markitdown) for document parsing.
+#### Create Foundry Project on Foundry Portal
 
-**Bash/zsh:**
-
-```bash
-REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
-mkdir -p $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown && \
-    git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
-```
-
-**PowerShell:**
-
-```powershell
-$REPOSITORY_ROOT = git rev-parse --show-toplevel
-New-Item -Type Directory -Path $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown -Force
-git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/InterviewCoach.Mcp.MarkItDown
-```
-
-### 3. Configure Microsoft Foundry
-
-#### Create Foundry Project
-
-1. Navigate to [Azure AI Foundry Portal](https://ai.azure.com)
-2. Sign in with your Azure account
-3. Click **New project** and follow the wizard
-4. Note your **Project Endpoint** and **API Key** from Project Settings
+1. Navigate to [Azure AI Foundry Portal](https://ai.azure.com).
+2. Sign in with your Azure account.
+3. Click **New project** and follow the wizard.
+4. Note your **Project Endpoint** and **API Key** from Project Settings.
 
 **[Detailed Foundry setup guide →](docs/providers/MICROSOFT-FOUNDRY.md)**
+
+#### Create Foundry Project with `azd`
+
+1. Navigate to the `resources-foundry` directory.
+1. Login to Azure by `azd auth login`.
+1. Run `azd up`.
+1. Note your **Project Endpoint** and **API Key** from Project Settings.
 
 #### Store Credentials
 
 Use .NET user secrets to keep credentials secure:
 
 ```bash
-dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint "https://your-project.azure.ai"
-dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey "your-api-key"
+dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}"
+dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey "{{MICROSOFT_FOUNDRY_API_KEY}}"
 ```
 
 #### Verify Configuration
@@ -93,18 +81,20 @@ Ensure `apphost.settings.json` contains:
 
 ```json
 {
+  "AgentMode": "Single",
   "LlmProvider": "MicrosoftFoundry",
   "MicrosoftFoundry": {
     "Project": {
       "Endpoint": "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}",
       "ApiKey": "{{MICROSOFT_FOUNDRY_PROJECT_API_KEY}}",
-      "DeploymentName": "model-router"
+      // "DeploymentName": "model-router"
+      "DeploymentName": "gpt-5-mini"
     }
   }
 }
 ```
 
-The `model-router` automatically selects optimal models for cost/quality balance. **[Learn about Model Router →](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router)**
+<!-- The `model-router` automatically selects optimal models for cost/quality balance. **[Learn about Model Router →](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router)** -->
 
 ### 4. Run the Application
 
@@ -116,10 +106,10 @@ aspire run --file ./apphost.cs
 
 **What happens next:**
 
-1. Aspire Dashboard opens automatically (~`https://localhost:17xxx`)
-2. All services start (Agent, WebUI, MCP servers, SQLite)
-3. Look for ✅ "Running" status on all resources
-4. Click the **webui** endpoint to open the interview coach
+1. Onen Aspire Dashboard opens on `https://localhost:17053`.
+1. All services start (Agent, WebUI, MCP servers, SQLite).
+1. Look for ✅ "Running" status on all resources.
+1. Click the **webui** endpoint to open the interview coach.
 
 **Having issues?** See [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
 
@@ -194,6 +184,7 @@ These patterns apply to:
 
 ### 📖 Learn
 
+- **[User Manual](docs/USER-MANUAL.md)** - Step-by-step guide to using the app once it's running
 - **[Learning Objectives](docs/LEARNING-OBJECTIVES.md)** - What you'll master by studying this sample
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Deep dive into system design
 - **[MCP Servers Explained](docs/MCP-SERVERS.md)** - Understanding extensibility patterns

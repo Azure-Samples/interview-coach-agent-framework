@@ -6,4 +6,7 @@
     <Project Path="src/InterviewCoach.ServiceDefaults/InterviewCoach.ServiceDefaults.csproj" />
     <Project Path="src/InterviewCoach.WebUI/InterviewCoach.WebUI.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/InterviewCoach.Agent.Tests/InterviewCoach.Agent.Tests.csproj" />
+  </Folder>
 </Solution>

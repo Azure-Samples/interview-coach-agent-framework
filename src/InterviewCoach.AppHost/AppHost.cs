@@ -2,9 +2,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 // var foundry = builder.AddBicepTemplate("foundry", "../../infra/foundry.bicep");
 
-var mcpMarkItDown = builder.AddDockerfile(ResourceConstants.McpMarkItDown, "../InterviewCoach.Mcp.MarkItDown/packages/markitdown-mcp")
+var mcpMarkItDown = builder.AddContainer(ResourceConstants.McpMarkItDown, "mcp/markitdown", "latest")
                            .WithExternalHttpEndpoints()
-                           .WithImageTag("latest")
                            .WithHttpEndpoint(3001, 3001)
                            .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001");
 
@@ -18,7 +17,7 @@ var mcpInterviewData = builder.AddProject<Projects.InterviewCoach_Mcp_InterviewD
 
 var agent = builder.AddProject<Projects.InterviewCoach_Agent>(ResourceConstants.Agent)
                    .WithExternalHttpEndpoints()
-                   .WithLlmReference(builder.Configuration)
+                   .WithLlmReference(builder.Configuration, args)
                    .WithEnvironment(ResourceConstants.LlmProvider, builder.Configuration[ResourceConstants.LlmProvider] ?? string.Empty)
                    .WithReference(mcpMarkItDown.GetEndpoint("http"))
                    .WithReference(mcpInterviewData)

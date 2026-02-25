@@ -1,7 +1,9 @@
 ﻿@page "/"
 @using System.ComponentModel
+@using InterviewCoach.WebUI.Services
 @inject IChatClient ChatClient
 @inject ILogger<Chat> Logger
+@inject FileUploadService FileUploadService
 @implements IDisposable
 
 <PageTitle>Chat</PageTitle>
@@ -10,13 +12,14 @@
 
 <ChatMessageList Messages="@messages" InProgressMessage="@currentResponseMessage">
     <NoMessagesContent>
-        <div>I'm your friendly interview coach. To get started, enter the link or text of your resume and job description.</div>
-    </NoMessagesContent>
-</ChatMessageList>
+        <div>I'm your friendly interview coach. To get started, enter the link or text of your resume and job
+            description.</div>
+        </NoMessagesContent>
+    </ChatMessageList>
 
-<div class="chat-container">
-    <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
-</div>
+    <div class="chat-container">
+        <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
+    </div>
 
 @code {
     private const string SystemPrompt = """
@@ -52,6 +55,30 @@
             lastSessionId = sessionId;
         }
 
+        // If a file is attached, upload it and append the URL to the message
+        var file = chatInput?.AttachedFile;
+        if (file is not null)
+        {
+            try
+            {
+                using var stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+                var url = await FileUploadService.UploadFileAsync(stream, file.Name, file.ContentType);
+                var messageText = userMessage.Text?.Trim();
+                var combined = string.IsNullOrEmpty(messageText)
+                    ? $"I've attached my file: {url}"
+                    : $"{messageText}\n[Attached file: {url}]";
+                userMessage = new ChatMessage(ChatRole.User, combined);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to upload file {FileName}", file.Name);
+            }
+            finally
+            {
+                chatInput?.ClearAttachment();
+            }
+        }
+
         messages.Add(userMessage);
         await chatInput!.FocusAsync();
 
@@ -60,57 +87,42 @@
         currentResponseCancellation = new();
 
         var outboundMessages = BuildOutboundMessages();
-        await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage, currentResponseCancellation.Token);
+        await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage,
+currentResponseCancellation.Token);
 
         messages.Add(currentResponseMessage!);
         statefulMessageCount = chatOptions.ConversationId is not null ? messages.Count : 0;
         currentResponseMessage = null;
     }
 
-    private async Task GetStreamingResponseAsync(IEnumerable<ChatMessage> outboundMessages, TextContent responseText, ChatMessage responseMessage, CancellationToken cancellationToken)
+    private async Task GetStreamingResponseAsync(IEnumerable<ChatMessage> outboundMessages, TextContent responseText,
+ChatMessage responseMessage, CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting streaming response for conversation {ConversationId}", chatOptions.ConversationId);
 
-        var deferAssistantTextUntilToolResponse = false;
-        var toolResponseSeen = false;
-        await foreach (var update in ChatClient.GetStreamingResponseAsync(outboundMessages, chatOptions, cancellationToken))
+        try
         {
-            await Task.Delay(50);
-
-            messages.AddMessages(update, filter: c => c is not TextContent);
-
-            if (deferAssistantTextUntilToolResponse == false && update.Role == ChatRole.Assistant && ContainsNonTextContent(update))
+            await foreach (var update in ChatClient.GetStreamingResponseAsync(outboundMessages, chatOptions, cancellationToken))
             {
-                deferAssistantTextUntilToolResponse = true;
-            }
+                await Task.Delay(50);
 
-            if (update.Role == ChatRole.Tool)
-            {
-                toolResponseSeen = true;
-            }
+                messages.AddMessages(update, filter: c => c is not TextContent);
 
-            if ((deferAssistantTextUntilToolResponse == false || toolResponseSeen == true) && update.Role == ChatRole.Assistant)
-            {
-                responseText.Text += update.Text;
-                ChatMessageItem.NotifyChanged(responseMessage);
-            }
+                if (update.Role == ChatRole.Assistant)
+                {
+                    responseText.Text += update.Text;
+                    ChatMessageItem.NotifyChanged(responseMessage);
+                }
 
-            StateHasChanged();
+                StateHasChanged();
+            }
         }
-
-        bool ContainsNonTextContent(ChatResponseUpdate update)
+        catch (System.Text.Json.JsonException ex)
         {
-            if (update.Contents.Any() == false)
-            {
-                return true;
-            }
-
-            if (update.Contents.Any(c => c is not TextContent) == true)
-            {
-                return true;
-            }
-
-            return false;
+            Logger.LogError(ex, "JSON parsing error at position {Position}. The response from the agent endpoint is not valid JSON. This usually means the endpoint is returning plain text or HTML instead of the expected streaming format.", ex.BytePositionInLine);
+            responseText.Text = "Error: The interview coach service returned an unexpected response format. Please check the agent service logs for details.";
+            ChatMessageItem.NotifyChanged(responseMessage);
+            StateHasChanged();
         }
     }
 

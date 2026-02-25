@@ -1,4 +1,5 @@
 using InterviewCoach.WebUI.Components;
+using InterviewCoach.WebUI.Services;
 
 using Microsoft.Agents.AI.AGUI;
 using Microsoft.Extensions.AI;
@@ -14,6 +15,8 @@ builder.Services.AddHttpClient("agent", client =>
 {
     client.BaseAddress = new Uri("https+http://agent");
 });
+
+builder.Services.AddScoped<FileUploadService>();
 
 builder.Services.AddChatClient(sp => new AGUIChatClient(
     httpClient: sp.GetRequiredService<IHttpClientFactory>().CreateClient("agent"),

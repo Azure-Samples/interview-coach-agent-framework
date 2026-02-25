@@ -648,3 +648,36 @@ curl http://localhost:5001/mcp -H "Content-Type: application/json" -d '{"jsonrpc
 ---
 
 **Still stuck?** [Open an issue](https://github.com/Azure-Samples/interview-coach-agent-framework/issues/new) with details and we'll help!
+
+---
+
+## Known Issues — Multi-Agent Handoff (Mode 2)
+
+### No response in chat after sending a message (Mode 2 only)
+
+**Symptoms**: You switch to Mode 2 (multi-agent handoff) in `Program.cs`, send
+a message in the WebUI, and get no response. The agent logs may show a
+`JsonException` with `"'T' is an invalid start of a value"`.
+
+**Cause**: This is a known bug in the Microsoft Agent Framework AG-UI package.
+When the handoff workflow transfers control between agents, the internal
+transfer tool returns a plain string like `"Transferred."`. The AG-UI serialization
+layer tries to parse this as JSON and crashes.
+
+**Upstream issues**:
+
+- [microsoft/agent-framework#2775](https://github.com/microsoft/agent-framework/issues/2775) — JSON parsing exception when Handoff tool returns plain string content
+- [microsoft/agent-framework#3962](https://github.com/microsoft/agent-framework/issues/3962) — Duplicate messageId for consecutive TOOL_CALL_RESULT events
+
+**Current workaround**: The file `src/InterviewCoach.Agent/HandoffToolResultFix.cs`
+wraps the handoff agent with a streaming middleware that converts plain-string
+tool results to `JsonElement` before the AG-UI pipeline processes them. This is
+applied automatically in `CreateHandoffAgents` and `CreateCopilotHandoffAgents`.
+
+**Mode 1 is unaffected** — the single-agent mode does not use handoff tools and
+works without any workaround.
+
+> **Reminder**: Check the upstream issues periodically. When a fixed version of
+> `Microsoft.Agents.AI.AGUI` is released, follow the removal steps in
+> [docs/plans/PLAN-HANDOFF-AGUI-WORKAROUND.md](plans/PLAN-HANDOFF-AGUI-WORKAROUND.md#4-future-removal-steps-when-upstream-fix-ships)
+> to remove the workaround and update packages.

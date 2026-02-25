@@ -1,22 +1,20 @@
+using System.Collections.Concurrent;
 using System.ClientModel.Primitives;
 using System.Data.Common;
 
 using Azure.Identity;
 
+using GitHub.Copilot.SDK;
+
 using InterviewCoach.Agent;
 
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.DevUI;
-using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using Microsoft.Extensions.AI;
 
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
-
-using OpenAI;
-
-#pragma warning disable OPENAI001
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -95,60 +93,20 @@ else
     builder.AddOpenAIClient("chat")
            .AddChatClient();
 
-//     var connection = new DbConnectionStringBuilder() { ConnectionString = config.GetConnectionString("foundry") };
-//     var endpoint = connection.TryGetValue("Endpoint", out var endpointValue) ? endpointValue?.ToString() : throw new InvalidOperationException("Missing Foundry Endpoint");
-//     // var accessKey = connection.TryGetValue("Key", out var accessKeyValue) ? accessKeyValue?.ToString() : throw new InvalidOperationException("Missing Foundry Key");
-//     var model = connection.TryGetValue("Model", out var modelValue) ? modelValue?.ToString() : throw new InvalidOperationException("Missing Foundry Model");
-//     var options = new OpenAIClientOptions() { Endpoint = new Uri(endpoint!) };
-//     var credential = new DefaultAzureCredential();
-//     var client = new OpenAIClient(new BearerTokenPolicy(credential, "https://ai.azure.com/.default"), options)
-//                     .GetResponsesClient(model!)
-//                     .AsIChatClient();
+    // var connection = new DbConnectionStringBuilder() { ConnectionString = config.GetConnectionString("foundry") };
+    // var endpoint = connection.TryGetValue("Endpoint", out var endpointValue) ? endpointValue?.ToString() : throw new InvalidOperationException("Missing Foundry Endpoint");
+    // // var accessKey = connection.TryGetValue("Key", out var accessKeyValue) ? accessKeyValue?.ToString() : throw new InvalidOperationException("Missing Foundry Key");
+    // var model = connection.TryGetValue("Model", out var modelValue) ? modelValue?.ToString() : throw new InvalidOperationException("Missing Foundry Model");
+    // var options = new OpenAIClientOptions() { Endpoint = new Uri(endpoint!) };
+    // var credential = new DefaultAzureCredential();
+    // var client = new OpenAIClient(new BearerTokenPolicy(credential, "https://ai.azure.com/.default"), options)
+    //                 .GetResponsesClient(model!)
+    //                 .AsIChatClient();
 
-//     builder.Services.AddSingleton<IChatClient>(client);
+    // builder.Services.AddSingleton<IChatClient>(client);
 }
 
-builder.AddAIAgent(
-    name: "coach",
-    createAgentDelegate: (sp, key) =>
-    {
-        var chatClient = sp.GetRequiredService<IChatClient>();
-        var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
-        var interviewData = sp.GetRequiredKeyedService<McpClient>("mcp-interview-data");
-
-        var markitdownTools = markitdown.ListToolsAsync().GetAwaiter().GetResult();
-        var interviewDataTools = interviewData.ListToolsAsync().GetAwaiter().GetResult();
-
-        var agent = new ChatClientAgent(
-            chatClient: chatClient,
-            name: key,
-            instructions: """
-                You are an AI Interview Coach designed to help users prepare for job interviews.
-                You will guide them through the interview process, provide feedback, and help them improve their skills.
-                You will be given a session Id to track the interview session progress.
-                Use the provided tools to manage interview sessions, capture resume and job description, ask both behavioral and technical questions, analyze responses, and generate summaries.
-
-                Here's the overall process you should follow:
-                01. Start by fetching an existing interview session and let the user know their session ID.
-                02. If there's no existing session, create a new interview session by the session ID and let the user know their session ID.
-                03. Once you have the session, then keep using this session record for all subsequent interactions. DO NOT create a new session again.
-                04. Ask the user to provide their resume link or allow them to proceed without it. The user may provide the resume in text form if they prefer.
-                05. Next, request the job description link or let them proceed without it. The user may provide the job description in text form if they prefer.
-                06. Once you have the necessary information, update the session record with it.
-                07. Once you have updated the session record with the information, begin the interview by asking behavioral questions first.
-                08. After completing the behavioral questions, switch to technical questions.
-                09. Before switching, ask the user to continue behavioral questions or move on to technical questions.
-                10. The user may want to stop the interview at any time; in such cases, mark the interview as complete and proceed to summary generation.
-                11. After the interview is complete, generate a comprehensive summary that includes an overview, key highlights, areas for improvement, and recommendations.
-                12. Record all the conversations including greetings, questions, answers and summary as a transcript by updating the current session record.
-
-                Always maintain a supportive and encouraging tone.
-                """,
-            tools: [ .. markitdownTools, .. interviewDataTools ]
-        );
-
-        return agent;
-    });
+builder.AddAIAgent("coach");
 
 builder.Services.AddOpenAIResponses();
 builder.Services.AddOpenAIConversations();
@@ -175,5 +133,50 @@ else
 {
     app.MapDevUI();
 }
+
+// --- File Upload Endpoints ---
+// In-memory store for uploaded files (ephemeral, session-scoped).
+var uploadedFiles = new ConcurrentDictionary<string, (byte[] Content, string ContentType, string FileName)>();
+
+var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+{
+    ".pdf", ".docx", ".doc", ".txt", ".md", ".html"
+};
+
+app.MapPost("/upload", async (HttpRequest request) =>
+{
+    if (!request.HasFormContentType)
+        return Results.BadRequest("Expected multipart/form-data.");
+
+    var form = await request.ReadFormAsync();
+    var file = form.Files.GetFile("file");
+
+    if (file is null || file.Length == 0)
+        return Results.BadRequest("No file provided.");
+
+    if (file.Length > 10 * 1024 * 1024)
+        return Results.Problem("File size exceeds 10 MB limit.", statusCode: 413);
+
+    var ext = Path.GetExtension(file.FileName);
+    if (!allowedExtensions.Contains(ext))
+        return Results.Problem($"File type '{ext}' is not supported.", statusCode: 415);
+
+    var fileId = Guid.NewGuid().ToString("N");
+    using var ms = new MemoryStream();
+    await file.CopyToAsync(ms);
+
+    uploadedFiles[fileId] = (ms.ToArray(), file.ContentType, file.FileName);
+
+    var url = $"{request.Scheme}://{request.Host}/uploads/{fileId}/{Uri.EscapeDataString(file.FileName)}";
+    return Results.Ok(new { url });
+});
+
+app.MapGet("/uploads/{fileId}/{fileName}", (string fileId, string fileName) =>
+{
+    if (!uploadedFiles.TryGetValue(fileId, out var entry))
+        return Results.NotFound();
+
+    return Results.File(entry.Content, entry.ContentType, entry.FileName);
+});
 
 await app.RunAsync();
