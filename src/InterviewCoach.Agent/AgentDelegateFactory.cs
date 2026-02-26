@@ -115,12 +115,12 @@ public static class AgentDelegateFactory
         var (markitdownTools, interviewDataTools) = GetMcpTools(sp);
         var agentDefinitions = WorkflowDefinitions.GetAgentDefinitions(markitdownTools, interviewDataTools);
 
-        var agents = agentDefinitions.Select(d =>
+        var agents = agentDefinitions.Select(agentDef =>
             (AIAgent)new ChatClientAgent(
                 chatClient: chatClient,
-                name: d.Name,
-                instructions: d.Instructions,
-                tools: d.Tools ?? [])
+                name: agentDef.Name,
+                instructions: agentDef.Instructions,
+                tools: agentDef.Tools ?? [])
         ).ToArray();
 
         return WorkflowDefinitions.BuildHandOffWorkflow(
@@ -154,11 +154,11 @@ public static class AgentDelegateFactory
         var copilotClient = new CopilotClient(copilotOptions);
         copilotClient.StartAsync().GetAwaiter().GetResult();
 
-        var agents = agentDefinitions.Select(d =>
+        var agents = agentDefinitions.Select(agentDef =>
             copilotClient.AsAIAgent(
-                name: d.Name,
-                instructions: d.Instructions,
-                tools: d.Tools ?? [])
+                name: agentDef.Name,
+                instructions: agentDef.Instructions,
+                tools: agentDef.Tools ?? [])
         ).ToArray();
 
         return WorkflowDefinitions.BuildHandOffWorkflow(
