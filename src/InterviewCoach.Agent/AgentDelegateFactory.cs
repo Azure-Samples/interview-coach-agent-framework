@@ -142,6 +142,7 @@ public static class AgentDelegateFactory
     {
         var (markitdownTools, interviewDataTools) = GetMcpTools(sp);
         var agentDefinitions = WorkflowDefinitions.GetAgentDefinitions(markitdownTools, interviewDataTools);
+        var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
         var githubToken = Environment.GetEnvironmentVariable(Constants.GitHubToken);
         var copilotOptions = new CopilotClientOptions();
@@ -160,6 +161,7 @@ public static class AgentDelegateFactory
                 name: agentDef.Name,
                 instructions: agentDef.Instructions,
                 tools: agentDef.Tools ?? [])
+            .CreateFixedCopilotSDKAgent(loggerFactory)
         ).ToArray();
 
         return WorkflowDefinitions.BuildHandOffWorkflow(
