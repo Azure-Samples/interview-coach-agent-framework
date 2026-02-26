@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Aspire.OpenAI" Version="13.*-*" />
     <PackageReference Include="Azure.Identity" Version="1.*" />
+    <PackageReference Include="GitHub.Copilot.SDK" Version="0.*" />
     <PackageReference Include="Microsoft.Agents.AI" Version="1.*-*" />
     <PackageReference Include="Microsoft.Agents.AI.AzureAI.Persistent" Version="1.*-*" />
     <PackageReference Include="Microsoft.Agents.AI.DevUI" Version="1.*-*" />

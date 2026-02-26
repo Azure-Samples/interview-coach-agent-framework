@@ -31,12 +31,25 @@ public static class AgentDelegateFactory
         IHostedAgentBuilder agentBuilder = mode switch
         {
             AgentMode.Single => builder.AddAIAgent(name, CreateSingleAgent),
-            AgentMode.LlmHandOff => CreateLlmHandOffAgents(builder, name),
-            AgentMode.CopilotHandOff => builder.AddAIAgent(name, CreateCopilotHandOffAgents),
+            AgentMode.LlmHandOff => builder.AddHandOffWorkflow(name, CreateLlmHandOffWorkflow),
+            AgentMode.CopilotHandOff => builder.AddHandOffWorkflow(name, CreateCopilotHandOffWorkflow),
             _ => throw new NotSupportedException($"The specified agent mode '{mode}' is not supported.")
         };
 
         return agentBuilder;
+    }
+
+    private static IHostedAgentBuilder AddHandOffWorkflow(this IHostApplicationBuilder builder, string key, Func<IServiceProvider, string, Workflow> createWorkflowDelegate)
+    {
+        builder.AddWorkflow(key, createWorkflowDelegate);
+
+        return builder.AddAIAgent(key, (sp, name) =>
+        {
+            var workflow = sp.GetRequiredKeyedService<Workflow>(key);
+
+            return workflow.AsAIAgent(name: key)
+                           .CreateFixedAgent();
+        });
     }
 
     // ============================================================================
@@ -45,7 +58,7 @@ public static class AgentDelegateFactory
     // It has access to all MCP tools (MarkItDown for document parsing and
     // InterviewData for session management) and follows a linear interview flow.
     // ============================================================================
-    public static AIAgent CreateSingleAgent(IServiceProvider sp, string key)
+    private static AIAgent CreateSingleAgent(IServiceProvider sp, string key)
     {
         var chatClient = sp.GetRequiredService<IChatClient>();
         var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
@@ -99,17 +112,17 @@ public static class AgentDelegateFactory
     // a stateless Triage re-routing loop. Triage acts as the initial entry
     // point and fallback for out-of-order user requests.
     // ============================================================================
-    public static IHostedAgentBuilder CreateLlmHandOffAgents(this IHostApplicationBuilder builder, string key)
-    {
-        builder.AddWorkflow(key, (sp, name) => CreateLlmHandOffWorkflow(sp, key, name));
+    // public static IHostedAgentBuilder CreateLlmHandOffAgents(this IHostApplicationBuilder builder, string key)
+    // {
+    //     builder.AddWorkflow(key, (sp, name) => CreateLlmHandOffWorkflow(sp, key, name));
 
-        return builder.AddAIAgent(key, (sp, name) =>
-        {
-            var workflow = sp.GetRequiredKeyedService<Workflow>(name);
-            return workflow.AsAIAgent(name: name).CreateFixedAgent();
-        });
-    }
-    public static Workflow CreateLlmHandOffWorkflow(IServiceProvider sp, string key, string name)
+    //     return builder.AddAIAgent(key, (sp, name) =>
+    //     {
+    //         var workflow = sp.GetRequiredKeyedService<Workflow>(name);
+    //         return workflow.AsAIAgent(name: name).CreateFixedAgent();
+    //     });
+    // }
+    private static Workflow CreateLlmHandOffWorkflow(IServiceProvider sp, string key)
     {
         var chatClient = sp.GetRequiredService<IChatClient>();
         var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
@@ -274,11 +287,7 @@ public static class AgentDelegateFactory
                        .WithHandoff(summariserAgent, triageAgent)
                        .Build();
 
-        // debugging the worflow to test the correct handoff
-        //workflow.SetName("HandOffWorkflow");
-        workflow.SetName(name);
-        return workflow;
-        //return workflow.AsAIAgent(name: key).CreateFixedAgent();
+        return workflow.SetName(key);
     }
 
     // ============================================================================
@@ -294,7 +303,7 @@ public static class AgentDelegateFactory
     // The agents use CopilotClient.AsAIAgent() which provides access to
     // GitHub Copilot's AI capabilities including tool use and MCP integration.
     // ============================================================================
-    public static AIAgent CreateCopilotHandOffAgents(IServiceProvider sp, string key)
+    private static Workflow CreateCopilotHandOffWorkflow(IServiceProvider sp, string key)
     {
         var config = sp.GetRequiredService<IConfiguration>();
         var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
@@ -455,7 +464,7 @@ public static class AgentDelegateFactory
                        .WithHandoff(summariserAgent, triageAgent)
                        .Build();
 
-        return workflow.AsAIAgent(name: key).CreateFixedAgent();
+        return workflow.SetName(key);
     }
 }
 

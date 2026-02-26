@@ -1,5 +1,4 @@
-﻿using Microsoft.Agents.AI.Workflows;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace InterviewCoach.Agent;
 
