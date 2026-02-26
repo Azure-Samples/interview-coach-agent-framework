@@ -22,22 +22,22 @@ This sample teaches modern AI agent development patterns:
 
 The application uses a **microservices architecture** with:
 
-- **Interview Coach Agent**: Conducts interviews using Microsoft Agent Framework
-- **MCP Servers**: Extensible tools for document parsing and session management
-- **Web UI**: Blazor-based chat interface
-- **.NET Aspire**: Service orchestration and local development
-- **Microsoft Foundry**: Production AI service with model-router
+- **Aspire**: Cloud-native container orchestration
+- **Frontend Web UI**: Blazor-based chat interface
+- **Backend Agent**: Multi-agent orchestration using Microsoft Agent Framework
+- **MarkItDown MCP Server**: Tools for document parsing and session management
+- **Microsoft Foundry**: Production-ready AI service with Azure OpenAI
 
 **[Explore the architecture in detail →](docs/ARCHITECTURE.md)**
 
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
-- [Visual Studio 2026](https://visualstudio.microsoft.com/downloads/) or [VS Code](http://code.visualstudio.com/download) + [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit)
-- [Azure Subscription](http://azure.microsoft.com/free) (free account works)
-- [Microsoft Foundry Project](https://ai.azure.com) (create free at ai.azure.com)
+- [Visual Studio 2026](https://visualstudio.microsoft.com/downloads/) or [VS Code](https://code.visualstudio.com/download) + [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit)
+- [Azure Subscription](https://azure.microsoft.com/free)
+- [Microsoft Foundry](https://ai.azure.com)
 
-**Using a different LLM provider?** See [Provider Setup Guides](docs/providers/README.md) for Azure OpenAI or GitHub Models.
+**[Explore the different LLM provider →](docs/providers/README.md)**
 
 ## Getting Started
 
@@ -50,21 +50,9 @@ cd interview-coach-agent-framework
 
 ### 2. Configure Microsoft Foundry
 
-#### Create Foundry Project on Foundry Portal
+1. Create a new Microsoft Foundry project on Foundry Portal or command line.
 
-1. Navigate to [Azure AI Foundry Portal](https://ai.azure.com).
-2. Sign in with your Azure account.
-3. Click **New project** and follow the wizard.
-4. Note your **Project Endpoint** and **API Key** from Project Settings.
-
-**[Detailed Foundry setup guide →](docs/providers/MICROSOFT-FOUNDRY.md)**
-
-#### Create Foundry Project with `azd`
-
-1. Navigate to the `resources-foundry` directory.
-1. Login to Azure by `azd auth login`.
-1. Run `azd up`.
-1. Note your **Project Endpoint** and **API Key** from Project Settings.
+   **[Detailed Foundry setup guide →](docs/providers/MICROSOFT-FOUNDRY.md)**
 
 #### Store Credentials
 
