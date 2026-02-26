@@ -112,16 +112,6 @@ public static class AgentDelegateFactory
     // a stateless Triage re-routing loop. Triage acts as the initial entry
     // point and fallback for out-of-order user requests.
     // ============================================================================
-    // public static IHostedAgentBuilder CreateLlmHandOffAgents(this IHostApplicationBuilder builder, string key)
-    // {
-    //     builder.AddWorkflow(key, (sp, name) => CreateLlmHandOffWorkflow(sp, key, name));
-
-    //     return builder.AddAIAgent(key, (sp, name) =>
-    //     {
-    //         var workflow = sp.GetRequiredKeyedService<Workflow>(name);
-    //         return workflow.AsAIAgent(name: name).CreateFixedAgent();
-    //     });
-    // }
     private static Workflow CreateLlmHandOffWorkflow(IServiceProvider sp, string key)
     {
         var chatClient = sp.GetRequiredService<IChatClient>();
@@ -305,27 +295,13 @@ public static class AgentDelegateFactory
     // ============================================================================
     private static Workflow CreateCopilotHandOffWorkflow(IServiceProvider sp, string key)
     {
-        var config = sp.GetRequiredService<IConfiguration>();
         var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
         var interviewData = sp.GetRequiredKeyedService<McpClient>("mcp-interview-data");
 
         var markitdownTools = markitdown.ListToolsAsync().GetAwaiter().GetResult();
         var interviewDataTools = interviewData.ListToolsAsync().GetAwaiter().GetResult();
 
-        // Create a shared CopilotClient for all agents.
-        // The GitHub token is passed from the Aspire AppHost as the GITHUB_TOKEN
-        // environment variable. When provided, it authenticates the Copilot SDK
-        // without requiring the user to be logged in via `gh auth login`.
-        var githubToken = config[Constants.GitHubToken];
-        var copilotOptions = new CopilotClientOptions();
-        if (!string.IsNullOrEmpty(githubToken))
-        {
-            copilotOptions.Environment = new Dictionary<string, string>
-            {
-                [Constants.GitHubToken] = githubToken
-            };
-        }
-        var copilotClient = new CopilotClient(copilotOptions);
+        var copilotClient = new CopilotClient();
         copilotClient.StartAsync().GetAwaiter().GetResult();
 
         // --- Triage Agent ---
