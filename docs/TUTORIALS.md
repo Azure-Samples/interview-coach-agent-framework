@@ -473,22 +473,34 @@ static ChatClientAgent CreateAgent(IServiceProvider sp, string key, string role)
 
 The coordinator would handle transitions:
 
-```
-User connects → Coordinator Agent
-    ↓
-Coordinator: "Let me introduce you to [Recruiter Agent name]"
-    ↓
-Hand off to Recruiter Agent → Conducts behavioral interview
-    ↓
-Recruiter completes → Returns to Coordinator
-    ↓
-Coordinator: "Great! Now let's move to the technical interview with [Technical Agent]"
-    ↓
-Hand off to Technical Agent → Conducts technical assessment
-    ↓
-Technical completes → Returns to Coordinator
-    ↓
-Coordinator: Aggregates feedback → Final summary
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as Coordinator Agent
+    participant R as Recruiter Agent
+    participant T as Technical Agent
+
+    U->>C: Connect
+    C->>U: "Let me introduce you to the Recruiter"
+    C-->>R: Handoff
+
+    loop Behavioral Interview
+        R->>U: Ask behavioral question
+        U->>R: Answer
+    end
+    R-->>C: Complete → return to Coordinator
+
+    C->>U: "Now let's move to the technical interview"
+    C-->>T: Handoff
+
+    loop Technical Assessment
+        T->>U: Ask technical question
+        U->>T: Answer
+    end
+    T-->>C: Complete → return to Coordinator
+
+    C->>C: Aggregate feedback
+    C->>U: Final summary
 ```
 
 **Note**: Full multi-agent orchestration requires additional workflow management. See [Microsoft Agent Framework Orchestrations](https://learn.microsoft.com/agent-framework/user-guide/workflows/orchestrations/overview) for advanced patterns.
