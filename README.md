@@ -25,7 +25,7 @@ The application uses a **microservices architecture** with:
 - **Aspire**: Cloud-native container orchestration
 - **Frontend Web UI**: Blazor-based chat interface
 - **Backend Agent**: Multi-agent orchestration using Microsoft Agent Framework
-- **MarkItDown MCP Server**: Tools for document parsing and session management
+- **MCP Servers**: Tools for document parsing and session management
 - **Microsoft Foundry**: Production-ready AI service with Azure OpenAI
 
 **[Explore the architecture in detail →](docs/ARCHITECTURE.md)**
@@ -54,7 +54,7 @@ cd interview-coach-agent-framework
 
    **[Detailed Foundry setup guide →](docs/providers/MICROSOFT-FOUNDRY.md)**
 
-#### Store Credentials
+### 3. Store Credentials
 
 Use .NET user secrets to keep credentials secure:
 
@@ -62,27 +62,6 @@ Use .NET user secrets to keep credentials secure:
 dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}"
 dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey "{{MICROSOFT_FOUNDRY_API_KEY}}"
 ```
-
-#### Verify Configuration
-
-Ensure `apphost.settings.json` contains:
-
-```json
-{
-  "AgentMode": "Single",
-  "LlmProvider": "MicrosoftFoundry",
-  "MicrosoftFoundry": {
-    "Project": {
-      "Endpoint": "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}",
-      "ApiKey": "{{MICROSOFT_FOUNDRY_PROJECT_API_KEY}}",
-      // "DeploymentName": "model-router"
-      "DeploymentName": "gpt-5-mini"
-    }
-  }
-}
-```
-
-<!-- The `model-router` automatically selects optimal models for cost/quality balance. **[Learn about Model Router →](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router)** -->
 
 ### 4. Run the Application
 
@@ -101,7 +80,7 @@ aspire run --file ./apphost.cs
 
 **Having issues?** See [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
 
-## Deploy to Azure
+### 5. Deploy to Azure
 
 Deploy the entire application to Azure Container Apps with one command:
 
@@ -113,84 +92,29 @@ azd auth login
 azd up
 ```
 
-This will:
-
-- ✅ Create Azure Container Apps Environment
-- ✅ Deploy all services as containers
-- ✅ Configure Foundry connection with Managed Identity
-- ✅ Set up observability (Application Insights, Log Analytics)
-- ✅ Output public URL for your application
-
-**Deployment details:** The `azd up` command reads `azure.yaml` and provisions infrastructure defined in the `infra/` directory.
-
-### Clean Up Resources
+### 6. Clean Up Resources
 
 When finished, remove all Azure resources:
 
 ```bash
 azd down --force --purge
 ```
-
-## Understanding This Sample
-
-### What Makes This Sample Valuable?
-
-This isn't just a chatbot—it's a **reference implementation** of production patterns:
-
-1. **MCP Architecture**: Learn how to extend agents without modifying code
-2. **Aspire Orchestration**: Multi-service development with production parity
-3. **Provider Abstraction**: Switch between Foundry, Azure OpenAI, or GitHub Models via configuration
-4. **Stateful Sessions**: Manage conversational context across interactions
-5. **Tool Integration**: Give agents capabilities through function calling
-
-**[Deep dive into learning objectives →](docs/LEARNING-OBJECTIVES.md)**
-
-### Key Code Locations
-
-| What | Where | Why It Matters |
-|------|-------|----------------|
-| Agent Configuration | [src/InterviewCoach.Agent/AgentDelegateFactory.cs](src/InterviewCoach.Agent/AgentDelegateFactory.cs) | Defines agent behavior, instructions, and multi-agent modes |
-| MCP Integration | [src/InterviewCoach.Agent/Program.cs](src/InterviewCoach.Agent/Program.cs) | Shows how to connect external MCP tools |
-| Provider Factory | [src/InterviewCoach.AppHost/LlmResourceFactory.cs](src/InterviewCoach.AppHost/LlmResourceFactory.cs) | Demonstrates multi-provider abstraction |
-| Service Orchestration | [src/InterviewCoach.AppHost/AppHost.cs](src/InterviewCoach.AppHost/AppHost.cs) | Aspire dependency management |
-| Custom MCP Server | [src/InterviewCoach.Mcp.InterviewData/](src/InterviewCoach.Mcp.InterviewData/) | Build your own MCP tools |
-
-**[Explore architecture details →](docs/ARCHITECTURE.md)**
-
-### Real-World Applications
-
-These patterns apply to:
-
-- 🎯 Customer service automation
-- 🔧 Technical support agents
-- 📚 Educational tutoring systems
-- 🏥 Healthcare intake interviews
-- 💼 Sales assistant bots
-- 🔬 Research assistants
-
 ## Next Steps
 
 ### 📖 Learn
 
-- **[User Manual](docs/USER-MANUAL.md)** - Step-by-step guide to using the app once it's running
 - **[Learning Objectives](docs/LEARNING-OBJECTIVES.md)** - What you'll master by studying this sample
 - **[Architecture Guide](docs/ARCHITECTURE.md)** - Deep dive into system design
-- **[MCP Servers Explained](docs/MCP-SERVERS.md)** - Understanding extensibility patterns
+- **[User Manual](docs/USER-MANUAL.md)** - Step-by-step guide to using the app once it's running
 - **[Tutorials](docs/TUTORIALS.md)** - Hands-on customization exercises
 
-### 🔧 Customize
-
-- **[Tutorial 1: Understanding Interview Flow](docs/TUTORIALS.md#tutorial-1-understanding-the-interview-flow)** - Trace agent behavior
-- **[Tutorial 2: Creating Custom MCP Server](docs/TUTORIALS.md#tutorial-2-creating-a-custom-mcp-server)** - Build your own tools
-- **[Tutorial 3: Customizing the Agent](docs/TUTORIALS.md#tutorial-3-customizing-the-agent)** - Modify interview behavior
-- **[FAQ](docs/FAQ.md)** - Common questions answered
-
-### 🔄 Alternative Providers
+### 🔄 Alternative LLM Providers
 
 This sample defaults to Microsoft Foundry (recommended for production), but also supports:
 
 - **[Azure OpenAI](docs/providers/AZURE-OPENAI.md)** - Direct AOAI integration
 - **[GitHub Models](docs/providers/GITHUB-MODELS.md)** - Free tier for prototyping
+- **[GitHub Copilot](docs/providers/GITHUB-COPILOT.md)** - GitHub Copilot as agent
 
 **[Compare providers →](docs/providers/README.md)**
 
@@ -198,9 +122,8 @@ This sample defaults to Microsoft Foundry (recommended for production), but also
 
 ### Microsoft Foundry
 
-- [What is Microsoft Foundry?](https://learn.microsoft.com/azure/ai-foundry/what-is-foundry)
-- [Foundry Agent Service](https://learn.microsoft.com/azure/ai-foundry/agents/overview)
-- [Model Router Deep Dive](https://learn.microsoft.com/azure/ai-foundry/openai/concepts/model-router)
+- [What is Microsoft Foundry?](https://learn.microsoft.com/azure/ai-foundry/what-is-foundry?view=foundry)
+- [Foundry Agent Service](https://learn.microsoft.com/azure/ai-foundry/agents/overview?view=foundry)
 
 ### Microsoft Agent Framework
 
@@ -210,19 +133,19 @@ This sample defaults to Microsoft Foundry (recommended for production), but also
 
 ### Model Context Protocol
 
-- [MarkItDown MCP Server](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp) (used in this sample)
+- [MarkItDown MCP Server](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp)
 - [MCP Specification](https://modelcontextprotocol.io)
 - [MCP Server Registry](https://github.com/modelcontextprotocol/servers)
 
-### .NET Aspire
+### Aspire
 
 - [Aspire Documentation](https://aspire.dev)
-- [Service Discovery](https://learn.microsoft.com/dotnet/aspire/service-discovery/overview)
-- [Deployment with azd](https://learn.microsoft.com/dotnet/aspire/deployment/azure/aca-deployment)
+- [Integrations](https://aspire.dev/integrations/overview/)
+- [Deployment](https://aspire.dev/deployment/overview/)
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 ## License
 
@@ -230,4 +153,4 @@ This project is licensed under the MIT License - see [LICENSE.md](LICENSE.md) fo
 
 ---
 
-**Built with ❤️ by the Azure Samples team** | **Questions?** Check the [FAQ](docs/FAQ.md) or open an issue
+**Built with ❤️ by the CoreAI DevRel** | **Questions?** Check the [FAQ](docs/FAQ.md) or open an [issue](../../issue).
