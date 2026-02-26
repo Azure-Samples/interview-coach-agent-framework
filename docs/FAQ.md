@@ -72,11 +72,13 @@ Agent Framework is optimized for deployable web services.
 
 Yes! The framework supports multi-agent patterns:
 
-- Sequential workflows (one agent after another)
-- Parallel execution (multiple agents at once)
-- Supervisor patterns (coordinator + specialists)
+- **Handoff orchestration** (sequential chain with specialists)
+- **Agent-as-tools** (coordinator calls helpers)
+- Single-agent mode for simplicity
 
-**[Multi-agent tutorial →](TUTORIALS.md#tutorial-4-multi-agent-pattern)**
+Switch between modes via the `AgentMode` setting in `apphost.settings.json`.
+
+**[Multi-agent guide →](MULTI-AGENT.md)**
 
 ### What's the AGUI protocol?
 
@@ -137,7 +139,7 @@ Quick overview:
 
 1. Create .NET project
 2. Add `ModelContextProtocol.Server` package
-3. Implement tools inheriting from `McpTool`
+3. Implement tools using `[McpServerToolType]` class with `[McpServerTool]` method attributes
 4. Register with `AddMcpServer()`
 5. Map endpoint with `app.MapMcp("/mcp")`
 
@@ -318,7 +320,7 @@ jobs:
 
 ### How do I change the interview flow?
 
-Edit agent instructions in [src/InterviewCoach.Agent/Program.cs](../src/InterviewCoach.Agent/Program.cs#L95-L125):
+Edit agent instructions in [src/InterviewCoach.Agent/AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs):
 
 ```csharp
 instructions: """

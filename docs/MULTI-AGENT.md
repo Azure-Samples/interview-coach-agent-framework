@@ -1,31 +1,46 @@
 # Multi-Agent Architecture
 
-This project demonstrates three approaches to building AI agents with [Microsoft Agent Framework](https://aka.ms/agent-framework). All three modes live in `src/InterviewCoach.Agent/Program.cs` and can be switched with a single line change.
+This project demonstrates three approaches to building AI agents with [Microsoft Agent Framework](https://aka.ms/agent-framework). All three modes are implemented in `src/InterviewCoach.Agent/AgentDelegateFactory.cs` and can be switched via configuration.
 
 ## Overview
 
 | Mode | Approach | Agent Count | LLM Backend | Best For |
 |------|----------|-------------|-------------|----------|
-| **1** | Single Agent | 1 | Foundry / Azure OpenAI / GitHub Models | Simple deployments, getting started |
-| **2** | Multi-Agent Handoff (ChatClient) | 5 | Foundry / Azure OpenAI / GitHub Models | Production multi-agent with cloud LLMs |
-| **3** | Multi-Agent Handoff (GitHub Copilot) | 5 | GitHub Copilot SDK | Local development with Copilot |
+| **Single** | Single Agent | 1 | Foundry / Azure OpenAI / GitHub Models | Simple deployments, getting started |
+| **LlmHandOff** | Multi-Agent Handoff (ChatClient) | 5 | Foundry / Azure OpenAI / GitHub Models | Production multi-agent with cloud LLMs |
+| **CopilotHandOff** | Multi-Agent Handoff (GitHub Copilot) | 5 | GitHub Copilot SDK | Local development with Copilot |
 
 ## How to Switch Modes
 
-Open `src/InterviewCoach.Agent/Program.cs` and find the **Agent Mode Toggle** section. Uncomment exactly one line:
+The agent mode is controlled by the `AgentMode` setting in `apphost.settings.json`:
 
-```csharp
-// ============================================================================
-// AGENT MODE TOGGLE
-// Uncomment exactly ONE of the following lines to select the agent mode.
-// ============================================================================
-
-builder.AddAIAgent("coach", createAgentDelegate: CreateSingleAgent);              // Mode 1: Single agent
-// builder.AddAIAgent("coach", createAgentDelegate: CreateHandoffAgents);         // Mode 2: Multi-agent handoff (ChatClient)
-// builder.AddAIAgent("coach", createAgentDelegate: CreateCopilotHandoffAgents);  // Mode 3: Multi-agent handoff (GitHub Copilot)
+```json
+{
+  "AgentMode": "Single",       // Mode 1: Single agent
+  // "AgentMode": "LlmHandOff",   // Mode 2: Multi-agent handoff (ChatClient)
+  // "AgentMode": "CopilotHandOff" // Mode 3: Multi-agent handoff (GitHub Copilot)
+}
 ```
 
-All three modes share the same MCP client setup, hosting pipeline, and API endpoints. No other code changes are needed.
+You can also pass the mode as a CLI argument:
+
+```bash
+aspire run --file ./apphost.cs -- --mode LlmHandOff
+```
+
+The `AgentDelegateFactory.AddAIAgent()` method in `src/InterviewCoach.Agent/AgentDelegateFactory.cs` reads this configuration and creates the appropriate agent(s):
+
+```csharp
+IHostedAgentBuilder agentBuilder = mode switch
+{
+    AgentMode.Single => builder.AddAIAgent(name, CreateSingleAgent),
+    AgentMode.LlmHandOff => builder.AddHandOffWorkflow(name, CreateLlmHandOffWorkflow),
+    AgentMode.CopilotHandOff => builder.AddHandOffWorkflow(name, CreateCopilotHandOffWorkflow),
+    _ => throw new NotSupportedException($"The specified agent mode '{mode}' is not supported.")
+};
+```
+
+All three modes share the same MCP client setup, hosting pipeline, and API endpoints. No code changes are needed.
 
 ---
 
@@ -38,7 +53,7 @@ User ←→ Interview Coach Agent ←→ MCP Tools
 ```
 
 The agent has a comprehensive instruction prompt covering session management, document intake, behavioural questions, technical questions, and summarization. All MCP tools (MarkItDown + InterviewData) are available to the single agent.
-
+See `CreateSingleAgent()` in [AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs) for the implementation.
 **When to use:** Getting started, simple deployments, or when multi-agent complexity isn't needed.
 
 ---
@@ -60,7 +75,7 @@ In the handoff pattern, agents transfer **full control** of the conversation to 
                     └────────┬────────┘
                              │
 ┌───────────────┐    ┌───────┴───────┐    ┌──────────────────┐
-│  Behavioural  │←──→│    Triage     │←──→│    Technical     │
+│  Behavioural  │←───│    Triage     │───→│    Technical     │
 │  Interviewer  │    │   (router)    │    │   Interviewer    │
 └───────────────┘    └───────┬───────┘    └──────────────────┘
                              │
@@ -70,17 +85,17 @@ In the handoff pattern, agents transfer **full control** of the conversation to 
                     └─────────────────┘
 ```
 
-**Triage** is the hub. All user messages first go to Triage, which routes to the appropriate specialist. Each specialist hands back to Triage when done.
+**Triage** is the entry point and fallback. The happy-path flow is sequential: Receptionist → Behavioural Interviewer → Technical Interviewer → Summariser. Each specialist hands off directly to the next agent in sequence. Specialists can fall back to Triage for out-of-order requests.
 
 ### The 5 Agents
 
 | Agent | Role | MCP Tools |
 |-------|------|-----------|
-| **Triage** | Routes messages to the right specialist | None (pure routing) |
-| **Receptionist** | Creates sessions, collects resume & job description | MarkItDown + InterviewData |
-| **Behavioural Interviewer** | Conducts behavioural questions using STAR method | InterviewData |
-| **Technical Interviewer** | Conducts technical questions for the role | InterviewData |
-| **Summariser** | Generates comprehensive interview summary | InterviewData |
+| **Triage** (`triage`) | Routes messages to the right specialist | None (pure routing) |
+| **Receptionist** (`receptionist`) | Creates sessions, collects resume & job description | MarkItDown + InterviewData |
+| **Behavioural Interviewer** (`behavioural_interviewer`) | Conducts behavioural questions using STAR method | InterviewData |
+| **Technical Interviewer** (`technical_interviewer`) | Conducts technical questions for the role | InterviewData |
+| **Summariser** (`summariser`) | Generates comprehensive interview summary | InterviewData |
 
 ### How It Works in Code
 
@@ -99,19 +114,19 @@ var receptionistAgent = new ChatClientAgent(
     tools: [.. markitdownTools, .. interviewDataTools]);
 ```
 
-The handoff workflow is built using `AgentWorkflowBuilder`:
+The handoff workflow uses a **sequential chain** topology with Triage as fallback. Each specialist hands off directly to the next phase (not back to Triage), preventing re-routing loops:
 
 ```csharp
 var workflow = AgentWorkflowBuilder
     .CreateHandoffBuilderWith(triageAgent)
     .WithHandoffs(triageAgent, [receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent])
-    .WithHandoff(receptionistAgent, triageAgent)
-    .WithHandoff(behaviouralAgent, triageAgent)
-    .WithHandoff(technicalAgent, triageAgent)
+    .WithHandoffs(receptionistAgent, [behaviouralAgent, triageAgent])
+    .WithHandoffs(behaviouralAgent, [technicalAgent, triageAgent])
+    .WithHandoffs(technicalAgent, [summariserAgent, triageAgent])
     .WithHandoff(summariserAgent, triageAgent)
     .Build();
 
-return workflow.AsAIAgent(name: "coach");
+return workflow.SetName(key);
 ```
 
 **Key APIs:**
@@ -119,7 +134,8 @@ return workflow.AsAIAgent(name: "coach");
 - `.WithHandoffs(from, [to1, to2, ...])` — the `from` agent can hand off to any of the `to` agents
 - `.WithHandoff(from, to)` — single handoff rule
 - `.Build()` — returns a `Workflow`
-- `.AsAIAgent(name)` — converts the workflow into an `AIAgent` that plugs into the hosting pipeline
+- `workflow.SetName(key)` — sets the workflow name (custom extension in `WorkflowExtensions.cs`)
+- `workflow.AsAIAgent(name)` — converts the workflow into an `AIAgent` for the hosting pipeline
 
 **When to use:** Production scenarios where you want specialized agents with a cloud LLM provider.
 
@@ -131,13 +147,12 @@ Same 5-agent handoff topology as Mode 2, but each agent is backed by the **GitHu
 
 ### Prerequisites
 
-- [GitHub Copilot CLI](https://github.com/github/copilot-sdk) installed
+- NuGet package: `GitHub.Copilot.SDK`
 - A **GitHub Personal Access Token (PAT)** with Copilot access, **or** authenticated via `gh auth login`
-- NuGet package: `Microsoft.Agents.AI.GitHub.Copilot`
 
 ### Setting Up the GitHub Token
 
-Mode 3 requires a GitHub token to authenticate the Copilot SDK. The token is configured as an **Aspire secret parameter** and passed to the Agent project as the `GITHUB_TOKEN` environment variable.
+Mode 3 requires a GitHub token to authenticate the Copilot SDK. The token is configured via the `GitHubCopilot:Token` setting and passed to the Agent project as the `GITHUB_TOKEN` environment variable.
 
 #### 1. Create a GitHub Personal Access Token
 
@@ -148,31 +163,26 @@ Mode 3 requires a GitHub token to authenticate the Copilot SDK. The token is con
 
 #### 2. Set the Token Value
 
-You have three options:
+You have two options:
 
-**Option A: Aspire Dashboard (recommended for development)**
+**Option A: `apphost.settings.json`**
 
-When you run the AppHost, the Aspire Dashboard will prompt you to enter values for any unresolved secret parameters. Enter your GitHub token when prompted for `github-token`.
-
-**Option B: `apphost.settings.json`**
-
-Add the token to `src/InterviewCoach.AppHost/apphost.settings.json`:
+Add the token to `apphost.settings.json`:
 
 ```json
 {
-  "Parameters": {
-    "github-token": "ghp_your_token_here"
+  "GitHubCopilot": {
+    "Token": "ghp_your_token_here"
   }
 }
 ```
 
 > ⚠️ Do not commit this file with a real token. It is listed in `.gitignore`.
 
-**Option C: .NET User Secrets**
+**Option B: .NET User Secrets**
 
 ```bash
-cd src/InterviewCoach.AppHost
-dotnet user-secrets set "Parameters:github-token" "ghp_your_token_here"
+dotnet user-secrets --file ./apphost.cs set "GitHubCopilot:Token" "ghp_your_token_here"
 ```
 
 ### How It Differs from Mode 2
@@ -181,24 +191,14 @@ dotnet user-secrets set "Parameters:github-token" "ghp_your_token_here"
 |--------|---------------------|-------------------|
 | Agent creation | `new ChatClientAgent(chatClient, ...)` | `copilotClient.AsAIAgent(...)` |
 | LLM backend | Cloud provider (Foundry/Azure OpenAI/GitHub Models) | GitHub Copilot |
-| Configuration | Requires provider setup in Aspire | Requires Copilot CLI + authentication |
+| Configuration | Requires LLM provider setup in `apphost.settings.json` | Requires `GitHubCopilot:Token` in config |
 | Tool passing | `AITool` instances from MCP clients | Same `AITool` instances |
 
 ### How It Works in Code
 
 ```csharp
-// Read the GitHub token from the GITHUB_TOKEN environment variable
-// (set by the Aspire AppHost from the secret parameter)
-var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN");
-var copilotOptions = new CopilotClientOptions();
-if (!string.IsNullOrEmpty(githubToken))
-{
-    copilotOptions.Environment = new Dictionary<string, string>
-    {
-        ["GITHUB_TOKEN"] = githubToken
-    };
-}
-var copilotClient = new CopilotClient(copilotOptions);
+// Create the Copilot client and start it
+var copilotClient = new CopilotClient();
 await copilotClient.StartAsync();
 
 var triageAgent = copilotClient.AsAIAgent(
@@ -210,11 +210,17 @@ var receptionistAgent = copilotClient.AsAIAgent(
     instructions: "You are the Receptionist...",
     tools: [.. markitdownTools, .. interviewDataTools]);
 
-// Same handoff workflow builder as Mode 2
+// Same sequential-chain handoff workflow as Mode 2
 var workflow = AgentWorkflowBuilder
     .CreateHandoffBuilderWith(triageAgent)
-    // ... same handoff rules ...
+    .WithHandoffs(triageAgent, [receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent])
+    .WithHandoffs(receptionistAgent, [behaviouralAgent, triageAgent])
+    .WithHandoffs(behaviouralAgent, [technicalAgent, triageAgent])
+    .WithHandoffs(technicalAgent, [summariserAgent, triageAgent])
+    .WithHandoff(summariserAgent, triageAgent)
     .Build();
+
+return workflow.SetName(key);
 ```
 
 **When to use:** Local development when you have GitHub Copilot access but don't want to configure a cloud LLM provider.

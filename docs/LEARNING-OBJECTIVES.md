@@ -13,7 +13,7 @@ Learn how to create AI agents using [Microsoft Agent Framework](https://aka.ms/a
 - Stateful conversation management across sessions
 - Error handling and graceful degradation
 
-**See it in action:** [src/InterviewCoach.Agent/Program.cs](../src/InterviewCoach.Agent/Program.cs#L95-L125) contains the complete agent instructions and tool registration.
+**See it in action:** [src/InterviewCoach.Agent/AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs) contains the complete agent instructions, tool registration, and multi-agent mode selection.
 
 ### 2. **Model Context Protocol (MCP) Integration**
 

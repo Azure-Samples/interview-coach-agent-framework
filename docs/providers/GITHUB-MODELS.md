@@ -101,10 +101,11 @@ Edit `apphost.settings.json`:
     }
   },
 
+  "AgentMode": "Single",
+
   "LlmProvider": "GitHubModels",
 
   "GitHub": {
-    "Endpoint": "https://models.github.ai/inference",
     "Token": "{{GITHUB_PAT}}",
     "Model": "openai/gpt-4o-mini"
   }
@@ -150,20 +151,18 @@ Browse all models at [github.com/marketplace/models](https://github.com/marketpl
 ## Step 4: Run the Application
 
 ```bash
-# Using file-based Aspire
 aspire run --file ./apphost.cs
-
-# OR using project-based Aspire
-aspire run --project ./src/InterviewCoach.AppHost
 ```
 
 ### Verify Configuration
 
 1. Aspire Dashboard opens
-2. Check Agent console logs for:
+2. Check terminal output for:
 
    ```
-   info: Using GitHubModels: openai/gpt-4o-mini
+   	LLM Provider: GitHubModels
+   	Model: openai/gpt-4o-mini
+   	Agent Mode: Single
    ```
 
 3. Navigate to webui endpoint

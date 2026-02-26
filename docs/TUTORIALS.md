@@ -21,7 +21,7 @@ Before starting these tutorials:
 
 ### Step 1: Read the Agent Instructions
 
-Open [src/InterviewCoach.Agent/Program.cs](../src/InterviewCoach.Agent/Program.cs) and find the agent instructions (around line 95):
+Open [src/InterviewCoach.Agent/AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs) and find the `CreateSingleAgent` method:
 
 ```csharp
 instructions: """
@@ -68,8 +68,8 @@ var agent = new ChatClientAgent(
 You should see entries like:
 
 ```
-info: Calling tool: create_interview_session
-info: Tool response: {"sessionId": "..."}
+info: Calling tool: add_interview_session
+info: Tool response: {"id": "..."}
 ```
 
 ### Step 3: Examine Session State
@@ -77,7 +77,7 @@ info: Tool response: {"sessionId": "..."}
 The agent maintains state through the InterviewData MCP server:
 
 1. Open [src/InterviewCoach.Mcp.InterviewData/InterviewSessionTool.cs](../src/InterviewCoach.Mcp.InterviewData/InterviewSessionTool.cs)
-2. Find the `UpdateInterviewSessionTool` class
+2. Find the `UpdateInterviewSessionAsync` method
 3. See how it stores resume, job description, and transcript
 
 **Exercise**:
@@ -91,7 +91,7 @@ The agent maintains state through the InterviewData MCP server:
 
 Let's add a warmup message before behavioral questions.
 
-**Edit** [src/InterviewCoach.Agent/Program.cs](../src/InterviewCoach.Agent/Program.cs):
+**Edit** [src/InterviewCoach.Agent/AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs):
 
 Find this line:
 
@@ -136,10 +136,11 @@ dotnet add package Microsoft.Extensions.Hosting
 Create `InterviewTipsTool.cs`:
 
 ```csharp
+using System.ComponentModel;
 using ModelContextProtocol.Server;
-using System.Text.Json;
 
-public class GetInterviewTipTool : McpTool
+[McpServerToolType]
+public class InterviewTipsTool
 {
     private static readonly Dictionary<string, string> Tips = new()
     {
@@ -148,35 +149,13 @@ public class GetInterviewTipTool : McpTool
         ["general"] = "Prepare questions for the interviewer. Show genuine interest"
     };
 
-    public GetInterviewTipTool()
+    [McpServerTool(Name = "get_interview_tip", Title = "Get an interview tip")]
+    [Description("Get a helpful interview tip by category (behavioral, technical, or general).")]
+    public string GetInterviewTip(
+        [Description("Tip category: behavioral, technical, or general")] string category
+    )
     {
-        Name = "get_interview_tip";
-        Description = "Get a helpful interview tip by category";
-        InputSchema = new
-        {
-            type = "object",
-            properties = new
-            {
-                category = new
-                {
-                    type = "string",
-                    description = "Tip category: behavioral, technical, or general",
-                    @enum = new[] { "behavioral", "technical", "general" }
-                }
-            },
-            required = new[] { "category" }
-        };
-    }
-
-    public override Task<ToolResponse> ExecuteAsync(ToolRequest request)
-    {
-        var category = request.Parameters["category"]?.ToString() ?? "general";
-        var tip = Tips.GetValueOrDefault(category, Tips["general"]);
-        
-        return Task.FromResult(new ToolResponse
-        {
-            Content = JsonSerializer.Serialize(new { tip, category })
-        });
+        return Tips.GetValueOrDefault(category, Tips["general"]);
     }
 }
 ```
@@ -201,7 +180,7 @@ await app.RunAsync();
 
 ### Step 4: Register in AppHost
 
-Edit [src/InterviewCoach.AppHost/AppHost.cs](../src/InterviewCoach.AppHost/AppHost.cs):
+Edit [src/InterviewCoach.Agent/Program.cs](../src/InterviewCoach.Agent/Program.cs):
 
 Add after other MCP servers:
 
@@ -213,10 +192,10 @@ var mcpTips = builder.AddProject<Projects.InterviewCoach_Mcp_Tips>("mcp-tips")
 Update agent reference:
 
 ```csharp
-var agent = builder.AddProject<Projects.InterviewCoach_Agent>("agent")
+var agent = builder.AddProject<Projects.InterviewCoach_Agent>(ResourceConstants.Agent)
                    .WithExternalHttpEndpoints()
-                   .WithLlmReference(builder.Configuration)
-                   .WithEnvironment("LlmProvider", builder.Configuration["LlmProvider"] ?? string.Empty)
+                   .WithLlmReference(builder.Configuration, args)
+                   .WithEnvironment(ResourceConstants.LlmProvider, builder.Configuration[ResourceConstants.LlmProvider] ?? string.Empty)
                    .WithReference(mcpMarkItDown.GetEndpoint("http"))
                    .WithReference(mcpInterviewData)
                    .WithReference(mcpTips)  // Add this line
@@ -318,9 +297,9 @@ instructions: """
 
 ### Step 1: Update Agent Instructions
 
-Edit [src/InterviewCoach.Agent/Program.cs](../src/InterviewCoach.Agent/Program.cs):
+Edit [src/InterviewCoach.Agent/AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs):
 
-Change the opening:
+Find the `CreateSingleAgent` method and change the opening:
 
 ```csharp
 instructions: """
@@ -338,7 +317,7 @@ instructions: """
 
 ### Step 2: Modify Question Types
 
-Change the question flow:
+Change the question flow in `AgentDelegateFactory.cs`:
 
 ```csharp
 07. Once you have updated the session record with the information, begin the interview with 
@@ -542,49 +521,20 @@ public class InterviewEvaluation
 ### Step 2: Add Evaluation Tool to MCP Server
 
 ```csharp
-public class SaveEvaluationTool : McpTool
+using System.ComponentModel;
+using ModelContextProtocol.Server;
+
+[McpServerToolType]
+public class EvaluationTool(IInterviewSessionRepository repository)
 {
-    private readonly IInterviewSessionRepository _repository;
-    
-    public SaveEvaluationTool(IInterviewSessionRepository repository)
+    [McpServerTool(Name = "save_interview_evaluation", Title = "Save interview evaluation")]
+    [Description("Save structured evaluation scores and feedback for an interview session.")]
+    public async Task<InterviewEvaluation> SaveEvaluationAsync(
+        [Description("The evaluation data")] InterviewEvaluation evaluation
+    )
     {
-        _repository = repository;
-        Name = "save_interview_evaluation";
-        Description = "Save structured evaluation scores and feedback";
-        InputSchema = new
-        {
-            type = "object",
-            properties = new
-            {
-                sessionId = new { type = "string" },
-                communicationScore = new { type = "integer", minimum = 1, maximum = 10 },
-                technicalScore = new { type = "integer", minimum = 1, maximum = 10 },
-                problemSolvingScore = new { type = "integer", minimum = 1, maximum = 10 },
-                strengths = new { type = "array", items = new { type = "string" } },
-                areasForImprovement = new { type = "array", items = new { type = "string" } },
-                overallRecommendation = new { type = "string" }
-            },
-            required = new[] { "sessionId" }
-        };
-    }
-    
-    public override async Task<ToolResponse> ExecuteAsync(ToolRequest request)
-    {
-        var evaluation = new InterviewEvaluation
-        {
-            SessionId = request.Parameters["sessionId"]?.ToString() ?? "",
-            CommunicationScore = int.Parse(request.Parameters["communicationScore"]?.ToString() ?? "0"),
-            TechnicalScore = int.Parse(request.Parameters["technicalScore"]?.ToString() ?? "0"),
-            ProblemSolvingScore = int.Parse(request.Parameters["problemSolvingScore"]?.ToString() ?? "0"),
-            // ... map other properties
-        };
-        
-        await _repository.SaveEvaluationAsync(evaluation);
-        
-        return new ToolResponse
-        {
-            Content = JsonSerializer.Serialize(new { status = "saved", evaluation })
-        };
+        await repository.SaveEvaluationAsync(evaluation);
+        return evaluation;
     }
 }
 ```

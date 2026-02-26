@@ -165,6 +165,8 @@ Edit `apphost.settings.json`:
     }
   },
 
+  "AgentMode": "Single",
+
   "LlmProvider": "AzureOpenAI",
 
   "Azure": {
@@ -182,25 +184,22 @@ Edit `apphost.settings.json`:
 ## Step 5: Run the Application
 
 ```bash
-# Using file-based Aspire
 aspire run --file ./apphost.cs
-
-# OR using project-based Aspire
-aspire run --project ./src/InterviewCoach.AppHost
 ```
 
 ### Verify Configuration
 
 1. Aspire Dashboard opens automatically
-2. Check Agent service console logs
-3. Look for:
+2. Check terminal output for provider confirmation:
 
    ```
-   info: Using AzureOpenAI: gpt-4o
+   	LLM Provider: AzureOpenAI
+   	Model: gpt-4o
+   	Agent Mode: Single
    ```
 
-4. Navigate to webui endpoint
-5. Test the interview coach
+3. Navigate to webui endpoint
+4. Test the interview coach
 
 ## Step 6: Deploy to Azure
 

@@ -181,26 +181,26 @@ Check the [Foundry Portal](https://ai.azure.com) for the latest available models
 ```bash
 # Using file-based Aspire (recommended)
 aspire run --file ./apphost.cs
-
-# OR using project-based Aspire
-aspire run --project ./src/InterviewCoach.AppHost
 ```
 
 ### Verify Configuration
 
-1. Open Aspire Dashboard `https://localhost:17053`
-2. Check the **Console Logs** for the Agent service
-3. Look for confirmation:
+1. Open Aspire Dashboard (URL shown in terminal output)
+2. Check terminal output for provider confirmation:
 
    ```
-   info: Using MicrosoftFoundry: gpt-5-mini
+   	LLM Provider: MicrosoftFoundry
+   	Model: gpt-5-mini
+   	Agent Mode: Single
    ```
    <!-- ```
-   info: Using MicrosoftFoundry: model-router
+   	LLM Provider: MicrosoftFoundry
+   	Model: model-router
+   	Agent Mode: Single
    ``` -->
 
-4. Navigate to the **webui** endpoint
-5. Start a conversation to test the agent
+3. Navigate to the **webui** endpoint
+4. Start a conversation to test the agent
 
 ## Step 6: Deploy to Azure
 

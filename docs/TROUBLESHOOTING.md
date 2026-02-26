@@ -213,8 +213,10 @@ git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/Interview
 
    ```
    info: Registered MCP tool: convert_to_markdown
-   info: Registered MCP tool: create_interview_session
+   info: Registered MCP tool: add_interview_session
    info: Registered MCP tool: get_interview_session
+   info: Registered MCP tool: update_interview_session
+   info: Registered MCP tool: complete_interview_session
    ```
 
 **Solutions**:
@@ -406,9 +408,11 @@ git clone https://github.com/microsoft/markitdown $REPOSITORY_ROOT/src/Interview
 1. **Verify SQLite configuration** in AppHost.cs:
 
    ```csharp
-   var sqlite = builder.AddSqlite("sqlite", databaseFileName: "interviews.db")
+   var sqlite = builder.AddSqlite(ResourceConstants.Sqlite, databaseFileName: ResourceConstants.DatabaseName)
                        .WithSqliteWeb();
    ```
+
+   Where `ResourceConstants.DatabaseName` is `"interviewcoach.db"`.
 
 2. **Check database file location**:
    - Local: `.aspire/` directory
@@ -672,7 +676,8 @@ layer tries to parse this as JSON and crashes.
 **Current workaround**: The file `src/InterviewCoach.Agent/HandoffToolResultFix.cs`
 wraps the handoff agent with a streaming middleware that converts plain-string
 tool results to `JsonElement` before the AG-UI pipeline processes them. This is
-applied automatically in `CreateHandoffAgents` and `CreateCopilotHandoffAgents`.
+applied automatically in `CreateLlmHandOffWorkflow` and `CreateCopilotHandOffWorkflow`
+via the `.CreateFixedAgent()` extension method.
 
 **Mode 1 is unaffected** — the single-agent mode does not use handoff tools and
 works without any workaround.

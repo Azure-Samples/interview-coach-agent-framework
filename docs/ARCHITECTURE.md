@@ -30,17 +30,24 @@ The application follows a **microservices architecture** orchestrated by .NET As
 
 **Key Files**:
 
-- **[Program.cs](../src/InterviewCoach.Agent/Program.cs)** - Application entry point and agent configuration
-  - Lines 17-66: MCP client setup (MarkItDown and InterviewData)
-  - Lines 68-79: LLM provider configuration
-  - Lines 81-119: Agent definition with instructions and tools
-  - Lines 121-135: API endpoint mapping (Responses, Conversations, AGUI)
+- **[Program.cs](../src/InterviewCoach.Agent/Program.cs)** - Application entry point and HTTP pipeline
+  - MCP client setup (MarkItDown and InterviewData)
+  - LLM provider configuration
+  - API endpoint mapping (Responses, Conversations, AGUI)
+  - File upload endpoints
+- **[AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs)** - Agent creation and mode selection
+  - Single agent, LLM handoff, and Copilot handoff modes
+  - Agent instructions and tool registration
+- **[Constants.cs](../src/InterviewCoach.Agent/Constants.cs)** - Configuration key constants
+- **[HandoffToolResultFix.cs](../src/InterviewCoach.Agent/HandoffToolResultFix.cs)** - Temporary workaround for AG-UI handoff serialization
+- **[WorkflowExtensions.cs](../src/InterviewCoach.Agent/WorkflowExtensions.cs)** - Workflow naming helper
 
 **Agent Capabilities**:
 
 ```csharp
-// Agent is configured with:
-- Instructions: Step-by-step interview process
+// Agent is configured via AgentDelegateFactory.cs with:
+- Mode selection: Single agent, LLM Handoff (5 agents), or Copilot Handoff (5 agents)
+- Instructions: Step-by-step interview process (per-agent in handoff modes)
 - Tools: MarkItDown (document parsing) + InterviewData (session management)
 - Chat client: Provider-agnostic IChatClient interface
 ```
@@ -49,8 +56,10 @@ The application follows a **microservices architecture** orchestrated by .NET As
 
 - `/responses` - OpenAI-compatible responses API
 - `/conversations` - Multi-turn conversation management
-- `/ag-ui` - Agent Framework DevUI integration
+- `/ag-ui` - AG-UI protocol endpoint for Agent Framework
 - `/devui/` - Development UI (dev environment only)
+- `/upload` - File upload endpoint (resume/JD uploads)
+- `/uploads/{fileId}/{fileName}` - Serve uploaded files
 
 **Design Pattern**: The agent uses the **Instruction-Tool-Loop** pattern:
 
@@ -74,13 +83,14 @@ The application follows a **microservices architecture** orchestrated by .NET As
 **Key Files**:
 
 - **[Program.cs](../src/InterviewCoach.WebUI/Program.cs)** - Web host configuration
-- **[Components/Pages/Home.razor](../src/InterviewCoach.WebUI/Components/Pages/Home.razor)** - Main chat interface
+- **[Components/Pages/Chat/Chat.razor](../src/InterviewCoach.WebUI/Components/Pages/Chat/Chat.razor)** - Main chat interface
+- **[Services/FileUploadService.cs](../src/InterviewCoach.WebUI/Services/FileUploadService.cs)** - File upload handling
 - **[wwwroot/](../src/InterviewCoach.WebUI/wwwroot/)** - Static assets and client libraries
 
 **Communication Flow**:
 
 ```
-User Input → Blazor Component → Agent API (/conversations) → LLM → Agent → Response → Blazor UI
+User Input → Blazor Component → Agent API (/ag-ui via AGUIChatClient) → LLM → Agent → Response → Blazor UI
 ```
 
 ### 3. InterviewCoach.Mcp.MarkItDown (Document Parsing MCP Server)
@@ -125,10 +135,11 @@ Agent → HTTP/SSE → MarkItDown MCP Server → Document Processing → Markdow
 
 **Tools Provided**:
 
-- `create_interview_session` - Initialize new session
+- `add_interview_session` - Add a new interview session
+- `get_interview_sessions` - Get a list of all interview sessions
 - `get_interview_session` - Retrieve session by ID
-- `update_interview_session` - Update session data
-- Additional session management operations
+- `update_interview_session` - Update session data (resume, JD, transcript)
+- `complete_interview_session` - Mark a session as completed
 
 **Why Custom MCP?**:
 
@@ -140,13 +151,17 @@ Agent → HTTP/SSE → MarkItDown MCP Server → Document Processing → Markdow
 
 ```
 InterviewSession
-├── SessionId (PK)
-├── Resume (text)
-├── JobDescription (text)
-├── Transcript (JSON)
-├── Status
-├── CreatedAt
-└── UpdatedAt
+├── Id (Guid, PK)
+├── ResumeLink (text, nullable)
+├── ResumeText (text, nullable)
+├── ProceedWithoutResume (bool)
+├── JobDescriptionLink (text, nullable)
+├── JobDescriptionText (text, nullable)
+├── ProceedWithoutJobDescription (bool)
+├── Transcript (text, nullable)
+├── IsCompleted (bool)
+├── CreatedAt (DateTimeOffset)
+└── UpdatedAt (DateTimeOffset)
 ```
 
 ### 5. InterviewCoach.AppHost (Aspire Orchestration)
@@ -162,36 +177,39 @@ InterviewSession
 **Service Topology**:
 
 ```csharp
-SQLite Database
+SQLite Database (AddSqlite + SqliteWeb)
     ↓
-MCP InterviewData Server (depends on SQLite)
+MCP InterviewData Server (Project, depends on SQLite)
+
+MarkItDown MCP Server (Docker container, port 3001)
+
+Agent Service (Project, depends on both MCP servers + LLM provider)
     ↓
-MarkItDown MCP Server (Docker)
-    ↓
-Agent Service (depends on both MCP servers + LLM provider)
-    ↓
-WebUI (depends on Agent)
+WebUI (Project, depends on Agent)
 ```
 
 **Dependency Management**:
 
 - `.WaitFor()` ensures proper startup order
 - `.WithReference()` provides service discovery
-- External HTTP endpoints for development access
+- `.WithExternalHttpEndpoints()` enables external access
+- `.WithLlmReference(config, args)` injects LLM provider
 
 **LLM Provider Abstraction**:
 The `LlmResourceFactory.WithLlmReference()` extension method:
 
-1. Reads `LlmProvider` configuration
+1. Reads `LlmProvider` and `AgentMode` configuration (also supports `--provider` / `--mode` CLI args)
 2. Retrieves provider-specific credentials
 3. Creates appropriate OpenAI client configuration
 4. Injects as dependency into agent service
+5. Sets `AgentMode` and `LlmProvider` environment variables for the agent
 
 Supports:
 
 - **Microsoft Foundry**: Production AI service with model-router
 - **Azure OpenAI**: Direct AOAI endpoint access
 - **GitHub Models**: Free prototyping with GitHub-hosted models
+- **GitHub Copilot**: Local development with GitHub Copilot SDK
 
 ### 6. InterviewCoach.ServiceDefaults (Shared Configuration)
 
@@ -420,10 +438,10 @@ Built-in through .NET Aspire:
 To customize this sample:
 
 1. **Add MCP Tools**: Create new MCP servers for capabilities
-2. **Modify Agent Instructions**: Change interview flow/questions
-3. **Swap UI**: Replace Blazor with React/Vue
-4. **Enhanced Storage**: Switch from SQLite to Cosmos DB
-5. **Multi-Agent**: Add specialist agents (technical, behavioral)
+2. **Modify Agent Instructions**: Change interview flow/questions in `AgentDelegateFactory.cs`
+3. **Switch Agent Mode**: Use `AgentMode` config to toggle between single and multi-agent modes
+4. **Swap UI**: Replace Blazor with React/Vue (agent exposes OpenAI-compatible APIs)
+5. **Enhanced Storage**: Switch from SQLite to Cosmos DB or Azure SQL
 
 ## Next Steps
 

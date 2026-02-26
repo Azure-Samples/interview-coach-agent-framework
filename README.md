@@ -106,7 +106,7 @@ aspire run --file ./apphost.cs
 
 **What happens next:**
 
-1. Onen Aspire Dashboard opens on `https://localhost:17053`.
+1. Open Aspire Dashboard (URL shown in terminal output).
 1. All services start (Agent, WebUI, MCP servers, SQLite).
 1. Look for ✅ "Running" status on all resources.
 1. Click the **webui** endpoint to open the interview coach.
@@ -161,8 +161,8 @@ This isn't just a chatbot—it's a **reference implementation** of production pa
 
 | What | Where | Why It Matters |
 |------|-------|----------------|
-| Agent Instructions | [src/InterviewCoach.Agent/Program.cs#L95-L125](src/InterviewCoach.Agent/Program.cs) | Defines agent behavior through natural language |
-| MCP Integration | [src/InterviewCoach.Agent/Program.cs#L17-L90](src/InterviewCoach.Agent/Program.cs) | Shows how to connect external tools |
+| Agent Configuration | [src/InterviewCoach.Agent/AgentDelegateFactory.cs](src/InterviewCoach.Agent/AgentDelegateFactory.cs) | Defines agent behavior, instructions, and multi-agent modes |
+| MCP Integration | [src/InterviewCoach.Agent/Program.cs](src/InterviewCoach.Agent/Program.cs) | Shows how to connect external MCP tools |
 | Provider Factory | [src/InterviewCoach.AppHost/LlmResourceFactory.cs](src/InterviewCoach.AppHost/LlmResourceFactory.cs) | Demonstrates multi-provider abstraction |
 | Service Orchestration | [src/InterviewCoach.AppHost/AppHost.cs](src/InterviewCoach.AppHost/AppHost.cs) | Aspire dependency management |
 | Custom MCP Server | [src/InterviewCoach.Mcp.InterviewData/](src/InterviewCoach.Mcp.InterviewData/) | Build your own MCP tools |

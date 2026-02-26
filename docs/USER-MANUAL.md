@@ -7,7 +7,7 @@ A step-by-step guide to using the Interview Coach application once it's running.
 The application must be running. Start it with:
 
 ```bash
-aspire run
+aspire run --file ./apphost.cs
 ```
 
 Once all services show ✅ **Running** in the Aspire Dashboard, click the **webui** endpoint to open the Interview Coach chat interface.
@@ -307,7 +307,15 @@ Coach: Here's your interview summary:
 
 ## Multi-Agent Mode
 
-By default, the application runs in **Multi-Agent Handoff mode** (Mode 2), where five specialized agents collaborate:
+By default, the application runs in **Single Agent mode** (`AgentMode: Single`). To use the **Multi-Agent Handoff mode**, change the `AgentMode` setting in `apphost.settings.json` to `LlmHandOff`:
+
+```json
+{
+  "AgentMode": "LlmHandOff"
+}
+```
+
+In multi-agent mode, five specialized agents collaborate:
 
 | Agent | What It Does |
 |-------|-------------|

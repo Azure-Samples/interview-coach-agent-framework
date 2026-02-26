@@ -55,7 +55,7 @@ This application uses two MCP servers to demonstrate different patterns:
 }
 ```
 
-**Integration**: [src/InterviewCoach.Agent/Program.cs](../src/InterviewCoach.Agent/Program.cs#L17-L42)
+**Integration**: [src/InterviewCoach.Agent/Program.cs](../src/InterviewCoach.Agent/Program.cs) (MCP client setup)
 
 ```csharp
 // MCP client connects to MarkItDown server via HTTP/SSE
@@ -86,27 +86,35 @@ builder.Services.AddKeyedSingleton<McpClient>("mcp-markitdown", (sp, obj) =>
 ```json
 [
   {
-    "name": "create_interview_session",
-    "description": "Initialize a new interview session",
+    "name": "add_interview_session",
+    "description": "Adds an interview session to database.",
     "parameters": {
-      "sessionId": "Unique session identifier"
+      "record": "The interview session details (InterviewSession object)"
     }
   },
   {
+    "name": "get_interview_sessions",
+    "description": "Gets a list of interview sessions from database."
+  },
+  {
     "name": "get_interview_session",
-    "description": "Retrieve existing session data",
+    "description": "Gets an interview session from the database by ID.",
     "parameters": {
-      "sessionId": "Session identifier"
+      "id": "The ID of the interview session (Guid)"
     }
   },
   {
     "name": "update_interview_session",
-    "description": "Update session with resume, JD, or transcript",
+    "description": "Updates an interview session in the database.",
     "parameters": {
-      "sessionId": "Session identifier",
-      "resume": "Resume text (optional)",
-      "jobDescription": "JD text (optional)",
-      "transcript": "Conversation history (optional)"
+      "record": "The interview session details (InterviewSession object)"
+    }
+  },
+  {
+    "name": "complete_interview_session",
+    "description": "Completes an interview session in the database.",
+    "parameters": {
+      "id": "The ID of the interview session (Guid)"
     }
   }
 ]
@@ -126,31 +134,29 @@ Let's walk through the InterviewData MCP server to understand how to build one.
 
 ### Step 2: Define Tools
 
-Tools inherit from `McpTool` and define their schema:
+Tools use the `[McpServerToolType]` attribute on a class and `[McpServerTool]` on individual methods:
 
 ```csharp
-public class CreateInterviewSessionTool : McpTool
-{
-    public CreateInterviewSessionTool(IInterviewSessionRepository repository)
-    {
-        Name = "create_interview_session";
-        Description = "Initialize a new interview session";
-        InputSchema = new
-        {
-            type = "object",
-            properties = new
-            {
-                sessionId = new { type = "string", description = "Unique session ID" }
-            },
-            required = new[] { "sessionId" }
-        };
-    }
+using System.ComponentModel;
+using ModelContextProtocol.Server;
 
-    public override async Task<ToolResponse> ExecuteAsync(ToolRequest request)
+[McpServerToolType]
+public class InterviewTipsTool
+{
+    private static readonly Dictionary<string, string> Tips = new()
     {
-        var sessionId = request.Parameters["sessionId"].ToString();
-        var session = await _repository.CreateSessionAsync(sessionId);
-        return new ToolResponse { Content = JsonSerializer.Serialize(session) };
+        ["behavioral"] = "Use the STAR method: Situation, Task, Action, Result",
+        ["technical"] = "Think out loud. Explain your reasoning as you solve problems",
+        ["general"] = "Prepare questions for the interviewer. Show genuine interest"
+    };
+
+    [McpServerTool(Name = "get_interview_tip", Title = "Get an interview tip")]
+    [Description("Get a helpful interview tip by category (behavioral, technical, or general).")]
+    public string GetInterviewTip(
+        [Description("Tip category: behavioral, technical, or general")] string category
+    )
+    {
+        return Tips.GetValueOrDefault(category, Tips["general"]);
     }
 }
 ```
@@ -183,13 +189,6 @@ var mcpServer = builder.AddProject<Projects.InterviewCoach_Mcp_InterviewData>("m
 ### Step 6: Connect from Agent
 
 ```csharp
-// Register MCP client
-builder.Services.AddKeyedSingleton<McpClient>("mcp-interview-data", (sp, obj) =>
-{
-    var transport = new HttpClientTransport(options, httpClient, loggerFactory);
-    return McpClient.CreateAsync(transport, options, loggerFactory).GetAwaiter().GetResult();
-});
-
 // Get tools from MCP server
 var mcpClient = sp.GetRequiredKeyedService<McpClient>("mcp-interview-data");
 var tools = mcpClient.ListToolsAsync().GetAwaiter().GetResult();
@@ -246,12 +245,12 @@ Server responds:
   "result": {
     "tools": [
       {
-        "name": "create_interview_session",
-        "description": "Initialize a new interview session",
+        "name": "add_interview_session",
+        "description": "Adds an interview session to database.",
         "inputSchema": {
           "type": "object",
           "properties": {
-            "sessionId": { "type": "string" }
+            "record": { "type": "object" }
           }
         }
       }
@@ -269,9 +268,13 @@ Agent calls tool:
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "create_interview_session",
+    "name": "add_interview_session",
     "arguments": {
-      "sessionId": "abc-123"
+      "record": {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "resumeLink": null,
+        "resumeText": null
+      }
     }
   },
   "id": 2
@@ -288,7 +291,7 @@ Server executes and responds:
     "content": [
       {
         "type": "text",
-        "text": "{\"sessionId\": \"abc-123\", \"status\": \"created\"}"
+        "text": "{\"id\": \"a1b2c3d4-...\", \"isCompleted\": false}"
       }
     ]
   }
@@ -344,7 +347,7 @@ Explore the [MCP Server Registry](https://github.com/modelcontextprotocol/server
 ### 1. **Clear Tool Names**
 
 ❌ Bad: `process`, `handle`, `do_thing`  
-✅ Good: `convert_to_markdown`, `create_interview_session`
+✅ Good: `convert_to_markdown`, `add_interview_session`
 
 ### 2. **Detailed Descriptions**
 
@@ -415,9 +418,11 @@ _logger.LogInformation("Executing {ToolName} with parameters: {Params}",
 In Aspire Dashboard → Agent logs:
 
 ```
-info: Registered MCP tool: create_interview_session
+info: Registered MCP tool: add_interview_session
+info: Registered MCP tool: get_interview_sessions
 info: Registered MCP tool: get_interview_session
 info: Registered MCP tool: update_interview_session
+info: Registered MCP tool: complete_interview_session
 ```
 
 ### Test MCP Endpoints

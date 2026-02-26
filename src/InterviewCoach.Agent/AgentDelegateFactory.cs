@@ -6,7 +6,6 @@ using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
 
 using ModelContextProtocol.Client;
 
@@ -17,16 +16,28 @@ public enum AgentMode
     CopilotHandOff
 }
 
+public enum LlmProvider
+{
+    GitHubModels,
+    AzureOpenAI,
+    MicrosoftFoundry,
+    GitHubCopilot
+}
+
 public static class AgentDelegateFactory
 {
     public static IHostedAgentBuilder AddAIAgent(this IHostApplicationBuilder builder, string name)
     {
-        var mode = Enum.TryParse<AgentMode>(builder.Configuration[Constants.AgentMode], ignoreCase: true, out var parsed)
-                 ? parsed
+        var provider = Enum.TryParse<LlmProvider>(builder.Configuration[Constants.LlmProvider], ignoreCase: true, out var parsedProvider)
+                        ? parsedProvider
+                        : throw new InvalidOperationException($"LLM provider not specified or invalid. Please set the '{Constants.LlmProvider}' configuration value.");
+        var mode = Enum.TryParse<AgentMode>(builder.Configuration[Constants.AgentMode], ignoreCase: true, out var parsedMode)
+                 ? parsedMode
                  : throw new InvalidOperationException($"Agent mode not specified or invalid. Please set the '{Constants.AgentMode}' configuration value.");
 
         var logger = LoggerFactory.Create(b => b.AddConsole()).CreateLogger(nameof(AgentDelegateFactory));
         logger.LogInformation("Agent mode: {AgentMode}", mode);
+        logger.LogInformation("LLM provider: {LlmProvider}", provider);
 
         IHostedAgentBuilder agentBuilder = mode switch
         {

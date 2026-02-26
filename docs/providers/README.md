@@ -4,11 +4,12 @@ The Interview Coach application supports multiple LLM providers through a config
 
 ## Quick Comparison
 
-| Provider | Best For | Auth | Cost | Response Quality | Setup Time |
-|----------|----------|------|------|------------------|------------|
-| **[Microsoft Foundry](MICROSOFT-FOUNDRY.md)** | Production deployments | API Key / Managed Identity | Pay-per-use | Excellent (model-router) | ~10 min |
-| **[Azure OpenAI](AZURE-OPENAI.md)** | Enterprise with existing AOAI | API Key / Managed Identity | Pay-per-use | Excellent | ~10 min |
-| **[GitHub Models](GITHUB-MODELS.md)** | Local development / prototyping | GitHub PAT | Free (with limits) | Good | ~5 min |
+| Provider                                      | Best For                                  | Auth       | Cost               |
+|-----------------------------------------------|-------------------------------------------|------------|--------------------|
+| **[GitHub Models](GITHUB-MODELS.md)**         | Local development and prototyping         | GitHub PAT | Free (with limits) |
+| **[Azure OpenAI](AZURE-OPENAI.md)**           | Production deployments                    | API Key    | Pay-per-use        |
+| **[Microsoft Foundry](MICROSOFT-FOUNDRY.md)** | Production deployments with Agent Service | API Key    | Pay-per-use        |
+| **[GitHub Copilot](../MULTI-AGENT.md#mode-3-multi-agent-handoff-github-copilot-sdk)** | Local development with GitHub Copilot     | GitHub PAT | Free (with limits) |
 
 ## When to Use Each Provider
 
@@ -60,30 +61,6 @@ The Interview Coach application supports multiple LLM providers through a config
 
 ---
 
-### GitHub Models
-
-**Use when:**
-
-- Local development and testing
-- Learning and experimentation
-- Prototyping new features
-- Quick demos without Azure setup
-
-**Advantages:**
-
-- ✅ **Free Tier**: No cost for development
-- ✅ **Quick Setup**: Just need GitHub PAT
-- ✅ **No Azure Required**: Perfect for learning
-- ✅ **Multiple Models**: Access to various providers
-
-**Considerations:**
-
-- ⚠️ Rate limits apply
-- ⚠️ Not for production use
-- ⚠️ Requires internet connectivity
-- ⚠️ Limited to individual use
-
-**Learn more:** [GITHUB-MODELS.md](GITHUB-MODELS.md)
 
 ## Switching Providers
 
@@ -145,11 +122,12 @@ The provider abstraction is implemented in [src/InterviewCoach.AppHost/LlmResour
 
 The factory pattern:
 
-1. Reads `LlmProvider` from configuration
+1. Reads `LlmProvider` and `AgentMode` from configuration (also supports `--provider` / `--mode` CLI args)
 2. Loads provider-specific settings
 3. Creates appropriate OpenAI client
 4. Registers with dependency injection
-5. Agent receives `IChatClient` (provider-agnostic)
+5. Sets `AgentMode` and `LlmProvider` environment variables for the agent
+6. Agent receives `IChatClient` (provider-agnostic)
 
 This means the agent code is identical regardless of provider:
 
