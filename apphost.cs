@@ -1,4 +1,61 @@
+#:sdk Aspire.AppHost.Sdk@13.1.1
+#:package Aspire.Hosting.Azure@13.*
+#:package Aspire.Hosting.GitHub.Models@13.*
+#:package Aspire.Hosting.OpenAI@13.*
+#:package CommunityToolkit.Aspire.Hosting.SQLite@13.*
+#:project ./src/InterviewCoach.Agent/InterviewCoach.Agent.csproj
+#:project ./src/InterviewCoach.Mcp.InterviewData/InterviewCoach.Mcp.InterviewData.csproj
+#:project ./src/InterviewCoach.WebUI/InterviewCoach.WebUI.csproj
+#:property UserSecretsId=7ae1635d-7ac9-43dd-b458-5f56d1b1ee02
+
 using Microsoft.Extensions.Configuration;
+
+const string RESOURCE_CONSTANTS_LLM_PROVIDER = "LlmProvider";
+const string RESOURCE_MCP_MARKITDOWN = "mcp-markitdown";
+const string RESOURCE_MCP_INTERVIEWDATA = "mcp-interview-data";
+const string RESOURCE_DB_SQLITE = "sqlite";
+const string RESOURCE_DB_NAME = "interviewcoach.db";
+const string RESOURCE_PROJECT_AGENT = "agent";
+const string RESOURCE_PROJECT_WEBUI = "webui";
+
+var builder = DistributedApplication.CreateBuilder(args);
+
+// var foundry = builder.AddBicepTemplate("foundry", "./infra/foundry.bicep");
+
+var config = builder.Configuration
+                    .AddJsonFile("apphost.settings.json", optional: true, reloadOnChange: true)
+                    .AddUserSecrets(typeof(Program).Assembly, optional: true, reloadOnChange: true)
+                    .Build();
+
+var mcpMarkItDown = builder.AddContainer(RESOURCE_MCP_MARKITDOWN, "mcp/markitdown", "latest")
+                           .WithExternalHttpEndpoints()
+                           .WithImageTag("latest")
+                           .WithHttpEndpoint(3001, 3001)
+                           .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001");
+
+var sqlite = builder.AddSqlite(RESOURCE_DB_SQLITE, databaseFileName: RESOURCE_DB_NAME)
+                    .WithSqliteWeb();
+
+var mcpInterviewData = builder.AddProject<Projects.InterviewCoach_Mcp_InterviewData>(RESOURCE_MCP_INTERVIEWDATA)
+                              .WithExternalHttpEndpoints()
+                              .WithReference(sqlite)
+                              .WaitFor(sqlite);
+
+var agent = builder.AddProject<Projects.InterviewCoach_Agent>(RESOURCE_PROJECT_AGENT)
+                   .WithExternalHttpEndpoints()
+                   .WithLlmReference(builder.Configuration, args)
+                   .WithEnvironment(RESOURCE_CONSTANTS_LLM_PROVIDER, builder.Configuration[RESOURCE_CONSTANTS_LLM_PROVIDER] ?? string.Empty)
+                   .WithReference(mcpMarkItDown.GetEndpoint("http"))
+                   .WithReference(mcpInterviewData)
+                   .WaitFor(mcpMarkItDown)
+                   .WaitFor(mcpInterviewData);
+
+var webUI = builder.AddProject<Projects.InterviewCoach_WebUI>(RESOURCE_PROJECT_WEBUI)
+                   .WithExternalHttpEndpoints()
+                   .WithReference(agent)
+                   .WaitFor(agent);
+
+await builder.Build().RunAsync();
 
 public enum LlmProvider
 {
