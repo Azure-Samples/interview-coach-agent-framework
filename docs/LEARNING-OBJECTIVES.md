@@ -75,11 +75,11 @@ Craft effective agent instructions:
 
 ## Why These Patterns Matter
 
-### Extensibility Without Modification
+### 1. Extensibility Without Modification
 
 MCP servers let you add capabilities (email, calendar, document processing) without touching agent code. This follows the Open-Closed Principle and enables teams to work independently on tools and agents.
 
-### Provider Flexibility
+### 2. Provider Flexibility
 
 The multi-provider pattern means you can:
 
@@ -88,7 +88,7 @@ The multi-provider pattern means you can:
 - Deploy to Foundry for integrated Azure AI services
 - All without rewriting application logic
 
-### Production-Ready Architecture
+### 3. Production-Ready Architecture
 
 Aspire orchestration provides:
 
@@ -97,7 +97,7 @@ Aspire orchestration provides:
 - Configuration management across environments
 - Seamless Azure deployment with `azd`
 
-### Separation of Concerns
+### 4. Separation of Concerns
 
 Each component has a single responsibility:
 
@@ -112,27 +112,27 @@ This makes the codebase maintainable, testable, and easy to extend.
 
 By studying and modifying this sample, you'll develop expertise in:
 
-✅ **Microsoft Agent Framework** - Building production AI agents  
-✅ **Model Context Protocol** - Creating and integrating MCP servers  
-✅ **Aspire** - Cloud-native container orchestration architecture  
-✅ **Agent Instruction Design** - Crafting effective AI behaviors  
-✅ **Tool/Function Calling** - Extending agents with capabilities  
-✅ **State Management** - Handling conversational context  
-✅ **Azure Deployment** - Production deployment with `azd`  
-✅ **Provider Abstraction** - Multi-vendor LLM integration  
+✅ **Microsoft Agent Framework**: Building production AI agents  
+✅ **Model Context Protocol**: Creating and integrating MCP servers  
+✅ **Aspire**: Cloud-native container orchestration architecture  
+✅ **Agent Instruction Design**: Crafting effective AI behaviors  
+✅ **Tool/Function Calling**: Extending agents with capabilities  
+✅ **State Management**: Handling conversational context  
+✅ **Azure Deployment**: Production deployment with `azd`  
+✅ **Provider Abstraction**: Multi-vendor LLM integration  
 
 ## Learning Path
 
 We recommend this progression:
 
-1. **Run the sample** - Get it working to understand the end-to-end flow
-2. **Read [ARCHITECTURE.md](ARCHITECTURE.md)** - Understand the system design
-3. **Study the agent instructions** - See how behavior is defined
-5. **Follow [TUTORIALS.md](TUTORIALS.md)** - Hands-on modifications
-6. **Build your own** - Apply patterns to your domain
+1. **Run the sample**: Get it working to understand the end-to-end flow
+2. **Read [architecture overview](ARCHITECTURE.md)**: Understand the system design
+3. **Study the agent instructions**: See how behavior is defined
+5. **Follow [tutorials](TUTORIALS.md)**: Hands-on modifications
+6. **Build your own**: Apply patterns to your domain
 
 ## Next Steps
 
-- 📚 [Architecture Overview](ARCHITECTURE.md) - Deep dive into system design
-- 📖 [Tutorials](TUTORIALS.md) - Hands-on learning exercises
-- ❓ [FAQ](FAQ.md) - Common questions answered
+- **[Architecture Overview](ARCHITECTURE.md)**: Deep dive into system design
+- **[Tutorials](TUTORIALS.md)**: Hands-on learning exercises
+- **[FAQ](FAQ.md)**: Common questions answered

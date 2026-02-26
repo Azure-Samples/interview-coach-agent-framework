@@ -101,22 +101,20 @@ azd down --force --purge
 ```
 ## Next Steps
 
-### 📖 Learn
+### Learn
 
-- **[Learning Objectives](docs/LEARNING-OBJECTIVES.md)** - What you'll master by studying this sample
-- **[Architecture Guide](docs/ARCHITECTURE.md)** - Deep dive into system design
-- **[User Manual](docs/USER-MANUAL.md)** - Step-by-step guide to using the app once it's running
-- **[Tutorials](docs/TUTORIALS.md)** - Hands-on customization exercises
+- **[Learning Objectives](docs/LEARNING-OBJECTIVES.md)**: Understand what you'll learn
+- **[Architecture Overview](docs/ARCHITECTURE.md)**: Deep dive into system design
+- **[Tutorials](docs/TUTORIALS.md)**: Hands-on learning exercises
+- **[FAQ](docs/FAQ.md)**: Common questions answered
 
-### 🔄 Alternative LLM Providers
+### Alternative LLM Providers
 
 This sample defaults to Microsoft Foundry (recommended for production), but also supports:
 
 - **[Azure OpenAI](docs/providers/AZURE-OPENAI.md)** - Direct AOAI integration
 - **[GitHub Models](docs/providers/GITHUB-MODELS.md)** - Free tier for prototyping
 - **[GitHub Copilot](docs/providers/GITHUB-COPILOT.md)** - GitHub Copilot as agent
-
-**[Compare providers →](docs/providers/README.md)**
 
 ## Additional Resources
 
