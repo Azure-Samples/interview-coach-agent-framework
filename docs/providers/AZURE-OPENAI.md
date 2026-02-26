@@ -1,23 +1,14 @@
-# Azure OpenAI Setup Guide
+# Azure OpenAI setup
 
-This guide shows how to configure the Interview Coach application to use Azure OpenAI directly.
+How to configure the app to use Azure OpenAI directly.
 
-## When to Use Azure OpenAI
+## When to use Azure OpenAI
 
-**Choose Azure OpenAI over Foundry when:**
+Pick Azure OpenAI over Foundry when you already have AOAI resources, need a specific model version, or need regional deployment control for compliance or latency.
 
-- You already have Azure OpenAI resources provisioned
-- You need a specific model/version not available in Foundry
-- You need regional deployment control for compliance/latency
-- You're migrating existing Azure OpenAI applications
+If you're starting fresh and don't have a strong reason to use AOAI directly, [Foundry](MICROSOFT-FOUNDRY.md) is usually simpler.
 
-**Consider Foundry instead if:**
-
-- Building a new application from scratch
-- Want automatic model routing and cost optimization
-- Need integrated evaluation and monitoring tools
-
-[Compare providers →](README.md)
+[Compare providers](README.md)
 
 ## Prerequisites
 
@@ -25,7 +16,7 @@ This guide shows how to configure the Interview Coach application to use Azure O
 - Azure Developer CLI installed ([Download](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd))
 - Azure CLI installed ([Download](https://docs.microsoft.com/cli/azure/install-azure-cli))
 
-## Step 1: Create Azure OpenAI Resource
+## Step 1: Create Azure OpenAI resource
 
 ```bash
 # Navigate to the resource directory
@@ -38,7 +29,7 @@ azd auth login
 azd up
 ```
 
-## Step 2: Get Resource Endpoint and API Key
+## Step 2: Get endpoint and API key
 
 ```bash
 # Navigate to the resource directory
@@ -54,14 +45,14 @@ azd env get-value 'FOUNDRY_OPENAI_ENDPOINT'
 az cognitiveservices account keys list -g rg-$(azd env get-value AZURE_ENV_NAME) -n $(azd env get-value FOUNDRY_NAME) --query "key1" -o tsv
 ```
 
-## Step 3: Store Credentials Securely
+## Step 3: Store credentials
 
 ```bash
 dotnet user-secrets --file ./apphost.cs set Azure:OpenAI:Endpoint "{{AZURE_OPENAI_ENDPOINT}}"
 dotnet user-secrets --file ./apphost.cs set Azure:OpenAI:ApiKey "{{AZURE_OPENAI_API_KEY}}"
 ```
 
-## Step 4: Run the Application
+## Step 4: Run the app
 
 ```bash
 # Using file-based Aspire (recommended)
@@ -81,7 +72,7 @@ azd auth login
 azd up
 ```
 
-## Step 6: Clean Up Resources
+## Step 6: Clean up
 
 When finished, remove all Azure resources:
 
@@ -89,9 +80,9 @@ When finished, remove all Azure resources:
 azd down --force --purge
 ```
 
-## Next Steps
+## Next steps
 
-- **[Learning Objectives](LEARNING-OBJECTIVES.md)**: Understand what you'll learn
-- **[Architecture Overview](ARCHITECTURE.md)**: Deep dive into system design
-- **[Tutorials](TUTORIALS.md)**: Hands-on learning exercises
-- **[FAQ](FAQ.md)**: Common questions answered
+- [Learning objectives](../LEARNING-OBJECTIVES.md)
+- [Architecture overview](../ARCHITECTURE.md)
+- [Tutorials](../TUTORIALS.md)
+- [FAQ](../FAQ.md)

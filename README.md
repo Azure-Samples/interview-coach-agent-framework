@@ -1,34 +1,34 @@
 # Interview Coach with Microsoft Agent Framework
 
-An AI-powered interview preparation application demonstrating production-ready patterns with [Microsoft Agent Framework](https://aka.ms/agent-framework), [Model Context Protocol (MCP)](https://modelcontextprotocol.io) integration, and [Aspire](https://aspire.dev) orchestration.
+An AI-powered interview coach that shows how to wire up [Microsoft Agent Framework](https://aka.ms/agent-framework), [Model Context Protocol (MCP)](https://modelcontextprotocol.io), and [Aspire](https://aspire.dev) into a working application you can deploy.
 
-## What You'll Learn
+## What you'll learn
 
-This sample teaches modern AI agent development patterns:
+This sample covers the patterns you'd need for a real agent deployment:
 
-- ✅ **Building production-ready AI agents** with Microsoft Agent Framework
-- ✅ **Multi-agent handoff orchestration** — single agent vs 5 specialized agents ([learn more](docs/MULTI-AGENT.md))
-- ✅ **Model Context Protocol (MCP)** for extensible agent capabilities
-- ✅ **Multi-service orchestration** with Aspire
-- ✅ **Stateful conversation management** across sessions
-- ✅ **Multi-provider LLM support** (Microsoft Foundry, Azure OpenAI, GitHub Models and GitHub Copilot)
-- ✅ **Azure deployment** with one command using `azd`
+- Building AI agents with Microsoft Agent Framework
+- Multi-agent handoff orchestration — single agent vs. 5 specialized agents
+- Model Context Protocol (MCP) for adding tools without touching agent code
+- Running multiple services together with Aspire
+- Keeping conversation state across sessions
+- Swapping LLM providers (Microsoft Foundry, Azure OpenAI, GitHub Models, GitHub Copilot)
+- Deploying to Azure with `azd up`
 
-**[Read more about learning objectives →](docs/LEARNING-OBJECTIVES.md)**
+See [learning objectives](docs/LEARNING-OBJECTIVES.md) for the full breakdown.
 
 ## Architecture
 
 ![Overall architecture](./assets/architecture.png)
 
-The application uses a **microservices architecture** with:
+The app is split into a few services:
 
-- **Aspire**: Cloud-native container orchestration
-- **Frontend Web UI**: Blazor-based chat interface
-- **Backend Agent**: Multi-agent orchestration using Microsoft Agent Framework
-- **MCP Servers**: Tools for document parsing and session management
-- **Microsoft Foundry**: Production-ready AI service with Azure OpenAI
+- **Aspire** orchestrates everything (service discovery, health checks, config)
+- **WebUI** is a Blazor chat interface
+- **Agent** runs the interview logic via Microsoft Agent Framework
+- **MCP Servers** handle document parsing (MarkItDown) and session storage (InterviewData)
+- **LLM Provider** talks to Foundry, Azure OpenAI, or GitHub Models
 
-**[Explore the architecture in detail →](docs/ARCHITECTURE.md)**
+See [architecture overview](docs/ARCHITECTURE.md) for how the pieces fit together.
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ The application uses a **microservices architecture** with:
 - [Azure Subscription](https://azure.microsoft.com/free)
 - [Microsoft Foundry](https://ai.azure.com)
 
-**[Explore the different LLM provider →](docs/providers/README.md)**
+See [LLM provider options](docs/providers/README.md) for alternatives.
 
 ## Getting Started
 
@@ -52,7 +52,7 @@ cd interview-coach-agent-framework
 
 1. Create a new Microsoft Foundry project on Foundry Portal or command line.
 
-   **[Detailed Foundry setup guide →](docs/providers/MICROSOFT-FOUNDRY.md)**
+   See [Foundry setup guide](docs/providers/MICROSOFT-FOUNDRY.md) for details.
 
 ### 3. Store Credentials
 
@@ -102,18 +102,18 @@ azd down --force --purge
 
 ### Learn
 
-- **[Learning Objectives](docs/LEARNING-OBJECTIVES.md)**: Understand what you'll learn
-- **[Architecture Overview](docs/ARCHITECTURE.md)**: Deep dive into system design
-- **[Tutorials](docs/TUTORIALS.md)**: Hands-on learning exercises
-- **[FAQ](docs/FAQ.md)**: Common questions answered
+- [Learning objectives](docs/LEARNING-OBJECTIVES.md)
+- [Architecture overview](docs/ARCHITECTURE.md)
+- [Tutorials](docs/TUTORIALS.md)
+- [FAQ](docs/FAQ.md)
 
-### Alternative LLM Providers
+### Alternative LLM providers
 
-This sample defaults to Microsoft Foundry (recommended for production), but also supports:
+The default is Microsoft Foundry, but you can also use:
 
-- **[Azure OpenAI](docs/providers/AZURE-OPENAI.md)** - Direct AOAI integration
-- **[GitHub Models](docs/providers/GITHUB-MODELS.md)** - Free tier for prototyping
-- **[GitHub Copilot](docs/providers/GITHUB-COPILOT.md)** - GitHub Copilot as agent
+- [Azure OpenAI](docs/providers/AZURE-OPENAI.md) — direct AOAI integration
+- [GitHub Models](docs/providers/GITHUB-MODELS.md) — free tier, good for prototyping
+- [GitHub Copilot](docs/providers/GITHUB-COPILOT.md) — local dev with Copilot SDK
 
 ## Additional Resources
 
@@ -150,4 +150,4 @@ This project is licensed under the MIT License - see [LICENSE.md](LICENSE.md) fo
 
 ---
 
-**Built with ❤️ by the CoreAI DevRel** | **Questions?** Check the [FAQ](docs/FAQ.md) or open an [issue](../../issue).
+Built by the CoreAI DevRel team | Questions? Check the [FAQ](docs/FAQ.md) or open an [issue](../../issue).

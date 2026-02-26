@@ -1,57 +1,39 @@
-# GitHub Models Setup Guide
+# GitHub Models setup
 
-This guide shows how to configure the Interview Coach application to use GitHub Models for local development and prototyping.
+For local development and prototyping. Not for production.
 
-## When to Use GitHub Models
+## When to use GitHub Models
 
-**Perfect for:**
+Good for learning, quick prototyping, demos, and following tutorials. No Azure setup needed, no credit card required.
 
-- Learning and experimentation
-- Rapid prototyping without Azure setup
-- Local development and testing
-- Quick demos and PoCs
-- Following tutorials
+Don't use it for production, sensitive data, or anything that needs reliable availability. For that, use [Foundry](MICROSOFT-FOUNDRY.md) or [Azure OpenAI](AZURE-OPENAI.md).
 
-**NOT recommended for:**
-
-- Production deployments
-- Applications handling sensitive/confidential data
-- High-volume or commercial use
-- Scenarios requiring SLAs or guaranteed availability
-
-**For production**, use [Microsoft Foundry](MICROSOFT-FOUNDRY.md) or [Azure OpenAI](AZURE-OPENAI.md).
-
-[Compare providers →](README.md)
+[Compare providers](README.md)
 
 ## What is GitHub Models?
 
-[GitHub Models](https://github.com/marketplace/models) is a free service that lets you:
-
-- Access AI models directly from GitHub
-- Experiment with models from OpenAI, Meta, Microsoft, and more
-- Test and prototype without cloud setup
-- No credit card required (with rate limits)
+[GitHub Models](https://github.com/marketplace/models) gives you free access to AI models (OpenAI, Meta, Microsoft, and others) directly from GitHub. Rate-limited, but no cost.
 
 ## Prerequisites
 
 - GitHub account ([Sign up free](https://github.com/signup))
 
-## Step 1: Get GitHub Personal Access Token
+## Step 1: Get a GitHub Personal Access Token
 
-You need a GitHub Personal Access Token (PAT) with `models:read` scope.
+You need a PAT with `models:read` scope.
 
 ### Create PAT
 
 1. Follow this document, [Creating a fine-grained personal access token](https://docs.github.com/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token)
 
-## Step 2: Store Token Securely
+## Step 2: Store token
 
 ```bash
 # Store GitHub token
 dotnet user-secrets --file ./apphost.cs set GitHub:Token "{{GITHUB_PAT}}"
 ```
 
-## Step 3: Run the Application
+## Step 3: Run the app
 
 ```bash
 # Using file-based Aspire (recommended)
@@ -61,16 +43,16 @@ aspire run --file ./apphost.cs -- --provider GitHubModels
 aspire run --project ./src/InterviewCoach.AppHost -- --provider GitHubModels
 ```
 
-## Rate Limits and Quotas
+## Rate limits
 
-GitHub Models has usage limits. For more details, visit this page, [GitHub Models billing](https://docs.github.com/billing/concepts/product-billing/github-models).
+GitHub Models has usage limits. See [GitHub Models billing](https://docs.github.com/billing/concepts/product-billing/github-models) for details.
 
-## Next Steps
+## Next steps
 
-- **[Learning Objectives](LEARNING-OBJECTIVES.md)**: Understand what you'll learn
-- **[Architecture Overview](ARCHITECTURE.md)**: Deep dive into system design
-- **[Tutorials](TUTORIALS.md)**: Hands-on learning exercises
-- **[FAQ](FAQ.md)**: Common questions answered
+- [Learning objectives](../LEARNING-OBJECTIVES.md)
+- [Architecture overview](../ARCHITECTURE.md)
+- [Tutorials](../TUTORIALS.md)
+- [FAQ](../FAQ.md)
 
 ## Resources
 

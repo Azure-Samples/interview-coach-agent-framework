@@ -1,6 +1,6 @@
-# User Manual — Interview Coach
+# User manual
 
-A step-by-step guide to using the Interview Coach application once it's running. This document walks you through a complete interview practice session from start to finish.
+A walkthrough of a complete interview session, from start to summary.
 
 ## Prerequisites
 
@@ -16,9 +16,9 @@ Once all services show ✅ **Running** in the Aspire Dashboard, click the **webu
 
 ---
 
-## Quick Overview
+## Quick overview
 
-The Interview Coach guides you through a mock interview session. Here's the typical flow:
+The coach walks you through a mock interview:
 
 ```
 1. Greet the coach → Session is created
@@ -33,9 +33,9 @@ You can skip steps, stop at any time, or go back and forth between sections.
 
 ---
 
-## Step-by-Step Walkthrough
+## Step-by-step walkthrough
 
-### Step 1: Start a Conversation
+### Step 1: Start a conversation
 
 Open the WebUI and type a greeting to begin. The coach will create an interview session and provide you with a **Session ID**.
 
@@ -52,26 +52,16 @@ Coach: Welcome! I've created a new interview session for you.
 
 ---
 
-### Step 2: Share Your Resume
+### Step 2: Share your resume
 
 Provide your resume in one of four ways:
 
-| Method | What to do |
-|--------|------------|
-| **Attach a file** | Click the 📎 button next to the text box, select a PDF/DOCX file from your computer |
-| **URL link** | `Here's my resume: https://www.linkedin.com/in/elbruno/` |
-| **File link** | `My resume is at https://example.com/resume.pdf` |
+| Method         | What to do                                                |
+|----------------|-----------------------------------------------------------|
+| **URL link**   | `Here's my resume: https://www.linkedin.com/in/johndoe/`  |
+| **File link**  | `My resume is at https://example.com/resume.pdf`          |
 | **Paste text** | Paste the full text of your resume directly into the chat |
-| **Skip** | `I'd like to proceed without a resume` |
-
-**Example using file upload:**
-
-```
-You:   [click 📎, select resume.pdf] Here's my resume, I attached it
-Coach: Thanks! I've received your file and parsed your resume.
-       I can see you have experience in AI, Cloud Architecture, and DevOps.
-       Would you like to provide a job description as well?
-```
+| **Skip**       | `I'd like to proceed without a resume`                    |
 
 **Example using a LinkedIn profile:**
 
@@ -139,7 +129,7 @@ The coach uses the **MarkItDown MCP server** to convert documents (PDF, DOCX, we
 
 ---
 
-### Step 3: Share the Job Description
+### Step 3: Share the job description
 
 Next, provide the job description for the role you're preparing for. The same input methods apply (URL, file link, text, or skip).
 
@@ -201,7 +191,7 @@ If you skip both the resume and job description, the coach will ask general inte
 
 ---
 
-### Step 4: Behavioral Interview
+### Step 4: Behavioral interview
 
 The coach begins with behavioral questions tailored to your resume and job description. Questions follow the **STAR method** (Situation, Task, Action, Result).
 
@@ -234,7 +224,7 @@ Typically the coach asks **3-5 behavioral questions**. After each answer, you re
 
 ---
 
-### Step 5: Technical Interview
+### Step 5: Technical interview
 
 When you're ready, the coach switches to technical questions based on the skills in your resume and job description.
 
@@ -264,7 +254,7 @@ Coach: Solid approach! Here's my analysis:
 
 ---
 
-### Step 6: End the Interview and Get a Summary
+### Step 6: End the interview and get a summary
 
 When you're done, ask the coach to wrap up. The coach generates a comprehensive summary.
 
@@ -305,89 +295,66 @@ Coach: Here's your interview summary:
 
 ---
 
-## Multi-Agent Mode
+## Multi-agent mode
 
-By default, the application runs in **Single Agent mode** (`AgentMode: Single`). To use the **Multi-Agent Handoff mode**, change the `AgentMode` setting in `apphost.settings.json` to `LlmHandOff`:
+By default the app runs the multi-agent mode with LLM (`AgentMode: LlmHandOff`). To use a single-agent mode or multi-agent with GitHub Copilot instead, set `AgentMode` to either `Single` or `CopilotHandOff` in `apphost.settings.json`:
 
 ```json
 {
-  "AgentMode": "LlmHandOff"
+  // Single-agent mode
+  "AgentMode": "Single",
+
+  // Multi-agent mode with GitHub Copilot
+  "AgentMode": "CopilotHandOff",
 }
 ```
 
 In multi-agent mode, five specialized agents collaborate:
 
-| Agent | What It Does |
-|-------|-------------|
-| **Triage** | Routes your messages to the right specialist |
-| **Receptionist** | Sets up your session, parses your resume and job description |
-| **Behavioral Interviewer** | Asks behavioral questions using the STAR method |
-| **Technical Interviewer** | Asks role-specific technical questions |
-| **Summariser** | Generates your final interview summary |
+| Agent                      | What It Does                                                 |
+|----------------------------|--------------------------------------------------------------|
+| **Triage**                 | Routes your messages to the right specialist                 |
+| **Receptionist**           | Sets up your session, parses your resume and job description |
+| **Behavioral Interviewer** | Asks behavioral questions using the STAR method              |
+| **Technical Interviewer**  | Asks role-specific technical questions                       |
+| **Summariser**             | Generates your final interview summary                       |
 
-The handoffs happen automatically — you interact naturally and the system routes to the right specialist behind the scenes.
+Handoffs happen automatically — you just chat normally and the system routes to the right specialist.
 
-> **Learn more:** See [MULTI-AGENT.md](MULTI-AGENT.md) for architecture details and how to switch between single-agent and multi-agent modes.
+See [MULTI-AGENT.md](MULTI-AGENT.md) for details.
 
----
+## Tips
 
-## Tips for the Best Experience
+1. **Provide both resume and JD** — more context means more relevant questions.
+2. **Answer in detail** — longer answers get better feedback.
+3. **Use the STAR method** — Situation, Task, Action, Result.
+4. **Ask for clarification** — the coach can rephrase.
+5. **Run multiple sessions** — each one is saved. Try different job descriptions.
+6. **Stop anytime** — say "stop" to get your summary early.
 
-1. **Provide both resume and job description** — The more context the coach has, the more relevant the questions will be.
-2. **Answer in detail** — Longer, structured answers get better feedback.
-3. **Use the STAR method** — Structure behavioral answers as Situation → Task → Action → Result.
-4. **Ask for clarification** — If a question is unclear, ask the coach to rephrase.
-5. **Practice multiple sessions** — Each session is saved. Start fresh with new job descriptions to practice for different roles.
-6. **Stop anytime** — Say "stop" or "end the interview" to get your summary at any point.
-
----
-
-## Monitoring with Aspire Dashboard
-
-While using the app, the Aspire Dashboard provides real-time observability:
-
-| What to Check | Where |
-|---------------|-------|
-| Service health | **Resources** tab — all services should show ✅ Running |
-| Agent tool calls | **Traces** tab — see when the agent calls MCP tools |
-| Logs | **Logs** tab — filter by `agent` to see agent reasoning |
-| Session data | **SQLite Web** resource — browse interview session records |
-
-This is useful for understanding how the agent works and for debugging if something goes wrong.
-
----
-
-## Common Scenarios
+## Common scenarios
 
 ### Resume from LinkedIn
 
 ```
-You: Hi my cv is here: https://www.linkedin.com/in/elbruno/
+You: Hi my resume is here: https://www.linkedin.com/in/johndoe/
 ```
 
-The coach uses MarkItDown to extract your profile information and tailors questions to your experience in AI, developer advocacy, and Microsoft technologies.
+The coach uses MarkItDown to extract your profile information and tailors questions to your experience.
 
-### Resume from a local PDF file
-
-Click the 📎 (paperclip) button in the chat input, select your PDF or Word document, and send. The coach will upload and parse the file automatically. Supported formats: `.pdf`, `.docx`, `.doc`, `.txt`, `.md`, `.html` (max 10 MB).
-
-```
-You: [click 📎, select my-resume.pdf] Here's my resume
-```
-
-### Resume from a hosted PDF file
+### Resume from a hosted PDF
 
 ```
 You: My resume is at https://mysite.com/resume.pdf
 ```
 
-### Skip resume, provide only job description
+### Skip resume, just provide a job description
 
 ```
 You: I don't have a resume handy, but here's the job: https://careers.example.com/job/12345
 ```
 
-### Practice with sample files
+### Practice with samples
 
 Use the included samples:
 
@@ -405,25 +372,8 @@ Coach: Of course! Your Session ID is a1b2c3d4-...
        Just mention this ID when you come back and we'll pick up where you left off.
 ```
 
----
+## Next steps
 
-## Troubleshooting
-
-| Issue | Solution |
-|-------|---------|
-| Coach doesn't parse my URL | Ensure the URL is publicly accessible. Private LinkedIn profiles may not be fully parseable. |
-| No response from the coach | Check the Aspire Dashboard — ensure all services are ✅ Running. |
-| Rate limiting errors | If using GitHub Models, you may hit the 15 RPM limit. Wait a moment and try again, or switch to Foundry/Azure OpenAI. |
-| Session not found | Start a new session. Session data persists in SQLite but may be cleared between restarts. |
-
-For more help, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
-
----
-
-## Next Steps
-
-- **[Quick Start Guide](QUICK-START.md)** — Setup and configuration
-- **[Architecture](ARCHITECTURE.md)** — How the system works under the hood
-- **[Tutorials](TUTORIALS.md)** — Customize the agent and build your own MCP servers
-- **[Multi-Agent Guide](MULTI-AGENT.md)** — Understand the multi-agent handoff pattern
-- **[FAQ](FAQ.md)** — Common questions
+- [Architecture overview](ARCHITECTURE.md)
+- [Tutorials](TUTORIALS.md)
+- [FAQ](FAQ.md)

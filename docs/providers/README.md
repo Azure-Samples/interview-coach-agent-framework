@@ -1,8 +1,8 @@
-# LLM Provider Options
+# LLM provider options
 
-The Interview Coach application supports multiple LLM providers through a configuration-based abstraction layer. This allows you to choose the best provider for your scenario without code changes.
+The app supports multiple LLM backends. Pick one in config and go — no code changes.
 
-## Quick Comparison
+## Quick comparison
 
 | Provider                                      | Best For                                  | Auth       | Cost               |
 |-----------------------------------------------|-------------------------------------------|------------|--------------------|
@@ -10,25 +10,23 @@ The Interview Coach application supports multiple LLM providers through a config
 | **[Azure OpenAI](AZURE-OPENAI.md)**           | Production deployments                    | API Key    | Pay-per-use        |
 | **[GitHub Models](GITHUB-MODELS.md)**         | Local development and prototyping         | GitHub PAT | Free (with limits) |
 
-## Getting Started
+## Getting started
 
-Choose your provider and follow the detailed guide:
+Pick a provider and follow the guide:
 
-- **[Microsoft Foundry Setup](MICROSOFT-FOUNDRY.md)** (Recommended)
-- **[Azure OpenAI Setup](AZURE-OPENAI.md)**
-- **[GitHub Models Setup](GITHUB-MODELS.md)**
+- [Microsoft Foundry](MICROSOFT-FOUNDRY.md) (recommended)
+- [Azure OpenAI](AZURE-OPENAI.md)
+- [GitHub Models](GITHUB-MODELS.md)
 
-## Switching Providers
+## Switching providers
 
-All providers use the same application code. Switching is as simple as:
+All providers use the same code. To switch:
 
-1. **Update configuration** (`apphost.settings.json`)
-2. **Set credentials** (user secrets or environment variables)
-3. **Restart application**
+1. Update configuration (`apphost.settings.json`)
+2. Set credentials (user secrets or environment variables)
+3. Restart
 
-No code changes required!
-
-### Configuration Examples
+### Configuration examples
 
 **Microsoft Foundry:**
 
@@ -75,9 +73,9 @@ No code changes required!
 }
 ```
 
-### Command-Line Parameter Examples
+### Command-line examples
 
-Instead of changing `apphost.settings.json`, pass the provider parameter when running the app.
+You can also pass the provider as a flag instead of editing config:
 
 **Microsoft Foundry:**
 
@@ -97,9 +95,9 @@ aspire run --file ./apphost.cs -- --provider AzureOpenAI
 aspire run --file ./apphost.cs -- --provider GitHubModels
 ```
 
-## Next Steps
+## Next steps
 
-- **[Learning Objectives](LEARNING-OBJECTIVES.md)**: Understand what you'll learn
-- **[Architecture Overview](ARCHITECTURE.md)**: Deep dive into system design
-- **[Tutorials](TUTORIALS.md)**: Hands-on learning exercises
-- **[FAQ](FAQ.md)**: Common questions answered
+- [Learning objectives](../LEARNING-OBJECTIVES.md)
+- [Architecture overview](../ARCHITECTURE.md)
+- [Tutorials](../TUTORIALS.md)
+- [FAQ](../FAQ.md)

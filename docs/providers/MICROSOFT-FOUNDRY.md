@@ -1,15 +1,10 @@
-# Microsoft Foundry Setup Guide
+# Microsoft Foundry setup
 
-This is the **recommended configuration** for production deployments of the Interview Coach application.
+Recommended for production.
 
 ## What is Microsoft Foundry?
 
-[Microsoft Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/what-is-foundry?view=foundry) is a comprehensive platform for building, deploying, and managing AI applications on Azure. It provides:
-
-- **Unified Portal**: Single interface for model management, evaluation, and monitoring
-- **Enterprise Features**: Content safety, PII detection, responsible AI tools
-- **Cost Optimization**: Automatic selection between models to balance quality and cost
-- **Integrated Tools**: Prompt flow, evaluation datasets, fine-tuning, and more
+[Microsoft Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/what-is-foundry?view=foundry) is Azure's platform for building and managing AI applications. It gives you a single portal for model management, content safety, PII detection, cost-optimized model routing, evaluation, and fine-tuning.
 
 ## Prerequisites
 
@@ -17,7 +12,7 @@ This is the **recommended configuration** for production deployments of the Inte
 - Azure Developer CLI installed ([Download](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd))
 - Azure CLI installed ([Download](https://docs.microsoft.com/cli/azure/install-azure-cli))
 
-## Step 1: Create Foundry Resource
+## Step 1: Create Foundry resource
 
 ```bash
 # Navigate to the resource directory
@@ -30,7 +25,7 @@ azd auth login
 azd up
 ```
 
-## Step 2: Get Resource Endpoint and API Key
+## Step 2: Get endpoint and API key
 
 ```bash
 # Navigate to the resource directory
@@ -46,14 +41,14 @@ azd env get-value 'FOUNDRY_PROJECT_ENDPOINT'
 az cognitiveservices account keys list -g rg-$(azd env get-value AZURE_ENV_NAME) -n $(azd env get-value FOUNDRY_NAME) --query "key1" -o tsv
 ```
 
-## Step 3: Store Credentials Securely
+## Step 3: Store credentials
 
 ```bash
 dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}"
 dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey "{{MICROSOFT_FOUNDRY_API_KEY}}"
 ```
 
-## Step 4: Run the Application
+## Step 4: Run the app
 
 ```bash
 # Using file-based Aspire (recommended)
@@ -72,7 +67,7 @@ azd auth login
 azd up
 ```
 
-## Step 6: Clean Up Resources
+## Step 6: Clean up
 
 When finished, remove all Azure resources:
 
@@ -80,12 +75,12 @@ When finished, remove all Azure resources:
 azd down --force --purge
 ```
 
-## Next Steps
+## Next steps
 
-- **[Learning Objectives](LEARNING-OBJECTIVES.md)**: Understand what you'll learn
-- **[Architecture Overview](ARCHITECTURE.md)**: Deep dive into system design
-- **[Tutorials](TUTORIALS.md)**: Hands-on learning exercises
-- **[FAQ](FAQ.md)**: Common questions answered
+- [Learning objectives](../LEARNING-OBJECTIVES.md)
+- [Architecture overview](../ARCHITECTURE.md)
+- [Tutorials](../TUTORIALS.md)
+- [FAQ](../FAQ.md)
 
 ## Resources
 

@@ -4,12 +4,12 @@ These hands-on tutorials guide you through customizing and extending the Intervi
 
 ## Prerequisites
 
-Before starting these tutorials:
+Before starting:
 
-- ✅ Complete the [Getting Started](../README.md#getting-started) guide
-- ✅ Get the application running locally
-- ✅ Read [architecture overview](ARCHITECTURE.md) for system overview
-- ✅ Familiarity with C# and .NET
+- Complete the [Getting Started](../README.md#getting-started) setup
+- Get the app running locally
+- Skim the [architecture overview](ARCHITECTURE.md)
+- Basic familiarity with C# and .NET
 
 ---
 
@@ -569,20 +569,20 @@ public class EvaluationTool(IInterviewSessionRepository repository)
 
 ## Next Steps
 
-After completing these tutorials, you should be able to:
+After these tutorials you should be able to:
 
-- ✅ Modify agent behavior through instructions
-- ✅ Create custom MCP servers with tools
-- ✅ Understand multi-agent patterns
-- ✅ Add structured evaluation logic
+- Change agent behavior by editing instructions
+- Build a custom MCP server with tools
+- Understand multi-agent handoff patterns
+- Add structured evaluation logic
 
-### Additional Challenges
+### More things to try
 
-1. **Add voice input**: Integrate speech-to-text for realistic interview practice
-2. **Timer functionality**: Add MCP tool to track time per question
-3. **Question bank**: Create MCP server with curated questions by role/level
-4. **Video analysis**: MCP server to analyze facial expressions (advanced)
-5. **Comparison mode**: Compare multiple interview sessions
+1. **Voice input** — integrate speech-to-text for realistic practice
+2. **Timer** — add an MCP tool to track time per question
+3. **Question bank** — MCP server with curated questions by role/level
+4. **Video analysis** — MCP server for facial expression feedback (advanced)
+5. **Session comparison** — diff multiple interview sessions
 
 ### Resources
 
@@ -590,4 +590,4 @@ After completing these tutorials, you should be able to:
 
 ---
 
-**Share Your Extensions!** If you build something cool with this sample, open a PR or discussion on [GitHub](https://github.com/Azure-Samples/interview-coach-agent-framework).
+If you build something interesting on top of this, open a PR or start a discussion on [GitHub](https://github.com/Azure-Samples/interview-coach-agent-framework).

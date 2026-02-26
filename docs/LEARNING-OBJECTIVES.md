@@ -1,138 +1,81 @@
-# Learning Objectives
+# Learning objectives
 
-This sample demonstrates production-ready patterns for building AI agents with [Microsoft Agent Framework](https://aka.ms/agent-framework). Whether you're new to AI development or experienced with chatbots, this application teaches modern architectural patterns that scale from prototype to production.
+What this sample actually teaches, and where to find each pattern in the code.
 
-## What This Sample Teaches
+## What this sample covers
 
-### 1. Building Production AI Agents
+### 1. Building agents with Microsoft Agent Framework
 
-Learn how to create AI agents using [Microsoft Agent Framework](https://aka.ms/agent-framework) with:
+How to set up an AI agent with structured instructions, tool calling, session state, and error handling.
 
-- Structured instruction design for consistent agent behavior
-- Tool/function calling patterns for extending agent capabilities
-- Stateful conversation management across sessions
-- Error handling and graceful degradation
+The agent definition lives in [AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs) — instructions, tool registration, and multi-agent mode selection are all there.
 
-**See it in action**: [src/InterviewCoach.Agent/AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs) contains the complete agent instructions, tool registration, and multi-agent mode selection.
+### 2. Model Context Protocol (MCP)
 
-### 2. Model Context Protocol (MCP) Integration
+MCP lets you break tool implementations out of the agent into separate servers. Tools become reusable, language-agnostic, and independently deployable.
 
-Understand how MCP servers provide modular, reusable capabilities:
+Two examples in this repo:
 
-- Separating agent logic from tool implementation
-- Creating language-agnostic tool interfaces
-- Enabling tool reuse across different agents and applications
-- Building custom MCP servers for domain-specific needs
+- [MarkItDown MCP](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp) — external Python server for document parsing
+- [InterviewData MCP](../src/InterviewCoach.Mcp.InterviewData/) — custom .NET server for session management
 
-**Example implementations:**
+### 3. Service orchestration with Aspire
 
-- [MarkItDown MCP](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp) - External document parsing
-- [InterviewData MCP](../src/InterviewCoach.Mcp.InterviewData/) - Custom session management server
+Coordinating multiple services (agent, UI, MCP servers, database) with dependency ordering, service discovery, and config management. Local dev that looks like production.
 
-### 3. Cloud-Native Container Orchestration with Aspire
+See [AppHost.cs](../src/InterviewCoach.AppHost/AppHost.cs) for the service topology.
 
-Master service orchestration patterns:
+### 4. Multi-provider LLM support
 
-- Coordinating multiple services (agent, UI, MCP servers, databases)
-- Managing dependencies and startup order
-- Local development with production parity
-- Environment-specific configuration
+One codebase, multiple LLM backends. Pick a provider in config and go — no code changes. Use GitHub Models while prototyping, then switch to Foundry or Azure OpenAI for production.
 
-**See it in action**: [src/InterviewCoach.AppHost/AppHost.cs](../src/InterviewCoach.AppHost/AppHost.cs) orchestrates all components.
+The abstraction is in [LlmResourceFactory.cs](../src/InterviewCoach.AppHost/LlmResourceFactory.cs).
 
-### 4. Multi-Provider LLM Integration
+### 5. Stateful conversations
 
-Implement provider abstraction for flexibility:
+Sessions persist to SQLite. Resume text, job descriptions, and transcripts survive across turns. Users can pause and pick up later.
 
-- Single codebase supporting multiple LLM providers
-- Runtime provider selection via configuration
-- Environment-specific provider strategies (dev vs. prod)
-- Avoiding vendor lock-in
+See [InterviewSessionRepository.cs](../src/InterviewCoach.Mcp.InterviewData/InterviewSessionRepository.cs).
 
-**See it in action**: [src/InterviewCoach.AppHost/LlmResourceFactory.cs](../src/InterviewCoach.AppHost/LlmResourceFactory.cs)
+### 6. Instruction engineering
 
-### 5. Stateful Conversation Management
+Writing agent prompts that actually work: defining the role, setting boundaries, specifying step-by-step process, describing tool usage, and setting tone.
 
-Build agents that maintain context across sessions:
+The interview coach instructions show progressive disclosure (behavioral then technical), user control (stop anytime), and structured output (summaries).
 
-- Persistent session storage with SQLite
-- Resume/job description attachment handling
-- Conversation transcript recording
-- Multi-turn interview flow management
+## Why these patterns are worth learning
 
-**See it in action**: [src/InterviewCoach.Mcp.InterviewData/InterviewSessionRepository.cs](../src/InterviewCoach.Mcp.InterviewData/InterviewSessionRepository.cs)
+**You can add tools without modifying the agent.** MCP servers mean you can bolt on new capabilities (email, calendar, whatever) independently. Teams can work on tools and agents in parallel.
 
-### 6. Agent Instruction Engineering
+**You can swap providers without rewriting anything.** Prototype on GitHub Models for free, ship on Azure OpenAI or Foundry. The `IChatClient` interface makes the switch a config change.
 
-Craft effective agent instructions:
+**You get observability for free.** Aspire gives you service discovery, health checks, distributed tracing, and structured logging out of the box. Deploying to Azure Container Apps with `azd` is one command.
 
-- Clear role definition and boundaries
-- Step-by-step process guidelines
-- Tool usage instructions
-- Tone and personality specification
+**Each piece does one thing.** The agent handles conversation logic. MCP servers handle tools. The UI handles rendering. Aspire handles wiring. This makes it easier to test, replace, and extend individual parts.
 
-**Best practices example:** The interview coach agent instructions demonstrate progressive disclosure (behavioral → technical questions), user control (stopping mid-interview), and structured output (summaries).
+## What you'll walk away with
 
-## Why These Patterns Matter
+After working through this sample:
 
-### 1. Extensibility Without Modification
+- Microsoft Agent Framework — building and deploying agents
+- MCP — creating and consuming MCP servers
+- Aspire — orchestrating multi-service apps
+- Instruction design — writing prompts that produce consistent behavior
+- Tool/function calling — giving agents abilities beyond text generation
+- State management — persisting context across conversation turns
+- Azure deployment — shipping with `azd`
+- Provider abstraction — avoiding LLM vendor lock-in
 
-MCP servers let you add capabilities (email, calendar, document processing) without touching agent code. This follows the Open-Closed Principle and enables teams to work independently on tools and agents.
+## Suggested order
 
-### 2. Provider Flexibility
+1. Run the sample and go through a full interview
+2. Read the [architecture overview](ARCHITECTURE.md)
+3. Look at the agent instructions in `AgentDelegateFactory.cs`
+4. Work through the [tutorials](TUTORIALS.md)
+5. Start adapting the patterns for your own use case
 
-The multi-provider pattern means you can:
+## Next steps
 
-- Use GitHub Models for rapid prototyping (free)
-- Switch to Azure OpenAI for enterprise features
-- Deploy to Foundry for integrated Azure AI services
-- All without rewriting application logic
-
-### 3. Production-Ready Architecture
-
-Aspire orchestration provides:
-
-- Service discovery and health checks
-- Observability with OpenTelemetry built-in
-- Configuration management across environments
-- Seamless Azure deployment with `azd`
-
-### 4. Separation of Concerns
-
-Each component has a single responsibility:
-
-- **WebUI**: User interface and interaction
-- **Agent**: Interview orchestration and conversation management
-- **MCP Servers**: Specific capabilities (document parsing, data storage)
-- **Aspire**: Service orchestration and configuration
-
-This makes the codebase maintainable, testable, and easy to extend.
-
-## Skills You'll Gain
-
-By studying and modifying this sample, you'll develop expertise in:
-
-✅ **Microsoft Agent Framework**: Building production AI agents  
-✅ **Model Context Protocol**: Creating and integrating MCP servers  
-✅ **Aspire**: Cloud-native container orchestration architecture  
-✅ **Agent Instruction Design**: Crafting effective AI behaviors  
-✅ **Tool/Function Calling**: Extending agents with capabilities  
-✅ **State Management**: Handling conversational context  
-✅ **Azure Deployment**: Production deployment with `azd`  
-✅ **Provider Abstraction**: Multi-vendor LLM integration  
-
-## Learning Path
-
-We recommend this progression:
-
-1. **Run the sample**: Get it working to understand the end-to-end flow
-2. **Read [architecture overview](ARCHITECTURE.md)**: Understand the system design
-3. **Study the agent instructions**: See how behavior is defined
-5. **Follow [tutorials](TUTORIALS.md)**: Hands-on modifications
-6. **Build your own**: Apply patterns to your domain
-
-## Next Steps
-
-- **[Architecture Overview](ARCHITECTURE.md)**: Deep dive into system design
-- **[Tutorials](TUTORIALS.md)**: Hands-on learning exercises
-- **[FAQ](FAQ.md)**: Common questions answered
+- [Architecture overview](ARCHITECTURE.md)
+- [Tutorials](TUTORIALS.md)
+- [FAQ](FAQ.md)

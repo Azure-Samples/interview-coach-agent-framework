@@ -1,52 +1,36 @@
-# Architecture Overview
+# Architecture overview
 
-This document provides a deep dive into the Interview Coach application architecture, explaining how components work together to create a production-ready AI agent system.
+How the Interview Coach is put together and why.
 
-## System Architecture
+## System architecture
 
 ![Architecture Diagram](../assets/architecture.png)
 
-The application follows a **microservices architecture** orchestrated by [Aspire](https://aspire.dev), with clear separation between the AI agent, user interface, extensibility layer (MCP servers), and data persistence.
+[Aspire](https://aspire.dev) orchestrates the services: agent, web UI, MCP servers, and a SQLite database. Each runs as a separate process with service discovery wiring them together.
 
-### Key Architectural Decisions
+A few decisions shaped the design:
 
-1. **MCP-Based Extensibility**: Tools are implemented as separate MCP servers rather than direct integrations, enabling reusability and independent development
-2. **Provider Abstraction**: LLM provider is configurable at runtime, supporting Foundry, Azure OpenAI, and GitHub Models
-3. **Aspire Orchestration**: Service discovery, health checks, and observability are built-in through .NET Aspire
-4. **Stateful Sessions**: Interview sessions persist to SQLite, allowing resume/pause functionality
+1. **MCP for tools** — Tools (document parsing, session storage) live in their own MCP servers. They can be reused across projects and developed independently.
+2. **Provider abstraction** — The LLM backend is swappable at runtime: Foundry, Azure OpenAI, or GitHub Models.
+3. **Aspire orchestration** — Service discovery, health checks, and telemetry come free from .NET Aspire.
+4. **Stateful sessions** — Interview sessions persist to SQLite so users can pause and resume.
 
 ## Component Deep Dive
 
-### 1. InterviewCoach.Agent (AI Agent Service)
+### 1. InterviewCoach.Agent (AI agent service)
 
-**Purpose**: The core AI agent that conducts interviews, manages conversation flow, and orchestrates tool usage.
+The agent runs the interview. It decides what to ask, when to call tools, and how to respond.
 
-**Technology Stack**:
+Built on ASP.NET Core, Microsoft Agent Framework, and the OpenAI SDK. Talks to the web UI via the AG-UI protocol and to tools via MCP clients.
 
-- ASP.NET Core Web API
-- Microsoft Agent Framework
-- OpenAI SDK for chat completions
-- MCP client for tool integration
-- AG-UI intergation for communication with web UI
+- Runs as a single agent or as 5 specialists in handoff mode (configurable)
+- Has step-by-step interview instructions (scoped per-agent in handoff mode)
+- Calls MarkItDown (document parsing) and InterviewData (session storage) through MCP
+- Uses the `IChatClient` interface, so the LLM provider is pluggable
 
-**Agent Capabilities**
+### 2. InterviewCoach.WebUI (user interface)
 
-- Mode selection: Single agent, Muilti-agent Handoff (Microsoft Foundry or GitHub Copilot)
-- Instructions: Step-by-step interview process (per-agent in handoff modes)
-- Tools: MarkItDown (document parsing) + InterviewData (session management)
-- Chat client: Provider-agnostic `IChatClient` interface
-
-### 2. InterviewCoach.WebUI (User Interface)
-
-**Purpose**: Blazor-based web application providing the user interface for interacting with the interview coach agent.
-
-**Technology Stack**:
-
-- Blazor Web App
-- Tailwind CSS for styling
-- Marked.js for markdown rendering
-- DOMPurify for XSS protection
-- AG-UI integration for communication with the backend agent service
+A Blazor web app where users chat with the agent. Styled with Tailwind CSS, renders markdown with Marked.js, and sanitizes input with DOMPurify. Communicates with the agent over the AG-UI protocol.
 
 **Communication Flow**:
 
@@ -60,18 +44,11 @@ flowchart LR
     F --> G[Blazor UI]
 ```
 
-### 3. InterviewCoach.Mcp.MarkItDown (Document Parsing MCP Server)
+### 3. InterviewCoach.Mcp.MarkItDown (document parsing)
 
-**Purpose**: External MCP server that converts various document formats (PDF, DOCX, etc.) to markdown for agent consumption.
+Converts PDFs, DOCX files, and other documents to markdown so the agent can read them. This is [Microsoft's MarkItDown](https://github.com/microsoft/markitdown) running as an MCP server in a Docker container.
 
-**Source**: [Microsoft MarkItDown](https://github.com/microsoft/markitdown)
-
-**Why External?**:
-
-- Language-agnostic (Python-based)
-- Reusable across projects
-- Independently maintained by Microsoft
-- Demonstrates external MCP integration
+It's external (Python-based) because it's reusable across projects and maintained independently. It also shows how to integrate a third-party MCP server.
 
 **Integration Pattern**:
 
@@ -83,15 +60,9 @@ flowchart LR
     D --> E[Markdown Response]
 ```
 
-### 4. InterviewCoach.Mcp.InterviewData (Custom MCP Server)
+### 4. InterviewCoach.Mcp.InterviewData (session storage)
 
-**Purpose**: Custom .NET MCP server managing interview session state and persistence.
-
-**Technology Stack**:
-
-- ASP.NET Core Web API
-- Model Context Protocol SDK
-- Entity Framework Core with SQLite
+A custom .NET MCP server that stores interview sessions in SQLite via Entity Framework Core. Built with the `ModelContextProtocol.Server` SDK.
 
 **Integration Pattern**:
 
@@ -103,13 +74,13 @@ flowchart LR
     D --> E[Response]
 ```
 
-### 5. InterviewCoach.AppHost (Aspire Orchestration)
+### 5. InterviewCoach.AppHost (Aspire orchestration)
 
-**Purpose**: .NET Aspire application model defining service topology, dependencies, and configuration.
+The Aspire app model. Defines which services exist, how they depend on each other, and what config they get.
 
-### 6. InterviewCoach.ServiceDefaults (Shared Configuration)
+### 6. InterviewCoach.ServiceDefaults (shared defaults)
 
-**Purpose**: Common service configuration shared across all projects (observability, health checks, service discovery).
+OpenTelemetry, health checks, service discovery, and HTTP client defaults. Shared across all projects so you don't repeat the setup.
 
 ## Multi-Agent Handoff Workflow
 
@@ -157,8 +128,8 @@ sequenceDiagram
     S->>U: Display summary
 ```
 
-## Next Steps
+## Next steps
 
-- **[Learning Objectives](LEARNING-OBJECTIVES.md)**: Understand what you'll learn
-- **[Tutorials](TUTORIALS.md)**: Hands-on learning exercises
-- **[FAQ](FAQ.md)**: Common questions answered
+- [Learning objectives](LEARNING-OBJECTIVES.md)
+- [Tutorials](TUTORIALS.md)
+- [FAQ](FAQ.md)
