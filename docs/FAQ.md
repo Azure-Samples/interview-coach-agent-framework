@@ -61,10 +61,10 @@ A .NET library for building AI agents with:
 
 | Feature | Agent Framework | Semantic Kernel | AutoGen |
 |---------|----------------|-----------------|---------|
-| Language | .NET | .NET, Python, Java | Python |
+| Language | .NET, Python | .NET, Python, Java | Python |
 | Focus | Production agents | AI orchestration | Multi-agent research |
 | Hosting | Web APIs | Embedded | Standalone |
-| AGUI Protocol | Yes | No | No |
+| AG-UI Protocol | Yes | No | No |
 
 Agent Framework is optimized for deployable web services.
 
@@ -80,9 +80,9 @@ Switch between modes via the `AgentMode` setting in `apphost.settings.json`.
 
 **[Multi-agent guide →](MULTI-AGENT.md)**
 
-### What's the AGUI protocol?
+### What's the AG-UI protocol?
 
-The **Agent UI (AGUI) protocol** is a standard for AI agent communication. It enables:
+The **Agent UI (AG-UI) protocol** is a standard for AI agent communication. It enables:
 
 - Consistent interface across different agents
 - Tool sharing between implementations
@@ -198,25 +198,11 @@ Not directly, but you can:
 
 **Limitations**: Local models may not support tools as well as OpenAI models.
 
-### How much does this cost to run?
-
-**Development** (GitHub Models): Free (with rate limits)
-
-**Production** (Foundry, estimated for 1000 interviews):
-
-- model-router: ~$15-30 (optimized routing)
-- gpt-4o-mini: ~$20-40
-- gpt-4o: ~$100-200
-
-**Azure hosting** (Container Apps, basic tier): ~$30-50/month
-
-**[Provider comparison →](providers/README.md)**
-
 ---
 
-## .NET Aspire
+## Aspire
 
-### What is .NET Aspire?
+### What is Aspire?
 
 A framework for building **cloud-native applications** with:
 
@@ -269,7 +255,7 @@ azd up
 
 This provisions all resources and deploys the application.
 
-**[Deployment guide →](../README.md#deploy-to-azure)**
+**[Deployment guide →](../README.md#5-deploy-to-azure)**
 
 ### Can I deploy to AWS or GCP?
 
@@ -281,26 +267,6 @@ Not directly with `azd`, but you can:
 - Set environment variables for endpoints
 
 The application is cloud-agnostic; Aspire deployment targets Azure by default.
-
-### How do I set up CI/CD?
-
-Template includes GitHub Actions workflow:
-
-```yaml
-# .github/workflows/deploy.yml
-on:
-  push:
-    branches: [main]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: azd auth login --client-id ${{ secrets.AZURE_CLIENT_ID }}
-      - run: azd deploy
-```
-
-**[Azure DevOps Pipelines also supported →](https://learn.microsoft.com/azure/developer/azure-developer-cli/azd-in-ci-cd)**
 
 ### What about scaling?
 
@@ -376,19 +342,9 @@ Agent is UI-agnostic.
 
 ### Where do I get help?
 
-1. **[Check Troubleshooting Guide →](TROUBLESHOOTING.md)**
 2. **[Search Issues](https://github.com/Azure-Samples/interview-coach-agent-framework/issues)**
 3. **[Open New Issue](https://github.com/Azure-Samples/interview-coach-agent-framework/issues/new)**
 4. **[Stack Overflow](https://stackoverflow.com/questions/tagged/microsoft-agent-framework)** (tag: `microsoft-agent-framework`)
-
-### Common issues?
-
-See **[Troubleshooting Guide](TROUBLESHOOTING.md)** for:
-
-- Connection errors
-- Provider configuration
-- MCP server issues
-- Deployment problems
 
 ---
 
@@ -396,7 +352,7 @@ See **[Troubleshooting Guide](TROUBLESHOOTING.md)** for:
 
 ### How can I contribute?
 
-See **[CONTRIBUTING.md](../CONTRIBUTING.md)** for:
+See **[CONTRIBUTING.md](./CONTRIBUTING.md)** for:
 
 - Code contributions
 - Documentation improvements
@@ -421,20 +377,10 @@ You can:
 
 ### Where should I start?
 
-1. **[Run the sample](../README.md)** - Get it working
-2. **[Learning Objectives](LEARNING-OBJECTIVES.md)** - Understand what you'll learn
-3. **[Architecture Guide](ARCHITECTURE.md)** - See how it works
-4. **[Tutorials](TUTORIALS.md)** - Hands-on practice
-
-### What should I learn next?
-
-After mastering this sample:
-
-- **Agent Framework** - Build multi-agent systems
-- **Prompt Flow** - Advanced prompt engineering
-- **Foundry Evaluation** - Measure agent quality
-- **RAG patterns** - Add knowledge bases
-- **Fine-tuning** - Custom model training
+- **[Run the sample](../README.md)**: Get it working
+- **[Learning Objectives](LEARNING-OBJECTIVES.md)**: Understand what you'll learn
+- **[Architecture Overview](ARCHITECTURE.md)**: Deep dive into system design
+- **[Tutorials](TUTORIALS.md)**: Hands-on learning exercises
 
 ---
 

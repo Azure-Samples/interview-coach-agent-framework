@@ -78,8 +78,6 @@ aspire run --file ./apphost.cs
 1. Look for ✅ "Running" status on all resources.
 1. Click the **webui** endpoint to open the interview coach.
 
-**Having issues?** See [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
-
 ### 5. Deploy to Azure
 
 Deploy the entire application to Azure Container Apps with one command:
@@ -99,6 +97,7 @@ When finished, remove all Azure resources:
 ```bash
 azd down --force --purge
 ```
+
 ## Next Steps
 
 ### Learn

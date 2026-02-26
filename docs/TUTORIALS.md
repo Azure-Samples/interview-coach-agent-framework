@@ -8,7 +8,7 @@ Before starting these tutorials:
 
 - ✅ Complete the [Getting Started](../README.md#getting-started) guide
 - ✅ Get the application running locally
-- ✅ Read [ARCHITECTURE.md](ARCHITECTURE.md) for system overview
+- ✅ Read [architecture overview](ARCHITECTURE.md) for system overview
 - ✅ Familiarity with C# and .NET
 
 ---
@@ -574,10 +574,7 @@ After completing these tutorials, you should be able to:
 
 ### Resources
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System design details
-- [MCP-SERVERS.md](MCP-SERVERS.md) - MCP deep dive
-- [Microsoft Agent Framework Docs](https://aka.ms/agent-framework)
-- [FAQ.md](FAQ.md) - Common questions
+- [Microsoft Agent Framework](https://aka.ms/agent-framework)
 
 ---
 
