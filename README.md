@@ -1,17 +1,17 @@
 # Interview Coach with Microsoft Agent Framework
 
-An AI-powered interview preparation application demonstrating production-ready patterns with [Microsoft Agent Framework](https://aka.ms/agent-framework), Model Context Protocol (MCP) integration, and .NET Aspire orchestration.
+An AI-powered interview preparation application demonstrating production-ready patterns with [Microsoft Agent Framework](https://aka.ms/agent-framework), [Model Context Protocol (MCP)](https://modelcontextprotocol.io) integration, and [Aspire](https://aspire.dev) orchestration.
 
 ## What You'll Learn
 
 This sample teaches modern AI agent development patterns:
 
-- ✅ **Building production AI agents** with Microsoft Agent Framework
+- ✅ **Building production-ready AI agents** with Microsoft Agent Framework
 - ✅ **Multi-agent handoff orchestration** — single agent vs 5 specialized agents ([learn more](docs/MULTI-AGENT.md))
 - ✅ **Model Context Protocol (MCP)** for extensible agent capabilities
-- ✅ **Multi-service orchestration** with .NET Aspire
+- ✅ **Multi-service orchestration** with Aspire
 - ✅ **Stateful conversation management** across sessions
-- ✅ **Multi-provider LLM support** (Microsoft Foundry, Azure OpenAI, GitHub Models)
+- ✅ **Multi-provider LLM support** (Microsoft Foundry, Azure OpenAI, GitHub Models and GitHub Copilot)
 - ✅ **Azure deployment** with one command using `azd`
 
 **[Read more about learning objectives →](docs/LEARNING-OBJECTIVES.md)**
