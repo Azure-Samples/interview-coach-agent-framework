@@ -1,10 +1,4 @@
 using System.Collections.Concurrent;
-using System.ClientModel.Primitives;
-using System.Data.Common;
-
-using Azure.Identity;
-
-using GitHub.Copilot.SDK;
 
 using InterviewCoach.Agent;
 
