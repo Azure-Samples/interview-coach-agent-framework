@@ -37,7 +37,7 @@ Foundry gives you a single portal for:
 
 For the Interview Coach, Foundry provides the model endpoint that powers the agents. Because the agent code uses the `IChatClient` interface, Foundry is just a configuration choice, but it's the one that gives you the most tooling out of the box.
 
-The sample also supports [GitHub Models](https://github.com/marketplace/models) as a free alternative for prototyping.
+<!-- The sample also supports [GitHub Models](https://github.com/marketplace/models) as a free alternative for prototyping. -->
 
 ## What does the Interview Coach do?
 
@@ -54,7 +54,7 @@ You interact with it through a Blazor web UI that streams responses in real time
 
 The application is split into several services, all orchestrated by Aspire:
 
-- **LLM Provider.** Microsoft Foundry (recommended) or GitHub Models for prototyping.
+- **LLM Provider.** Microsoft Foundry (recommended) for different model access.
 - **WebUI.** Blazor chat interface for the interview conversation.
 - **Agent.** The interview logic, built on Microsoft Agent Framework.
 - **MarkItDown MCP Server.** Parses resumes (PDF, DOCX) into markdown via Microsoft's MarkItDown.
@@ -64,7 +64,7 @@ The application is split into several services, all orchestrated by Aspire:
 
 Aspire handles service discovery, health checks, and telemetry. Each component runs as a separate process, and you start the whole thing with a single command.
 
-## Pattern 1: Pluggable LLM providers via IChatClient
+<!-- ## Pattern 1: Pluggable LLM providers via IChatClient
 
 The agent code doesn't know or care which LLM it's talking to. Every agent is built on the `IChatClient` interface from [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai), so the model provider is a configuration choice, not a code change.
 
@@ -92,9 +92,9 @@ aspire run --file ./apphost.cs -- --provider MicrosoftFoundry
 aspire run --file ./apphost.cs -- --provider GitHubModels
 ```
 
-Under the hood, the Aspire app host uses a provider factory that wires up the right resource based on the provider setting. The agent project receives an `IChatClient` through dependency injection and never references a specific provider SDK directly. This means you can prototype on GitHub Models for free, then switch to Foundry for production without touching agent code. And when a new provider shows up, you just add it to the factory.
+Under the hood, the Aspire app host uses a provider factory that wires up the right resource based on the provider setting. The agent project receives an `IChatClient` through dependency injection and never references a specific provider SDK directly. This means you can prototype on GitHub Models for free, then switch to Foundry for production without touching agent code. And when a new provider shows up, you just add it to the factory. -->
 
-## Pattern 2: Multi-agent handoff
+## Pattern 1: Multi-agent handoff
 
 The handoff pattern is where this sample gets interesting. Instead of one agent doing everything, the interview is split across five specialized agents:
 
@@ -125,7 +125,7 @@ The happy path is sequential: Receptionist → Behavioral → Technical → Summ
 
 The sample also includes a single-agent mode for simpler deployments, so you can compare the two approaches side by side.
 
-## Pattern 3: MCP for tool integration
+## Pattern 2: MCP for tool integration
 
 Tools in this project don't live inside the agent. They live in their own MCP (Model Context Protocol) servers. The same MarkItDown server could power a completely different agent project, and tool teams can ship independently of agent teams. MCP is also language-agnostic, which is how MarkItDown runs as a Python server while the agent is .NET.
 
@@ -141,7 +141,7 @@ var receptionistAgent = new ChatClientAgent(
 
 Each agent only gets the tools it needs. Triage gets none (it just routes), interviewers get session access, and the Receptionist gets document parsing plus session access. This follows the principle of least privilege.
 
-## Pattern 4: Aspire orchestration
+## Pattern 3: Aspire orchestration
 
 Aspire ties everything together. The app host defines the service topology: which services exist, how they depend on each other, and what configuration they receive. You get:
 
