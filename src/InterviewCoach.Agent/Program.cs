@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using Microsoft.Extensions.Caching.Memory;
 
 using InterviewCoach.Agent;
 
@@ -129,8 +129,11 @@ else
 }
 
 // --- File Upload Endpoints ---
-// In-memory store for uploaded files (ephemeral, session-scoped).
-var uploadedFiles = new ConcurrentDictionary<string, (byte[] Content, string ContentType, string FileName)>();
+// In-memory store for uploaded files with eviction to prevent unbounded memory growth.
+var uploadedFiles = new MemoryCache(new MemoryCacheOptions
+{
+    SizeLimit = 50
+});
 
 var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 {
@@ -159,7 +162,10 @@ app.MapPost("/upload", async (HttpRequest request) =>
     using var ms = new MemoryStream();
     await file.CopyToAsync(ms);
 
-    uploadedFiles[fileId] = (ms.ToArray(), file.ContentType, file.FileName);
+    var cacheOptions = new MemoryCacheEntryOptions()
+        .SetSlidingExpiration(TimeSpan.FromMinutes(30))
+        .SetSize(1);
+    uploadedFiles.Set(fileId, (ms.ToArray(), file.ContentType, file.FileName), cacheOptions);
 
     var url = $"{request.Scheme}://{request.Host}/uploads/{fileId}/{Uri.EscapeDataString(file.FileName)}";
     return Results.Ok(new { url });
@@ -167,7 +173,7 @@ app.MapPost("/upload", async (HttpRequest request) =>
 
 app.MapGet("/uploads/{fileId}/{fileName}", (string fileId, string fileName) =>
 {
-    if (!uploadedFiles.TryGetValue(fileId, out var entry))
+    if (!uploadedFiles.TryGetValue(fileId, out (byte[] Content, string ContentType, string FileName) entry))
         return Results.NotFound();
 
     return Results.File(entry.Content, entry.ContentType, entry.FileName);
