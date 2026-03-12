@@ -21,6 +21,7 @@
     <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.*-*" />
     <!-- <PackageReference Include="Microsoft.Agents.AI.GitHub.Copilot" Version="1.*-*" /> -->
     <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.*-*" />
+    <PackageReference Include="QuestPDF" Version="2026.2.3" />
   </ItemGroup>
 
   <ItemGroup>

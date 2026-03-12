@@ -1,6 +1,12 @@
 using System.Collections.Concurrent;
+using System.Text;
+using System.Text.Json;
 
 using InterviewCoach.Agent;
+
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
 
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.DevUI;
@@ -171,6 +177,100 @@ app.MapGet("/uploads/{fileId}/{fileName}", (string fileId, string fileName) =>
         return Results.NotFound();
 
     return Results.File(entry.Content, entry.ContentType, entry.FileName);
+});
+
+// --- Export Endpoints ---
+app.MapGet("/export/{sessionId}/markdown", async (string sessionId) =>
+{
+    var mcpClient = app.Services.GetRequiredKeyedService<McpClient>("mcp-interview-data");
+    var result = await mcpClient.CallToolAsync("get_formatted_summary", new Dictionary<string, object?>
+    {
+        ["id"] = sessionId
+    });
+
+    var textBlock = result.Content.OfType<TextContentBlock>().FirstOrDefault();
+    if (textBlock is null)
+        return Results.NotFound("Interview session not found.");
+
+    var markdown = textBlock.Text ?? string.Empty;
+    var bytes = Encoding.UTF8.GetBytes(markdown);
+
+    return Results.File(bytes, "text/markdown", $"interview-summary-{sessionId}.md");
+});
+
+app.MapGet("/export/{sessionId}/pdf", async (string sessionId) =>
+{
+    var mcpClient = app.Services.GetRequiredKeyedService<McpClient>("mcp-interview-data");
+    var result = await mcpClient.CallToolAsync("get_formatted_summary", new Dictionary<string, object?>
+    {
+        ["id"] = sessionId
+    });
+
+    var textBlock = result.Content.OfType<TextContentBlock>().FirstOrDefault();
+    if (textBlock is null)
+        return Results.NotFound("Interview session not found.");
+
+    var markdown = textBlock.Text ?? string.Empty;
+    var lines = markdown.Split('\n');
+
+    QuestPDF.Settings.License = LicenseType.Community;
+
+    var pdfBytes = Document.Create(container =>
+    {
+        container.Page(page =>
+        {
+            page.Size(PageSizes.A4);
+            page.Margin(40);
+            page.DefaultTextStyle(x => x.FontSize(11));
+
+            page.Content().Column(column =>
+            {
+                foreach (var line in lines)
+                {
+                    var trimmed = line.TrimEnd('\r');
+
+                    if (trimmed.StartsWith("# "))
+                    {
+                        column.Item().PaddingBottom(10).Text(trimmed[2..])
+                            .FontSize(22).Bold();
+                    }
+                    else if (trimmed.StartsWith("## "))
+                    {
+                        column.Item().PaddingTop(15).PaddingBottom(5).Text(trimmed[3..])
+                            .FontSize(16).Bold();
+                    }
+                    else if (trimmed.StartsWith("**") && trimmed.EndsWith("**"))
+                    {
+                        column.Item().PaddingBottom(3).Text(trimmed.Trim('*'))
+                            .Bold();
+                    }
+                    else if (trimmed == "---")
+                    {
+                        column.Item().PaddingVertical(8).LineHorizontal(0.5f).LineColor(Colors.Grey.Medium);
+                    }
+                    else if (trimmed.StartsWith("*") && trimmed.EndsWith("*"))
+                    {
+                        column.Item().PaddingBottom(3).Text(trimmed.Trim('*'))
+                            .Italic().FontColor(Colors.Grey.Darken1);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(trimmed))
+                    {
+                        column.Item().PaddingBottom(3).Text(trimmed);
+                    }
+                }
+            });
+
+            page.Footer().AlignCenter().Text(text =>
+            {
+                text.Span("Page ");
+                text.CurrentPageNumber();
+                text.Span(" of ");
+                text.TotalPages();
+            });
+        });
+    }).GeneratePdf();
+
+    return Results.File(pdfBytes, "application/pdf", $"interview-summary-{sessionId}.pdf");
 });
 
 await app.RunAsync();

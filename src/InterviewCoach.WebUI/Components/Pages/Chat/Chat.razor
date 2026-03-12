@@ -4,6 +4,8 @@
 @inject IChatClient ChatClient
 @inject ILogger<Chat> Logger
 @inject FileUploadService FileUploadService
+@inject IHttpClientFactory HttpClientFactory
+@inject IJSRuntime JS
 @implements IDisposable
 
 <PageTitle>Chat</PageTitle>
@@ -16,6 +18,25 @@
             description.</div>
         </NoMessagesContent>
     </ChatMessageList>
+
+    @if (isInterviewComplete)
+    {
+        <div class="export-container page-width">
+            <span>Download your interview summary:</span>
+            <button class="btn-default" @onclick="@(() => DownloadExportAsync("markdown"))">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px;display:inline;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                Markdown
+            </button>
+            <button class="btn-default" @onclick="@(() => DownloadExportAsync("pdf"))">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:16px;height:16px;display:inline;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+                PDF
+            </button>
+        </div>
+    }
 
     <div class="chat-container">
         <ChatInput OnSend="@AddUserMessageAsync" @ref="@chatInput" />
@@ -36,6 +57,15 @@
     private CancellationTokenSource? currentResponseCancellation;
     private ChatMessage? currentResponseMessage;
     private ChatInput? chatInput;
+    private bool isInterviewComplete;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("import", "./Components/Pages/Chat/Chat.razor.js");
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -92,6 +122,20 @@ currentResponseCancellation.Token);
 
         messages.Add(currentResponseMessage!);
         statefulMessageCount = chatOptions.ConversationId is not null ? messages.Count : 0;
+
+        var assistantText = currentResponseMessage?.Text;
+        if (!isInterviewComplete && !string.IsNullOrEmpty(assistantText))
+        {
+            var lowerText = assistantText.ToLower();
+            if (lowerText.Contains("interview is complete") || lowerText.Contains("interview session complete")
+                || lowerText.Contains("completed your interview") || lowerText.Contains("session has been completed")
+                || lowerText.Contains("interview summary"))
+            {
+                isInterviewComplete = true;
+                StateHasChanged();
+            }
+        }
+
         currentResponseMessage = null;
     }
 
@@ -144,6 +188,7 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
         AddSessionSystemMessages();
         chatOptions.ConversationId = sessionId;
         statefulMessageCount = 0;
+        isInterviewComplete = false;
         await chatInput!.FocusAsync();
     }
 
@@ -174,6 +219,26 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
                                             ReferenceEquals(m, sessionIdMessage) == false));
 
         return outboundMessages;
+    }
+
+    private async Task DownloadExportAsync(string format)
+    {
+        var client = HttpClientFactory.CreateClient("agent");
+        var url = $"export/{sessionId}/{format}";
+        var response = await client.GetAsync(url);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Logger.LogWarning("Export failed with status {StatusCode}", response.StatusCode);
+            return;
+        }
+
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        var contentType = format == "pdf" ? "application/pdf" : "text/markdown";
+        var fileName = $"interview-summary-{sessionId}.{(format == "pdf" ? "pdf" : "md")}";
+
+        using var streamRef = new DotNetStreamReference(new MemoryStream(bytes));
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
     }
 
     public void Dispose()
