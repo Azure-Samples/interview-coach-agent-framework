@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Text;
+using System.Text.Json;
 
 using InterviewCoach.Agent;
 
@@ -171,6 +173,25 @@ app.MapGet("/uploads/{fileId}/{fileName}", (string fileId, string fileName) =>
         return Results.NotFound();
 
     return Results.File(entry.Content, entry.ContentType, entry.FileName);
+});
+
+// --- Export Endpoints ---
+app.MapGet("/export/{sessionId}/markdown", async (string sessionId) =>
+{
+    var mcpClient = app.Services.GetRequiredKeyedService<McpClient>("mcp-interview-data");
+    var result = await mcpClient.CallToolAsync("get_formatted_summary", new Dictionary<string, object?>
+    {
+        ["id"] = sessionId
+    });
+
+    var textBlock = result.Content.OfType<TextContentBlock>().FirstOrDefault();
+    if (textBlock is null)
+        return Results.NotFound("Interview session not found.");
+
+    var markdown = textBlock.Text ?? string.Empty;
+    var bytes = Encoding.UTF8.GetBytes(markdown);
+
+    return Results.File(bytes, "text/markdown", $"interview-summary-{sessionId}.md");
 });
 
 await app.RunAsync();
