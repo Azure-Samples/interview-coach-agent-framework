@@ -11,6 +11,7 @@ public interface IInterviewSessionRepository
     Task<InterviewSession?> GetInterviewSessionAsync(Guid id);
     Task<InterviewSession?> UpdateInterviewSessionAsync(InterviewSession interviewSession);
     Task<InterviewSession?> CompleteInterviewSessionAsync(Guid id);
+    Task<string?> GetFormattedSummaryAsync(Guid id);
 }
 
 public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewSessionRepository
@@ -90,5 +91,86 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
         await db.SaveChangesAsync();
 
         return record;
+    }
+
+    public async Task<string?> GetFormattedSummaryAsync(Guid id)
+    {
+        var record = await db.InterviewSessions.SingleOrDefaultAsync(p => p.Id == id);
+        if (record is null)
+        {
+            return default;
+        }
+
+        var sb = new StringBuilder();
+        sb.AppendLine("# Interview Session Summary");
+        sb.AppendLine();
+        sb.AppendLine($"**Session ID:** {record.Id}");
+        sb.AppendLine($"**Date:** {record.CreatedAt:yyyy-MM-dd HH:mm} UTC");
+        sb.AppendLine($"**Status:** {(record.IsCompleted ? "Completed" : "In Progress")}");
+        sb.AppendLine();
+
+        if (!string.IsNullOrWhiteSpace(record.ResumeLink))
+        {
+            sb.AppendLine("---");
+            sb.AppendLine();
+            sb.AppendLine("## Resume");
+            sb.AppendLine();
+            sb.AppendLine($"**Source:** {record.ResumeLink}");
+            if (!string.IsNullOrWhiteSpace(record.ResumeText))
+            {
+                sb.AppendLine();
+                sb.AppendLine(record.ResumeText.Trim());
+            }
+            sb.AppendLine();
+        }
+        else if (record.ProceedWithoutResume)
+        {
+            sb.AppendLine("---");
+            sb.AppendLine();
+            sb.AppendLine("## Resume");
+            sb.AppendLine();
+            sb.AppendLine("*Proceeded without resume.*");
+            sb.AppendLine();
+        }
+
+        if (!string.IsNullOrWhiteSpace(record.JobDescriptionLink))
+        {
+            sb.AppendLine("---");
+            sb.AppendLine();
+            sb.AppendLine("## Job Description");
+            sb.AppendLine();
+            sb.AppendLine($"**Source:** {record.JobDescriptionLink}");
+            if (!string.IsNullOrWhiteSpace(record.JobDescriptionText))
+            {
+                sb.AppendLine();
+                sb.AppendLine(record.JobDescriptionText.Trim());
+            }
+            sb.AppendLine();
+        }
+        else if (record.ProceedWithoutJobDescription)
+        {
+            sb.AppendLine("---");
+            sb.AppendLine();
+            sb.AppendLine("## Job Description");
+            sb.AppendLine();
+            sb.AppendLine("*Proceeded without job description.*");
+            sb.AppendLine();
+        }
+
+        if (!string.IsNullOrWhiteSpace(record.Transcript))
+        {
+            sb.AppendLine("---");
+            sb.AppendLine();
+            sb.AppendLine("## Interview Transcript");
+            sb.AppendLine();
+            sb.AppendLine(record.Transcript.Trim());
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("---");
+        sb.AppendLine();
+        sb.AppendLine($"*Generated on {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm} UTC*");
+
+        return sb.ToString();
     }
 }

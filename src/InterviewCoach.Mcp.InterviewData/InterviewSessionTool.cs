@@ -11,6 +11,7 @@ public interface IInterviewSessionTool
     Task<InterviewSession?> GetInterviewSessionAsync(Guid id);
     Task<InterviewSession?> UpdateInterviewSessionAsync(InterviewSession record);
     Task<InterviewSession?> CompleteInterviewSessionAsync(Guid id);
+    Task<string?> GetFormattedSummaryAsync(Guid id);
 }
 
 [McpServerToolType]
@@ -95,5 +96,24 @@ public class InterviewSessionTool(IInterviewSessionRepository repository, ILogge
         logger.LogInformation("Completed interview session: '{id}'", id);
 
         return completed;
+    }
+
+    [McpServerTool(Name = "get_formatted_summary", Title = "Get a formatted interview summary")]
+    [Description("Gets a formatted Markdown summary of a completed interview session, including session metadata, resume, job description, and full transcript.")]
+    public async Task<string?> GetFormattedSummaryAsync(
+        [Description("The ID of the interview session")] Guid id
+    )
+    {
+        var summary = await repository.GetFormattedSummaryAsync(id);
+        if (summary is null)
+        {
+            logger.LogWarning("Interview session with ID '{id}' not found.", id);
+
+            return default;
+        }
+
+        logger.LogInformation("Generated formatted summary for interview session '{id}'", id);
+
+        return summary;
     }
 }
