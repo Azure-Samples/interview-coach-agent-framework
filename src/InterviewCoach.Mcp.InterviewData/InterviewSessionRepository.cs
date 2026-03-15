@@ -51,6 +51,7 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
         record.JobDescriptionLink = interviewSession.JobDescriptionLink;
         record.JobDescriptionText = interviewSession.JobDescriptionText;
         record.ProceedWithoutJobDescription = interviewSession.ProceedWithoutJobDescription;
+        record.CurrentPhase = interviewSession.CurrentPhase ?? record.CurrentPhase;
         record.UpdatedAt = DateTimeOffset.UtcNow;
 
         var sb = new StringBuilder();
@@ -66,6 +67,7 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
                                                             .SetProperty(p => p.JobDescriptionLink, record.JobDescriptionLink)
                                                             .SetProperty(p => p.JobDescriptionText, record.JobDescriptionText)
                                                             .SetProperty(p => p.ProceedWithoutJobDescription, record.ProceedWithoutJobDescription)
+                                                            .SetProperty(p => p.CurrentPhase, record.CurrentPhase)
                                                             .SetProperty(p => p.Transcript, record.Transcript)
                                                             .SetProperty(p => p.UpdatedAt, record.UpdatedAt));
 

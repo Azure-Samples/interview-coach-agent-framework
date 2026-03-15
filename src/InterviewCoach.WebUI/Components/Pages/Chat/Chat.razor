@@ -87,16 +87,18 @@
         currentResponseCancellation = new();
 
         var outboundMessages = BuildOutboundMessages();
-        await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage,
-currentResponseCancellation.Token);
+        await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage, currentResponseCancellation.Token);
 
         messages.Add(currentResponseMessage!);
         statefulMessageCount = chatOptions.ConversationId is not null ? messages.Count : 0;
         currentResponseMessage = null;
     }
 
-    private async Task GetStreamingResponseAsync(IEnumerable<ChatMessage> outboundMessages, TextContent responseText,
-ChatMessage responseMessage, CancellationToken cancellationToken)
+    private async Task GetStreamingResponseAsync(
+        IEnumerable<ChatMessage> outboundMessages, 
+        TextContent responseText,
+        ChatMessage responseMessage, 
+        CancellationToken cancellationToken)
     {
         Logger.LogInformation("Getting streaming response for conversation {ConversationId}", chatOptions.ConversationId);
 
@@ -170,8 +172,8 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
         }
 
         var outboundMessages = new[] { systemPromptMessage, sessionIdMessage }
-            .Concat(baseMessages.Where(m => ReferenceEquals(m, systemPromptMessage) == false &&
-                                            ReferenceEquals(m, sessionIdMessage) == false));
+            .Concat(baseMessages.Where(m => ReferenceEquals(m, systemPromptMessage) == false 
+                                            && ReferenceEquals(m, sessionIdMessage) == false));
 
         return outboundMessages;
     }

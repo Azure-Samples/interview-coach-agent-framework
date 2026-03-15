@@ -31,6 +31,16 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<InterviewDataDbContext>();
     dbContext.Database.EnsureCreated();
+
+    // Add CurrentPhase column to existing databases that pre-date this field.
+    try
+    {
+        dbContext.Database.ExecuteSqlRaw("ALTER TABLE InterviewSessions ADD COLUMN CurrentPhase TEXT");
+    }
+    catch
+    {
+        // Column already exists — safe to ignore.
+    }
 }
 
 if (app.Environment.IsDevelopment() == false)

@@ -12,6 +12,7 @@ public class InterviewSession
     public string? JobDescriptionText { get; set; }
     public bool ProceedWithoutJobDescription { get; set; }
     public string? Transcript { get; set; }
+    public string? CurrentPhase { get; set; }
     public bool IsCompleted { get; set; } = false;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
@@ -33,6 +34,7 @@ public class InterviewDataDbContext(DbContextOptions<InterviewDataDbContext> opt
         modelBuilder.Entity<InterviewSession>().Property(t => t.JobDescriptionText);
         modelBuilder.Entity<InterviewSession>().Property(t => t.ProceedWithoutJobDescription).IsRequired();
         modelBuilder.Entity<InterviewSession>().Property(t => t.Transcript);
+        modelBuilder.Entity<InterviewSession>().Property(t => t.CurrentPhase);
         modelBuilder.Entity<InterviewSession>().Property(t => t.IsCompleted).IsRequired();
         modelBuilder.Entity<InterviewSession>().Property(t => t.CreatedAt).IsRequired();
         modelBuilder.Entity<InterviewSession>().Property(t => t.UpdatedAt).IsRequired();
