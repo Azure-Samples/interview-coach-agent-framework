@@ -62,6 +62,9 @@ public static class Extensions
             .WithTracing(tracing =>
             {
                 tracing.AddSource(builder.Environment.ApplicationName)
+                    .AddSource("Experimental.Microsoft.Extensions.AI")
+                    .AddSource("Experimental.Microsoft.Agents.AI")
+                    .AddSource("Microsoft.Agents.AI.Workflows")
                     .AddAspNetCoreInstrumentation(tracing =>
                         // Exclude health check requests from tracing
                         tracing.Filter = context =>
