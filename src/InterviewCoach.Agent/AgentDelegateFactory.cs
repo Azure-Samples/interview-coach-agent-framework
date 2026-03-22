@@ -58,8 +58,10 @@ public static class AgentDelegateFactory
         {
             var workflow = sp.GetRequiredKeyedService<Workflow>(key);
 
-            return workflow.AsAIAgent(name: key)
-                           .CreateFixedAgent();
+            var agent = workflow.AsAIAgent(name: key)
+                                .CreateFixedAgent();
+
+            return new OpenTelemetryAgent(agent, sourceName: "Experimental.Microsoft.Agents.AI");
         });
     }
 
@@ -106,7 +108,7 @@ public static class AgentDelegateFactory
             tools: [.. markitdownTools, .. interviewDataTools]
         );
 
-        return agent;
+        return new OpenTelemetryAgent(agent, sourceName: "Experimental.Microsoft.Agents.AI");
     }
 
     // ============================================================================
