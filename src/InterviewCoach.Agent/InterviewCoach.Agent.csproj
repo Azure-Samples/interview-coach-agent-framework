@@ -7,6 +7,12 @@
     <UserSecretsId>7ae1635d-7ac9-43dd-b458-5f56d1b1ee02</UserSecretsId>
   </PropertyGroup>
 
+  
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);MAAIW001</NoWarn>
+  </PropertyGroup>
+
+
   <ItemGroup>
     <PackageReference Include="Aspire.OpenAI" Version="13.*-*" />
     <PackageReference Include="Azure.Identity" Version="1.*" />

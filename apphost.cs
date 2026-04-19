@@ -1,4 +1,4 @@
-#:sdk Aspire.AppHost.Sdk@13.1.2
+#:sdk Aspire.AppHost.Sdk@13.2.2
 #:package Aspire.Hosting.Azure@13.*
 #:package Aspire.Hosting.GitHub.Models@13.*
 #:package Aspire.Hosting.OpenAI@13.*
