@@ -4,6 +4,7 @@
   },
   "profiles": {
     "https": {
+      "launchBrowser": true,
       "applicationUrl": "https://localhost:17053;http://localhost:15154",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -14,6 +15,7 @@
       }
     },
     "http": {
+      "launchBrowser": true,
       "applicationUrl": "http://localhost:15154",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -25,6 +27,6 @@
     }
   },
   "features": {
-    "defaultWatchEnabled": "false"
+    "defaultWatchEnabled": "true"
   }
 }
