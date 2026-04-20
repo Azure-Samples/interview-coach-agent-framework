@@ -58,10 +58,13 @@ builder.Services.AddKeyedSingleton<McpClient>("mcp-interview-data", (sp, obj) =>
     var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
     var httpClient = sp.GetRequiredService<IHttpClientFactory>()
                        .CreateClient("mcp-interview-data");
+    var endpoint = builder.Environment.IsDevelopment() == true
+                 ? $"{httpClient.BaseAddress!.ToString().Replace("https+", string.Empty).TrimEnd('/')}"
+                 : $"{httpClient.BaseAddress!.ToString().Replace("+http", string.Empty).TrimEnd('/')}";
 
     var clientTransportOptions = new HttpClientTransportOptions()
     {
-        Endpoint = new Uri($"{httpClient.BaseAddress!.ToString().Replace("+http", string.Empty).TrimEnd('/')}/mcp")
+        Endpoint = new Uri($"{endpoint}/mcp")
     };
     var clientTransport = new HttpClientTransport(clientTransportOptions, httpClient, loggerFactory);
 
