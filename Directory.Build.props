@@ -1,0 +1,11 @@
+<Project>
+  <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <UserSecretsId>7ae1635d-7ac9-43dd-b458-5f56d1b1ee02</UserSecretsId>
+  </PropertyGroup>
+</Project>

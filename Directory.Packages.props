@@ -1,0 +1,41 @@
+<Project>
+  <PropertyGroup>
+    <!-- Enable central package management, https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Aspire.Hosting.Azure" Version="13.*" />
+    <PackageVersion Include="Aspire.Hosting.Azure.AIFoundry" Version="13.*-*" />
+    <PackageVersion Include="Aspire.Hosting.GitHub.Models" Version="13.*" />
+    <PackageVersion Include="Aspire.Hosting.OpenAI" Version="13.*" />
+    <PackageVersion Include="Aspire.OpenAI" Version="13.*-*" />
+    <PackageVersion Include="Azure.Identity" Version="1.*" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Hosting.SQLite" Version="13.*" />
+    <PackageVersion Include="CommunityToolkit.Aspire.Microsoft.Data.Sqlite" Version="13.*" />
+    <PackageVersion Include="GitHub.Copilot.SDK" Version="0.*" />
+    <PackageVersion Include="Microsoft.Agents.AI" Version="1.*" />
+    <PackageVersion Include="Microsoft.Agents.AI.AGUI" Version="1.*-*" />
+    <PackageVersion Include="Microsoft.Agents.AI.AzureAI" Version="1.*-*" />
+    <PackageVersion Include="Microsoft.Agents.AI.DevUI" Version="1.*-*" />
+    <PackageVersion Include="Microsoft.Agents.AI.GitHub.Copilot" Version="1.*-*" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting" Version="1.*-*" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" Version="1.*-*" />
+    <PackageVersion Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.*-*" />
+    <PackageVersion Include="Microsoft.Agents.AI.OpenAI" Version="1.*" />
+    <PackageVersion Include="Microsoft.Agents.AI.Workflows" Version="1.*" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.*" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.*" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.*" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.*" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.*" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.*" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.*" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.*" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.*" />
+    <PackageVersion Include="xunit.v3" Version="3.*" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.*-*" />
+  </ItemGroup>
+</Project>

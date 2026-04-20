@@ -2,18 +2,14 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <UserSecretsId>7ae1635d-7ac9-43dd-b458-5f56d1b1ee02</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.Azure" Version="13.*" />
-    <!-- <PackageReference Include="Aspire.Hosting.Azure.AIFoundry" Version="13.*-*" /> -->
-    <PackageReference Include="Aspire.Hosting.GitHub.Models" Version="13.*" />
-    <PackageReference Include="Aspire.Hosting.OpenAI" Version="13.*" />
-    <PackageReference Include="CommunityToolkit.Aspire.Hosting.SQLite" Version="13.*" />
+    <PackageReference Include="Aspire.Hosting.Azure" />
+    <!-- <PackageReference Include="Aspire.Hosting.Azure.AIFoundry" /> -->
+    <PackageReference Include="Aspire.Hosting.GitHub.Models" />
+    <PackageReference Include="Aspire.Hosting.OpenAI" />
+    <PackageReference Include="CommunityToolkit.Aspire.Hosting.SQLite" />
   </ItemGroup>
 
   <ItemGroup>
