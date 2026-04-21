@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <PackageVersion Include="Aspire.Hosting.Azure" Version="13.*" />
-    <PackageVersion Include="Aspire.Hosting.Azure.AIFoundry" Version="13.*-*" />
+    <PackageVersion Include="Aspire.Hosting.Foundry" Version="13.*-*" />
     <PackageVersion Include="Aspire.Hosting.GitHub.Models" Version="13.*" />
     <PackageVersion Include="Aspire.Hosting.OpenAI" Version="13.*" />
     <PackageVersion Include="Aspire.OpenAI" Version="13.*-*" />

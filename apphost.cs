@@ -1,12 +1,12 @@
-# : sdk Aspire.AppHost.Sdk@13.2.2
-# : package Aspire.Hosting.Azure@13.2.2
-# : package Aspire.Hosting.Foundry@13.2.2-preview.1.26207.2
-# : package Aspire.Hosting.GitHub.Models@13.2.2
-# : package Aspire.Hosting.OpenAI@13.2.2
-# : package CommunityToolkit.Aspire.Hosting.SQLite@13.*
-# : project ./src/InterviewCoach.Agent/InterviewCoach.Agent.csproj
-# : project ./src/InterviewCoach.Mcp.InterviewData/InterviewCoach.Mcp.InterviewData.csproj
-# : project ./src/InterviewCoach.WebUI/InterviewCoach.WebUI.csproj
+#:sdk Aspire.AppHost.Sdk@13.2.2
+#:package Aspire.Hosting.Azure
+#:package Aspire.Hosting.Foundry
+#:package Aspire.Hosting.GitHub.Models
+#:package Aspire.Hosting.OpenAI
+#:package CommunityToolkit.Aspire.Hosting.SQLite
+#:project ./src/InterviewCoach.Agent/InterviewCoach.Agent.csproj
+#:project ./src/InterviewCoach.Mcp.InterviewData/InterviewCoach.Mcp.InterviewData.csproj
+#:project ./src/InterviewCoach.WebUI/InterviewCoach.WebUI.csproj
 
 using Microsoft.Extensions.Configuration;
 
