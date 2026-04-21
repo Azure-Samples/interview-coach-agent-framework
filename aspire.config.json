@@ -4,6 +4,7 @@
   },
   "profiles": {
     "https": {
+      "launchBrowser": true,
       "applicationUrl": "https://localhost:17053;http://localhost:15154",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -14,6 +15,7 @@
       }
     },
     "http": {
+      "launchBrowser": true,
       "applicationUrl": "http://localhost:15154",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -23,5 +25,8 @@
         "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20189"
       }
     }
+  },
+  "features": {
+    "defaultWatchEnabled": "true"
   }
 }
