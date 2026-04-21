@@ -6,7 +6,7 @@ The app supports multiple LLM backends. Pick one in config and go — no code ch
 
 | Provider                                      | Best For                                              | Auth       | Cost               |
 |-----------------------------------------------|-------------------------------------------------------|------------|--------------------|
-| **[Microsoft Foundry](MICROSOFT-FOUNDRY.md)** | Production deployments with Agent Service             | API Key    | Pay-per-use        |
+| **[Microsoft Foundry](MICROSOFT-FOUNDRY.md)** | Production deployments with Agent Service             | Azure RBAC | Pay-per-use        |
 | **[Azure OpenAI](AZURE-OPENAI.md)**           | Production deployments                                | API Key    | Pay-per-use        |
 | **[GitHub Models](GITHUB-MODELS.md)**         | Local development and prototyping                     | GitHub PAT | Free (with limits) |
 <!-- | **[GitHub Copilot](GITHUB-MODELS.md)**        | Local development and prototyping with GitHub Copilot | GitHub PAT | Free (with limits) | -->
@@ -37,11 +37,9 @@ All providers use the same code. To switch:
   "LlmProvider": "MicrosoftFoundry",
 
   "MicrosoftFoundry": {
-    "Project": {
-      "Endpoint": "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}",
-      "ApiKey": "{{MICROSOFT_FOUNDRY_API_KEY}}",
-      "DeploymentName": "gpt-5-mini"
-    }
+    "DeploymentName": "gpt-5-mini",
+    "ModelVersion": "1",
+    "ModelFormat": "OpenAI"
   }
 }
 ```

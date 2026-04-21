@@ -279,6 +279,8 @@ public static class AgentDelegateFactory
         // This prevents the stateless Triage from re-routing to an already-completed
         // phase based on keywords in the original user message.
         // Each specialist can still fall back to Triage for out-of-order requests.
+#pragma warning disable MAAIW001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
         var workflow = AgentWorkflowBuilder
                        .CreateHandoffBuilderWith(triageAgent)
                        .WithHandoffs(triageAgent, [receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent])
@@ -287,6 +289,8 @@ public static class AgentDelegateFactory
                        .WithHandoffs(technicalAgent, [summariserAgent, triageAgent])
                        .WithHandoff(summariserAgent, triageAgent)
                        .Build();
+#pragma warning restore MAAIW001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
 
         return workflow.SetName(key);
     }

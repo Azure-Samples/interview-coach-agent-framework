@@ -1,4 +1,8 @@
+using System.ClientModel.Primitives;
 using System.Collections.Concurrent;
+using System.Data.Common;
+
+using Azure.Identity;
 
 using InterviewCoach.Agent;
 
@@ -9,6 +13,9 @@ using Microsoft.Extensions.AI;
 
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+
+using OpenAI;
+using OpenAI.Chat;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -84,20 +91,25 @@ if (config[Constants.LlmProvider] != "MicrosoftFoundry")
 }
 else
 {
-    builder.AddOpenAIClient("chat")
-           .AddChatClient();
+    var connection = new DbConnectionStringBuilder() { ConnectionString = config.GetConnectionString("chat") };
+    var cogServicesEndpoint = (connection.TryGetValue("Endpoint", out var endpointValue) ? endpointValue?.ToString() : throw new InvalidOperationException("Missing Foundry Endpoint")) ?? throw new InvalidOperationException("Missing Foundry Endpoint");
+    var uri = new Uri(cogServicesEndpoint);
+    var host = uri.Host.Split('.')[0];
+    var model = connection.TryGetValue("Deployment", out var modelValue) ? modelValue?.ToString() : throw new InvalidOperationException("Missing Foundry Model");
+    BearerTokenPolicy tokenPolicy = new(
+        new DefaultAzureCredential(),
+        "https://cognitiveservices.azure.com/.default");
 
-    // var connection = new DbConnectionStringBuilder() { ConnectionString = config.GetConnectionString("foundry") };
-    // var endpoint = connection.TryGetValue("Endpoint", out var endpointValue) ? endpointValue?.ToString() : throw new InvalidOperationException("Missing Foundry Endpoint");
-    // // var accessKey = connection.TryGetValue("Key", out var accessKeyValue) ? accessKeyValue?.ToString() : throw new InvalidOperationException("Missing Foundry Key");
-    // var model = connection.TryGetValue("Model", out var modelValue) ? modelValue?.ToString() : throw new InvalidOperationException("Missing Foundry Model");
-    // var options = new OpenAIClientOptions() { Endpoint = new Uri(endpoint!) };
-    // var credential = new DefaultAzureCredential();
-    // var client = new OpenAIClient(new BearerTokenPolicy(credential, "https://ai.azure.com/.default"), options)
-    //                 .GetResponsesClient(model!)
-    //                 .AsIChatClient();
+#pragma warning disable OPENAI001
+    ChatClient client = new(
+        authenticationPolicy: tokenPolicy,
+        model: model,
+        options: new OpenAIClientOptions()
+        {
+            Endpoint = new($"{uri.Scheme}://{host}.openai.azure.com/openai/v1/"),
+        });
 
-    // builder.Services.AddSingleton<IChatClient>(client);
+    builder.Services.AddSingleton(client.AsIChatClient());
 }
 
 builder.AddAIAgent("coach");

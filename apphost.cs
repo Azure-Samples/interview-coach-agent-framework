@@ -1,7 +1,8 @@
-#:sdk Aspire.AppHost.Sdk@13.1.2
-#:package Aspire.Hosting.Azure@13.*
-#:package Aspire.Hosting.GitHub.Models@13.*
-#:package Aspire.Hosting.OpenAI@13.*
+﻿#:sdk Aspire.AppHost.Sdk@13.2.2
+#:package Aspire.Hosting.Azure@13.2.2
+#:package Aspire.Hosting.Foundry@13.2.2-preview.1.26207.2
+#:package Aspire.Hosting.GitHub.Models@13.2.2
+#:package Aspire.Hosting.OpenAI@13.2.2
 #:package CommunityToolkit.Aspire.Hosting.SQLite@13.*
 #:project ./src/InterviewCoach.Agent/InterviewCoach.Agent.csproj
 #:project ./src/InterviewCoach.Mcp.InterviewData/InterviewCoach.Mcp.InterviewData.csproj
@@ -19,8 +20,6 @@ const string RESOURCE_PROJECT_AGENT = "agent";
 const string RESOURCE_PROJECT_WEBUI = "webui";
 
 var builder = DistributedApplication.CreateBuilder(args);
-
-// var foundry = builder.AddBicepTemplate("foundry", "./infra/foundry.bicep");
 
 var config = builder.Configuration
                     .AddJsonFile("apphost.settings.json", optional: true, reloadOnChange: true)
@@ -81,13 +80,15 @@ public static class LlmResourceFactory
     private const string LLM_PROVIDER_KEY = "LlmProvider";
     private const string SECTION_NAME_GITHUB = "GitHub";
     private const string SECTION_NAME_AZURE_OPENAI = "Azure:OpenAI";
-    private const string SECTION_NAME_MICROSOFT_FOUNDRY = "MicrosoftFoundry:Project";
+    private const string SECTION_NAME_MICROSOFT_FOUNDRY = "MicrosoftFoundry";
     private const string SECTION_NAME_GITHUB_COPILOT = "GitHubCopilot";
     private const string ENDPOINT_KEY = "Endpoint";
     private const string TOKEN_KEY = "Token";
     private const string API_KEY_KEY = "ApiKey";
     private const string MODEL_KEY = "Model";
     private const string DEPLOYMENT_NAME_KEY = "DeploymentName";
+    private const string MODEL_VERSION_KEY = "ModelVersion";
+    private const string MODEL_FORMAT_KEY = "ModelFormat";
     private const string API_KEY_RESOURCE_NAME = "apiKey";
     private const string TOKEN_RESOURCE_NAME = "token";
     private const string LLM_PROJECT_NAME = "foundry";
@@ -199,9 +200,9 @@ public static class LlmResourceFactory
     private static IResourceBuilder<ProjectResource> AddMicrosoftFoundryResource(this IResourceBuilder<ProjectResource> source, IConfiguration config, LlmProvider provider, AgentMode mode)
     {
         var foundry = config.GetSection(SECTION_NAME_MICROSOFT_FOUNDRY);
-        var endpoint = foundry[ENDPOINT_KEY] ?? throw new InvalidOperationException($"Missing configuration: {SECTION_NAME_MICROSOFT_FOUNDRY}:{ENDPOINT_KEY}");
-        var accessKey = foundry[API_KEY_KEY] ?? throw new InvalidOperationException($"Missing configuration: {SECTION_NAME_MICROSOFT_FOUNDRY}:{API_KEY_KEY}");
         var deploymentName = foundry[DEPLOYMENT_NAME_KEY] ?? throw new InvalidOperationException($"Missing configuration: {SECTION_NAME_MICROSOFT_FOUNDRY}:{DEPLOYMENT_NAME_KEY}");
+        var modelVersion = foundry[MODEL_VERSION_KEY] ?? "1";
+        var modelFormat = foundry[MODEL_FORMAT_KEY] ?? "OpenAI";
 
         Console.WriteLine();
         Console.WriteLine($"\tLLM Provider: {provider}");
@@ -209,18 +210,9 @@ public static class LlmResourceFactory
         Console.WriteLine($"\tAgent Mode: {mode}");
         Console.WriteLine();
 
-        var apiKey = source.ApplicationBuilder
-                           .AddParameter(name: API_KEY_RESOURCE_NAME, value: accessKey, secret: true);
         var chat = source.ApplicationBuilder
-                        //  .AddConnectionString(
-                        //      LLM_PROJECT_NAME,
-                        //     //  ReferenceExpression.Create($"Endpoint:{endpoint};Key={accessKey};Model={deploymentName}"));
-                        //     //  ReferenceExpression.Create($"Endpoint={string.Join("://", endpoint.Split([':', '/'], StringSplitOptions.RemoveEmptyEntries).Take(2))}/openai/v1/;Model={deploymentName}"));
-                        //     //  ReferenceExpression.Create($"Endpoint={string.Join("://", endpoint.Split([':', '/'], StringSplitOptions.RemoveEmptyEntries).Take(2))}/openai/v1/;Key={accessKey};Model={deploymentName}"));
-                         .AddOpenAI(LLM_PROJECT_NAME)
-                         .WithEndpoint($"{string.Join("://", endpoint.Split([':', '/'], StringSplitOptions.RemoveEmptyEntries).Take(2))}/openai/v1/")
-                         .WithApiKey(apiKey)
-                         .AddModel(name: LLM_RESOURCE_NAME, model: deploymentName);
+                         .AddFoundry(LLM_PROJECT_NAME)
+                         .AddDeployment(LLM_RESOURCE_NAME, deploymentName, modelVersion, modelFormat);
 
         return source.WithEnvironment(AGENT_MODE_KEY, mode.ToString())
                      .WithEnvironment(LLM_PROVIDER_KEY, provider.ToString())

@@ -26,11 +26,9 @@
   },
 
   "MicrosoftFoundry": {
-    "Project": {
-      "Endpoint": "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}",
-      "ApiKey": "{{MICROSOFT_FOUNDRY_PROJECT_API_KEY}}",
-      "DeploymentName": "gpt-5-mini"
-    }
+    "DeploymentName": "gpt-5-mini",
+    "ModelVersion": "2025-08-07",
+    "ModelFormat": "OpenAI"
   },
 
   "GitHubCopilot": {

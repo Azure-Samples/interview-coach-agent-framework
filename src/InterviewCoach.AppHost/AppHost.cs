@@ -1,9 +1,15 @@
+using Microsoft.Extensions.Configuration;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
-// var foundry = builder.AddBicepTemplate("foundry", "../../infra/foundry.bicep");
+var config = builder.Configuration
+                    .AddJsonFile("apphost.settings.json", optional: true, reloadOnChange: true)
+                    .AddUserSecrets(typeof(Program).Assembly, optional: true, reloadOnChange: true)
+                    .Build();
 
 var mcpMarkItDown = builder.AddContainer(ResourceConstants.McpMarkItDown, "mcp/markitdown", "latest")
                            .WithExternalHttpEndpoints()
+                           .WithImageTag("latest")
                            .WithHttpEndpoint(3001, 3001)
                            .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001");
 
@@ -17,8 +23,8 @@ var mcpInterviewData = builder.AddProject<Projects.InterviewCoach_Mcp_InterviewD
 
 var agent = builder.AddProject<Projects.InterviewCoach_Agent>(ResourceConstants.Agent)
                    .WithExternalHttpEndpoints()
-                   .WithLlmReference(builder.Configuration, args)
-                   .WithEnvironment(ResourceConstants.LlmProvider, builder.Configuration[ResourceConstants.LlmProvider] ?? string.Empty)
+                   .WithLlmReference(config, args)
+                   .WithEnvironment(ResourceConstants.LlmProvider, config[ResourceConstants.LlmProvider] ?? string.Empty)
                    .WithReference(mcpMarkItDown.GetEndpoint("http"))
                    .WithReference(mcpInterviewData)
                    .WaitFor(mcpMarkItDown)

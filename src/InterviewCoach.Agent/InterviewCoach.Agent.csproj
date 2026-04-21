@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.OpenAI" Version="13.*-*" />
+    <PackageReference Include="Aspire.OpenAI" Version="13.2.2-preview.1.26207.2" />
     <PackageReference Include="Azure.Identity" Version="1.*" />
     <!-- <PackageReference Include="GitHub.Copilot.SDK" Version="0.*" /> -->
     <PackageReference Include="Microsoft.Agents.AI" Version="1.*-*" />
