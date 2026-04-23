@@ -7,8 +7,11 @@ var mcpMarkItDown = builder.AddContainer(ResourceConstants.McpMarkItDown, "mcp/m
                            .WithHttpEndpoint(3001, 3001)
                            .WithArgs("--http", "--host", "0.0.0.0", "--port", "3001");
 
-var sqlite = builder.AddSqlite(ResourceConstants.Sqlite, databaseFileName: ResourceConstants.DatabaseName)
-                    .WithSqliteWeb();
+var sqlite = builder.AddSqlite(ResourceConstants.Sqlite, databaseFileName: ResourceConstants.DatabaseName);
+if (builder.ExecutionContext.IsRunMode)
+{
+    sqlite.WithSqliteWeb();
+}
 
 var mcpInterviewData = builder.AddProject<Projects.InterviewCoach_Mcp_InterviewData>(ResourceConstants.McpInterviewData)
                               .WithExternalHttpEndpoints()
