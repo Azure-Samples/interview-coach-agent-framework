@@ -12,43 +12,38 @@ Recommended for production.
 - Azure Developer CLI installed ([Download](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd))
 - Azure CLI installed ([Download](https://docs.microsoft.com/cli/azure/install-azure-cli))
 
-## Step 1: Create Foundry resource
+## Step 1: Configure Azure provisioning
+
+The Aspire AppHost auto-provisions the Foundry resource using your Azure subscription. Set the required provisioning settings in user secrets:
 
 ```bash
-# Navigate to the resource directory
-cd resources-foundry
-
-# Login to Azure
-azd auth login
-
-# Provision resources
-azd up
+dotnet user-secrets --file ./apphost.cs set Azure:SubscriptionId "{{YOUR_AZURE_SUBSCRIPTION_ID}}"
+dotnet user-secrets --file ./apphost.cs set Azure:ResourceGroupPrefix "{{YOUR_RESOURCE_GROUP_PREFIX}}"
+dotnet user-secrets --file ./apphost.cs set Azure:Location "{{YOUR_AZURE_LOCATION}}"
 ```
 
-## Step 2: Get endpoint and API key
+> [!NOTE]
+> You may also need to store Azure tenant ID to user secrets:
+>
+> ```bash
+> dotnet user-secrets --file ./apphost.cs set Azure:TenantId "{{YOUR_TENANT_ID}}"
+> ```
 
-```bash
-# Navigate to the resource directory
-cd resources-foundry
+## Step 2: Configure the model deployment (optional)
 
-# Login to Azure
-az login
+The default model is `gpt-5-mini` with OpenAI format. To change it, update `apphost.settings.json`:
 
-# Get endpoint
-azd env get-value 'FOUNDRY_PROJECT_ENDPOINT'
-
-# Get API key
-az cognitiveservices account keys list -g rg-$(azd env get-value AZURE_ENV_NAME) -n $(azd env get-value FOUNDRY_NAME) --query "key1" -o tsv
+```json
+{
+  "MicrosoftFoundry": {
+    "DeploymentName": "gpt-5-mini",
+    "ModelVersion": "1",
+    "ModelFormat": "OpenAI"
+  }
+}
 ```
 
-## Step 3: Store credentials
-
-```bash
-dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:Endpoint "{{MICROSOFT_FOUNDRY_PROJECT_ENDPOINT}}"
-dotnet user-secrets --file ./apphost.cs set MicrosoftFoundry:Project:ApiKey "{{MICROSOFT_FOUNDRY_API_KEY}}"
-```
-
-## Step 4: Run the app
+## Step 3: Run the app
 
 ```bash
 # Using file-based Aspire (recommended)
@@ -58,7 +53,17 @@ aspire run --file ./apphost.cs
 aspire run --project ./src/InterviewCoach.AppHost
 ```
 
-## Step 5: Deploy to Azure
+Aspire will automatically provision the Foundry resource and model deployment on first run.
+
+> [!NOTE]
+> You may also need to store Azure tenant ID to user secrets:
+>
+> ```bash
+> dotnet user-secrets --file ./apphost.cs set AZURE_TENANT_ID "{{YOUR_TENANT_ID}}"
+> ```
+
+
+## Step 4: Deploy to Azure
 
 ```bash
 # Login to Azure
@@ -68,7 +73,7 @@ azd auth login
 azd up
 ```
 
-## Step 6: Clean up
+## Step 5: Clean up
 
 When finished, remove all Azure resources:
 

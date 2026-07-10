@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.2.2">
+<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,9 +6,11 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.Azure" />
-    <!-- <PackageReference Include="Aspire.Hosting.Azure.AIFoundry" /> -->
+    <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
+    <PackageReference Include="Aspire.Hosting.Foundry" />
     <PackageReference Include="Aspire.Hosting.GitHub.Models" />
     <PackageReference Include="Aspire.Hosting.OpenAI" />
+    <PackageReference Include="Azure.Provisioning.Storage" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.SQLite" />
   </ItemGroup>
 
