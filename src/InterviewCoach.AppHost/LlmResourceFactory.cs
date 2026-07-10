@@ -33,6 +33,8 @@ public static class LlmResourceFactory
     private const string DEPLOYMENT_NAME_KEY = "DeploymentName";
     private const string MODEL_VERSION_KEY = "ModelVersion";
     private const string MODEL_FORMAT_KEY = "ModelFormat";
+    private const string SKU_NAME_KEY = "SkuName";
+    private const string SKU_CAPACITY_KEY = "SkuCapacity";
     private const string API_KEY_RESOURCE_NAME = "apiKey";
     private const string TOKEN_RESOURCE_NAME = "token";
     private const string LLM_PROJECT_NAME = "foundry";
@@ -147,16 +149,24 @@ public static class LlmResourceFactory
         var deploymentName = foundry[DEPLOYMENT_NAME_KEY] ?? throw new InvalidOperationException($"Missing configuration: {SECTION_NAME_MICROSOFT_FOUNDRY}:{DEPLOYMENT_NAME_KEY}");
         var modelVersion = foundry[MODEL_VERSION_KEY] ?? "1";
         var modelFormat = foundry[MODEL_FORMAT_KEY] ?? "OpenAI";
+        var skuName = foundry[SKU_NAME_KEY] ?? "GlobalStandard";
+        var skuCapacity = int.TryParse(foundry[SKU_CAPACITY_KEY], out var capacity) ? capacity : 100;
 
         Console.WriteLine();
         Console.WriteLine($"\tLLM Provider: {provider}");
         Console.WriteLine($"\tModel: {deploymentName}");
+        Console.WriteLine($"\tSKU: {skuName} ({skuCapacity}K TPM)");
         Console.WriteLine($"\tAgent Mode: {mode}");
         Console.WriteLine();
 
         var chat = source.ApplicationBuilder
                          .AddFoundry(LLM_PROJECT_NAME)
-                         .AddDeployment(LLM_RESOURCE_NAME, deploymentName, modelVersion, modelFormat);
+                         .AddDeployment(LLM_RESOURCE_NAME, deploymentName, modelVersion, modelFormat)
+                         .WithProperties(deployment =>
+                         {
+                             deployment.SkuName = skuName;
+                             deployment.SkuCapacity = skuCapacity;
+                         });
 
         return source.WithEnvironment(AGENT_MODE_KEY, mode.ToString())
                      .WithEnvironment(LLM_PROVIDER_KEY, provider.ToString())

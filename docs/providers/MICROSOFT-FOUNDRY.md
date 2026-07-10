@@ -22,6 +22,13 @@ dotnet user-secrets --file ./apphost.cs set Azure:ResourceGroupPrefix "{{YOUR_RE
 dotnet user-secrets --file ./apphost.cs set Azure:Location "{{YOUR_AZURE_LOCATION}}"
 ```
 
+> [!NOTE]
+> You may also need to store Azure tenant ID to user secrets:
+>
+> ```bash
+> dotnet user-secrets --file ./apphost.cs set Azure:TenantId "{{YOUR_TENANT_ID}}"
+> ```
+
 ## Step 2: Configure the model deployment (optional)
 
 The default model is `gpt-5-mini` with OpenAI format. To change it, update `apphost.settings.json`:
@@ -47,6 +54,14 @@ aspire run --project ./src/InterviewCoach.AppHost
 ```
 
 Aspire will automatically provision the Foundry resource and model deployment on first run.
+
+> [!NOTE]
+> You may also need to store Azure tenant ID to user secrets:
+>
+> ```bash
+> dotnet user-secrets --file ./apphost.cs set AZURE_TENANT_ID "{{YOUR_TENANT_ID}}"
+> ```
+
 
 ## Step 4: Deploy to Azure
 

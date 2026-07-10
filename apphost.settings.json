@@ -28,7 +28,9 @@
   "MicrosoftFoundry": {
     "DeploymentName": "gpt-5-mini",
     "ModelVersion": "2025-08-07",
-    "ModelFormat": "OpenAI"
+    "ModelFormat": "OpenAI",
+    "SkuName": "GlobalStandard",
+    "SkuCapacity": 100
   },
 
   "GitHubCopilot": {
