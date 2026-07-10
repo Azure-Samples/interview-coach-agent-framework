@@ -1,5 +1,3 @@
-using System.Text;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace InterviewCoach.Mcp.InterviewData;
@@ -53,11 +51,13 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
         record.ProceedWithoutJobDescription = interviewSession.ProceedWithoutJobDescription;
         record.UpdatedAt = DateTimeOffset.UtcNow;
 
-        var sb = new StringBuilder();
-        sb.AppendLine(record.Transcript ?? string.Empty);
-        sb.AppendLine();
-        sb.AppendLine(interviewSession.Transcript ?? string.Empty);
-        record.Transcript = sb.ToString();
+        var existingTranscript = record.Transcript?.Trim();
+        var newTranscript = interviewSession.Transcript?.Trim();
+        record.Transcript = string.IsNullOrEmpty(existingTranscript)
+            ? newTranscript ?? string.Empty
+            : string.IsNullOrEmpty(newTranscript)
+                ? existingTranscript
+                : $"{existingTranscript}\n\n{newTranscript}";
 
         await db.InterviewSessions.Where(r => r.Id == interviewSession.Id)
                                   .ExecuteUpdateAsync(r => r.SetProperty(p => p.ResumeLink, record.ResumeLink)
@@ -69,7 +69,7 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
                                                             .SetProperty(p => p.Transcript, record.Transcript)
                                                             .SetProperty(p => p.UpdatedAt, record.UpdatedAt));
 
-        await db.SaveChangesAsync();
+        db.Entry(record).State = EntityState.Detached;
 
         return record;
     }
@@ -87,7 +87,7 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
         await db.InterviewSessions.Where(p => p.Id == id)
                                   .ExecuteUpdateAsync(p => p.SetProperty(x => x.IsCompleted, true));
 
-        await db.SaveChangesAsync();
+        db.Entry(record).State = EntityState.Detached;
 
         return record;
     }
