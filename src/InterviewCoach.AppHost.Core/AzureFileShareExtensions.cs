@@ -15,7 +15,7 @@ using Azure.Provisioning.Storage;
 /// local-development connection string points at a host path that does not exist in the
 /// container.
 /// </summary>
-internal static class AzureFileShareExtensions
+public static class AzureFileShareExtensions
 {
     // Azure Container Apps resource names. The volume's StorageName must match the name of
     // the managed environment storage that is registered on the environment.

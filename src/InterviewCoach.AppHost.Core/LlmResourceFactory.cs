@@ -1,21 +1,5 @@
 using Microsoft.Extensions.Configuration;
 
-public enum LlmProvider
-{
-    Unknown,
-    AzureOpenAI,
-    MicrosoftFoundry,
-    GitHubCopilot
-}
-
-public enum AgentMode
-{
-    Unknown,
-    Single,
-    LlmHandOff,
-    CopilotHandOff
-}
-
 public static class LlmResourceFactory
 {
     private const string GITHUB_TOKEN_KEY = "GITHUB_TOKEN";

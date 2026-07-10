@@ -6,4 +6,17 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure" />
+    <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
+    <PackageReference Include="Aspire.Hosting.Foundry" />
+    <PackageReference Include="Aspire.Hosting.OpenAI" />
+    <PackageReference Include="Azure.Provisioning.Storage" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Aspire.Hosting" />
+    <Using Include="Aspire.Hosting.ApplicationModel" />
+  </ItemGroup>
+
 </Project>
