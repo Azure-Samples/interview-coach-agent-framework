@@ -11,7 +11,7 @@ How the Interview Coach is put together and why.
 A few decisions shaped the design:
 
 1. **MCP for tools** — Tools (document parsing, session storage) live in their own MCP servers. They can be reused across projects and developed independently.
-2. **Provider abstraction** — The LLM backend is swappable at runtime: Foundry, Azure OpenAI, or GitHub Models.
+2. **Provider abstraction** — The LLM backend is swappable at runtime: Foundry or Azure OpenAI.
 3. **Aspire orchestration** — Service discovery, health checks, and telemetry come free from .NET Aspire.
 4. **Stateful sessions** — Interview sessions persist to SQLite so users can pause and resume.
 

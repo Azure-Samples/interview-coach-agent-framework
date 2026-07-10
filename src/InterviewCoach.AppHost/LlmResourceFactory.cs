@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 public enum LlmProvider
 {
     Unknown,
-    GitHubModels,
     AzureOpenAI,
     MicrosoftFoundry,
     GitHubCopilot
@@ -22,14 +21,12 @@ public static class LlmResourceFactory
     private const string GITHUB_TOKEN_KEY = "GITHUB_TOKEN";
     private const string AGENT_MODE_KEY = "AgentMode";
     private const string LLM_PROVIDER_KEY = "LlmProvider";
-    private const string SECTION_NAME_GITHUB = "GitHub";
     private const string SECTION_NAME_AZURE_OPENAI = "Azure:OpenAI";
     private const string SECTION_NAME_MICROSOFT_FOUNDRY = "MicrosoftFoundry";
     private const string SECTION_NAME_GITHUB_COPILOT = "GitHubCopilot";
     private const string ENDPOINT_KEY = "Endpoint";
     private const string TOKEN_KEY = "Token";
     private const string API_KEY_KEY = "ApiKey";
-    private const string MODEL_KEY = "Model";
     private const string DEPLOYMENT_NAME_KEY = "DeploymentName";
     private const string MODEL_VERSION_KEY = "ModelVersion";
     private const string MODEL_FORMAT_KEY = "ModelFormat";
@@ -47,7 +44,6 @@ public static class LlmResourceFactory
 
         source = provider switch
         {
-            LlmProvider.GitHubModels => source.AddGitHubModelsResource(config, provider, mode),
             LlmProvider.AzureOpenAI => source.AddAzureOpenAIResource(config, provider, mode),
             LlmProvider.MicrosoftFoundry => source.AddMicrosoftFoundryResource(config, provider, mode),
             LlmProvider.GitHubCopilot => source.AddGitHubCopilotResource(config, provider, mode),
@@ -90,30 +86,6 @@ public static class LlmResourceFactory
         }
 
         return (provider, mode);
-    }
-
-    private static IResourceBuilder<ProjectResource> AddGitHubModelsResource(this IResourceBuilder<ProjectResource> source, IConfiguration config, LlmProvider provider, AgentMode mode)
-    {
-        var github = config.GetSection(SECTION_NAME_GITHUB);
-        var token = github[TOKEN_KEY] ?? throw new InvalidOperationException($"Missing configuration: {SECTION_NAME_GITHUB}:{TOKEN_KEY}");
-        var model = github[MODEL_KEY] ?? throw new InvalidOperationException($"Missing configuration: {SECTION_NAME_GITHUB}:{MODEL_KEY}");
-
-        Console.WriteLine();
-        Console.WriteLine($"\tLLM Provider: {provider}");
-        Console.WriteLine($"\tModel: {model}");
-        Console.WriteLine($"\tAgent Mode: {mode}");
-        Console.WriteLine();
-
-        var apiKey = source.ApplicationBuilder
-                           .AddParameter(name: API_KEY_RESOURCE_NAME, value: token, secret: true);
-        var chat = source.ApplicationBuilder
-                         .AddGitHubModel(name: LLM_RESOURCE_NAME, model: model)
-                         .WithApiKey(apiKey);
-
-        return source.WithEnvironment(AGENT_MODE_KEY, mode.ToString())
-                     .WithEnvironment(LLM_PROVIDER_KEY, provider.ToString())
-                     .WithReference(chat)
-                     .WaitFor(chat);
     }
 
     private static IResourceBuilder<ProjectResource> AddAzureOpenAIResource(this IResourceBuilder<ProjectResource> source, IConfiguration config, LlmProvider provider, AgentMode mode)

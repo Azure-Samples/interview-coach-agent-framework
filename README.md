@@ -11,7 +11,7 @@ This sample covers the patterns you'd need for a real agent deployment:
 - Model Context Protocol (MCP) for adding tools without touching agent code
 - Running multiple services together with Aspire
 - Keeping conversation state across sessions
-- Swapping LLM providers (Microsoft Foundry, Azure OpenAI, GitHub Models, GitHub Copilot)
+- Swapping LLM providers (Microsoft Foundry, Azure OpenAI, GitHub Copilot)
 - Deploying to Azure with `azd up`
 
 See [learning objectives](docs/LEARNING-OBJECTIVES.md) for the full breakdown.
@@ -26,7 +26,7 @@ The app is split into a few services:
 - **WebUI** is a Blazor chat interface
 - **Agent** runs the interview logic via Microsoft Agent Framework
 - **MCP Servers** handle document parsing (MarkItDown) and session storage (InterviewData)
-- **LLM Provider** talks to Foundry, Azure OpenAI, or GitHub Models
+- **LLM Provider** talks to Foundry or Azure OpenAI
 
 See [architecture overview](docs/ARCHITECTURE.md) for how the pieces fit together.
 
@@ -112,7 +112,6 @@ azd down --force --purge
 The default is Microsoft Foundry, but you can also use:
 
 - [Azure OpenAI](docs/providers/AZURE-OPENAI.md) — direct AOAI integration
-- [GitHub Models](docs/providers/GITHUB-MODELS.md) — free tier, good for prototyping
 <!-- - [GitHub Copilot](docs/providers/GITHUB-COPILOT.md) — local dev with Copilot SDK -->
 
 ### Alternative agent mode

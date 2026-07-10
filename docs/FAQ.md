@@ -112,18 +112,6 @@ Yes, just change the config:
 
 See [Azure OpenAI setup](providers/AZURE-OPENAI.md).
 
-### Can I use GitHub Models?
-
-For development, yes:
-
-```json
-"LlmProvider": "GitHubModels"
-```
-
-Rate limits make it unsuitable for production.
-
-See [GitHub Models setup](providers/GITHUB-MODELS.md).
-
 ### Can I use OpenAI Platform (not Azure)?
 
 Not currently supported, but adding it is straightforward:

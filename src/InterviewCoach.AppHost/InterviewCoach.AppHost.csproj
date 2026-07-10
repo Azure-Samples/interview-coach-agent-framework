@@ -8,10 +8,13 @@
     <PackageReference Include="Aspire.Hosting.Azure" />
     <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
     <PackageReference Include="Aspire.Hosting.Foundry" />
-    <PackageReference Include="Aspire.Hosting.GitHub.Models" />
     <PackageReference Include="Aspire.Hosting.OpenAI" />
     <PackageReference Include="Azure.Provisioning.Storage" />
     <PackageReference Include="CommunityToolkit.Aspire.Hosting.SQLite" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InterviewCoach.AppHost.Core\InterviewCoach.AppHost.Core.csproj" IsAspireProjectResource="false" />
   </ItemGroup>
 
   <ItemGroup>

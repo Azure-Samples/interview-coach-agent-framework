@@ -18,7 +18,6 @@ public enum AgentMode
 
 public enum LlmProvider
 {
-    GitHubModels,
     AzureOpenAI,
     MicrosoftFoundry,
     GitHubCopilot

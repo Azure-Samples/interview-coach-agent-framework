@@ -27,7 +27,7 @@ See [AppHost.cs](../src/InterviewCoach.AppHost/AppHost.cs) for the service topol
 
 ### 4. Multi-provider LLM support
 
-One codebase, multiple LLM backends. Pick a provider in config and go — no code changes. Use GitHub Models while prototyping, then switch to Foundry or Azure OpenAI for production.
+One codebase, multiple LLM backends. Pick a provider in config and go — no code changes. Prototype with Azure OpenAI, then switch to Foundry for production.
 
 The abstraction is in [LlmResourceFactory.cs](../src/InterviewCoach.AppHost/LlmResourceFactory.cs).
 
@@ -47,7 +47,7 @@ The interview coach instructions show progressive disclosure (behavioral then te
 
 **You can add tools without modifying the agent.** MCP servers mean you can bolt on new capabilities (email, calendar, whatever) independently. Teams can work on tools and agents in parallel.
 
-**You can swap providers without rewriting anything.** Prototype on GitHub Models for free, ship on Azure OpenAI or Foundry. The `IChatClient` interface makes the switch a config change.
+**You can swap providers without rewriting anything.** Prototype on Azure OpenAI, ship on Foundry. The `IChatClient` interface makes the switch a config change.
 
 **You get observability for free.** Aspire gives you service discovery, health checks, distributed tracing, and structured logging out of the box. Deploying to Azure Container Apps with `azd` is one command.
 

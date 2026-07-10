@@ -8,8 +8,7 @@ The app supports multiple LLM backends. Pick one in config and go — no code ch
 |-----------------------------------------------|-------------------------------------------------------|------------|--------------------|
 | **[Microsoft Foundry](MICROSOFT-FOUNDRY.md)** | Production deployments with Agent Service             | Azure RBAC | Pay-per-use        |
 | **[Azure OpenAI](AZURE-OPENAI.md)**           | Production deployments                                | API Key    | Pay-per-use        |
-| **[GitHub Models](GITHUB-MODELS.md)**         | Local development and prototyping                     | GitHub PAT | Free (with limits) |
-<!-- | **[GitHub Copilot](GITHUB-MODELS.md)**        | Local development and prototyping with GitHub Copilot | GitHub PAT | Free (with limits) | -->
+<!-- | **[GitHub Copilot](GITHUB-COPILOT.md)**        | Local development and prototyping with GitHub Copilot | GitHub PAT | Free (with limits) | -->
 
 ## Getting started
 
@@ -17,7 +16,6 @@ Pick a provider and follow the guide:
 
 - [Microsoft Foundry](MICROSOFT-FOUNDRY.md) (recommended)
 - [Azure OpenAI](AZURE-OPENAI.md)
-- [GitHub Models](GITHUB-MODELS.md)
 <!-- - [GitHub Copilot](GITHUB-COPILOT.md) -->
 
 ## Switching providers
@@ -60,19 +58,6 @@ All providers use the same code. To switch:
 }
 ```
 
-**GitHub Models:**
-
-```json
-{
-  "LlmProvider": "GitHubModels",
-
-  "GitHub": {
-    "Token": "{{GITHUB_PAT}}",
-    "Model": "openai/gpt-5-mini"
-  }
-}
-```
-
 <!-- **GitHub Copilot:**
 
 ```json
@@ -103,12 +88,6 @@ aspire run --file ./apphost.cs -- --provider MicrosoftFoundry
 
 ```bash
 aspire run --file ./apphost.cs -- --provider AzureOpenAI
-```
-
-**GitHub Models:**
-
-```bash
-aspire run --file ./apphost.cs -- --provider GitHubModels
 ```
 
 <!-- **GitHub Copilot:**
