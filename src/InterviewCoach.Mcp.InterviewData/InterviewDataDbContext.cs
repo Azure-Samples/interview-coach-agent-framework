@@ -23,18 +23,12 @@ public class InterviewDataDbContext(DbContextOptions<InterviewDataDbContext> opt
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<InterviewSession>().ToTable("InterviewSessions")
-                                       .HasKey(t => t.Id);
-        modelBuilder.Entity<InterviewSession>().Property(t => t.Id).IsRequired();
-        modelBuilder.Entity<InterviewSession>().Property(t => t.ResumeLink);
-        modelBuilder.Entity<InterviewSession>().Property(t => t.ResumeText);
-        modelBuilder.Entity<InterviewSession>().Property(t => t.ProceedWithoutResume).IsRequired();
-        modelBuilder.Entity<InterviewSession>().Property(t => t.JobDescriptionLink);
-        modelBuilder.Entity<InterviewSession>().Property(t => t.JobDescriptionText);
-        modelBuilder.Entity<InterviewSession>().Property(t => t.ProceedWithoutJobDescription).IsRequired();
-        modelBuilder.Entity<InterviewSession>().Property(t => t.Transcript);
-        modelBuilder.Entity<InterviewSession>().Property(t => t.IsCompleted).IsRequired();
-        modelBuilder.Entity<InterviewSession>().Property(t => t.CreatedAt).IsRequired();
-        modelBuilder.Entity<InterviewSession>().Property(t => t.UpdatedAt).IsRequired();
+        modelBuilder.Entity<InterviewSession>(builder =>
+        {
+            builder.ToContainer("interviewsessions");
+            builder.HasKey(t => t.Id);
+            builder.HasPartitionKey(t => t.Id);
+            builder.Property(t => t.Id).ToJsonProperty("id");
+        });
     }
 }

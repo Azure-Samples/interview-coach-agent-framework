@@ -2,21 +2,11 @@ using System.Reflection;
 
 using InterviewCoach.Mcp.InterviewData;
 
-using Microsoft.Data.Sqlite;
-using Microsoft.EntityFrameworkCore;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddSqliteConnection("sqlite");
-// var connection = new SqliteConnection("Filename=:memory:");
-// connection.Open();
-
-// builder.Services.AddSingleton(connection);
-
-builder.Services.AddDbContext<InterviewDataDbContext>((sp, options) => options.UseSqlite(sp.GetRequiredService<SqliteConnection>()));
-// builder.Services.AddDbContext<InterviewDataDbContext>(options => options.UseSqlite());
+builder.AddCosmosDbContext<InterviewDataDbContext>("interviewdb", "interviewdb");
 builder.Services.AddScoped<IInterviewSessionRepository, InterviewSessionRepository>();
 
 builder.Services.AddMcpServer()
@@ -27,13 +17,17 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-using (var scope = app.Services.CreateScope())
+if (app.Environment.IsDevelopment())
 {
+    // The Cosmos DB emulator uses local key auth, so the app can create the database and
+    // container here for a smooth local dev experience. In Azure the account is keyless
+    // (Entra ID), which does not permit management-plane operations from the data-plane SDK,
+    // so the database and container are provisioned by Aspire (AddCosmosDatabase/AddContainer).
+    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<InterviewDataDbContext>();
-    dbContext.Database.EnsureCreated();
+    await dbContext.Database.EnsureCreatedAsync();
 }
-
-if (app.Environment.IsDevelopment() == false)
+else
 {
     app.UseHttpsRedirection();
 }

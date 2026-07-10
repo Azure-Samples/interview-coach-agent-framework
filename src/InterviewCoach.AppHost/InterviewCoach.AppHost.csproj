@@ -2,10 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <NoWarn>$(NoWarn);ASPIRECOSMOSDB001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Aspire.Hosting.SQLite" />
+    <PackageReference Include="Aspire.Hosting.Azure.CosmosDB" />
   </ItemGroup>
 
   <ItemGroup>
