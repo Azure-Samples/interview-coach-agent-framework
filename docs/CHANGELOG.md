@@ -2,31 +2,56 @@
 
 All notable changes to this project will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## [Unreleased]
+
+### Added
+
+- `.vscode` tasks to launch each LLM provider mode (Microsoft Foundry, Azure OpenAI, GitHub Models, GitHub Copilot)
+- Microsoft Foundry orchestration through .NET Aspire, including Azure File Share integration for persistent storage
+- GitHub Models as a free provider option for local development and prototyping
+- Aspire skill and Playwright CLI skill with supporting reference documentation
+- NDC Sydney presentation deck under `docs/`
+
+### Changed
+
+- Centralized build and package configuration via `Directory.Build.props` and `Directory.Packages.props`
+- Upgraded `Aspire.AppHost.Sdk` to 13.2.2 and refreshed Aspire dependencies
+- Refactored the multi-agent workflow and removed the Squad assets
+- Fixed the `mcp-interview-data` resource scheme
+- Restricted SqliteWeb to run mode only
+- Moved artifact upload path to `./samples`
+
+### Removed
+
+- GitHub Copilot SDK integration (temporarily removed pending updates)
+
+### Fixed
+
+- Session ID propagation and logging across agents and MCP clients
+- Typo in the devcontainer configuration
+
+### Documentation
+
+- Comprehensive documentation review with Mermaid diagram conversion
+- Provider setup guides for GitHub Models and Microsoft Foundry
+- CONTRIBUTING, CHANGELOG, and pull request template additions
+
+## [0.1.0] - 2026-01-22
 
 ### Added
 
 - Initial release of Interview Coach with Microsoft Agent Framework
 - Multi-agent orchestration for job interview coaching
-- Integration with Microsoft Foundry, Azure OpenAI, and GitHub Models
-- MCP server integration for MarkItDown
+- AI-powered interview coach agent and custom .NET expert agent
+- Integration with Azure OpenAI for LLM inference
+- Model Context Protocol (MCP) InterviewData server with wired MCP clients
 - Web UI for interactive interview practice
-- Aspire-based deployment architecture
-
-### Features
-
-- AI-powered interview coach agent
-- Support for multiple LLM providers (Microsoft Foundry, Azure OpenAI, GitHub Models)
-- Model Context Protocol (MCP) server integration
+- .NET Aspire AppHost for local development and deployment orchestration
 - Azure deployment support via Azure Developer CLI (azd)
-- Local development with .NET Aspire
-
-### Documentation
-
-- Comprehensive README with setup instructions
-- Architecture diagrams and documentation
-- Contributing guidelines
-- Code of Conduct
+- Comprehensive README with setup instructions, architecture diagrams, and Code of Conduct
 
 ---
 
