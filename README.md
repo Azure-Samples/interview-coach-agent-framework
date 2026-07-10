@@ -74,7 +74,7 @@ aspire run --file ./apphost.cs
 **What happens next:**
 
 1. Open Aspire Dashboard (URL shown in terminal output).
-1. All services start (Agent, WebUI, MCP servers, SQLite).
+1. All services start (Agent, WebUI, MCP servers, Cosmos DB).
 1. Look for ✅ "Running" status on all resources.
 1. Click the **webui** endpoint to open the interview coach.
 

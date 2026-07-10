@@ -6,14 +6,14 @@ How the Interview Coach is put together and why.
 
 ![Architecture Diagram](../assets/architecture.png)
 
-[Aspire](https://aspire.dev) orchestrates the services: agent, web UI, MCP servers, and a SQLite database. Each runs as a separate process with service discovery wiring them together.
+[Aspire](https://aspire.dev) orchestrates the services: agent, web UI, MCP servers, and an Azure Cosmos DB database. Each runs as a separate process with service discovery wiring them together.
 
 A few decisions shaped the design:
 
 1. **MCP for tools** — Tools (document parsing, session storage) live in their own MCP servers. They can be reused across projects and developed independently.
 2. **Provider abstraction** — The LLM backend is swappable at runtime: Foundry or Azure OpenAI.
 3. **Aspire orchestration** — Service discovery, health checks, and telemetry come free from .NET Aspire.
-4. **Stateful sessions** — Interview sessions persist to SQLite so users can pause and resume.
+4. **Stateful sessions** — Interview sessions persist to Azure Cosmos DB so users can pause and resume.
 
 ## Component Deep Dive
 
@@ -54,7 +54,7 @@ It's external (Python-based) because it's reusable across projects and maintaine
 
 ```mermaid
 flowchart LR
-    A[Agent] --> B[HTTP/SSE]
+    A[Agent] --> B[Streamable HTTP]
     B --> C[MarkItDown MCP Server]
     C --> D[Document Processing]
     D --> E[Markdown Response]
@@ -62,13 +62,13 @@ flowchart LR
 
 ### 4. InterviewCoach.Mcp.InterviewData (session storage)
 
-A custom .NET MCP server that stores interview sessions in SQLite via Entity Framework Core. Built with the `ModelContextProtocol.Server` SDK.
+A custom .NET MCP server that stores interview sessions in Azure Cosmos DB via Entity Framework Core. Built with the `ModelContextProtocol.Server` SDK.
 
 **Integration Pattern**:
 
 ```mermaid
 flowchart LR
-    A[Agent] --> B[HTTP/SSE]
+    A[Agent] --> B[Streamable HTTP]
     B --> C[InterviewData MCP Server]
     C --> D[Data Processing]
     D --> E[Response]

@@ -192,7 +192,7 @@ This follows the principle of least privilege — agents can only access what th
 
 ### Shared session state
 
-All agents share the same interview session through the InterviewData MCP server. The session (resume, job description, transcript) lives in SQLite and every agent accesses it through MCP tool calls. No agent touches the database directly.
+All agents share the same interview session through the InterviewData MCP server. The session (resume, job description, transcript) lives in Azure Cosmos DB and every agent accesses it through MCP tool calls. No agent touches the database directly.
 
 ### Handoff vs. agent-as-tools
 

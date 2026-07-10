@@ -83,7 +83,7 @@ The agent maintains state through the InterviewData MCP server:
 **Exercise**:
 
 1. Complete a short interview
-2. Check the SQLite database using Aspire's SQLite Web viewer
+2. Check the database using the Cosmos DB emulator's Data Explorer
 3. Find your session record
 4. Examine the stored transcript JSON
 

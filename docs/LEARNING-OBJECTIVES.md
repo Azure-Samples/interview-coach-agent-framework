@@ -29,11 +29,11 @@ See [AppHost.cs](../src/InterviewCoach.AppHost/AppHost.cs) for the service topol
 
 One codebase, multiple LLM backends. Pick a provider in config and go — no code changes. Prototype with Azure OpenAI, then switch to Foundry for production.
 
-The abstraction is in [LlmResourceFactory.cs](../src/InterviewCoach.AppHost/LlmResourceFactory.cs).
+The abstraction is in [LlmResourceFactory.cs](../src/InterviewCoach.AppHost.Core/LlmResourceFactory.cs).
 
 ### 5. Stateful conversations
 
-Sessions persist to SQLite. Resume text, job descriptions, and transcripts survive across turns. Users can pause and pick up later.
+Sessions persist to Azure Cosmos DB. Resume text, job descriptions, and transcripts survive across turns. Users can pause and pick up later.
 
 See [InterviewSessionRepository.cs](../src/InterviewCoach.Mcp.InterviewData/InterviewSessionRepository.cs).
 
