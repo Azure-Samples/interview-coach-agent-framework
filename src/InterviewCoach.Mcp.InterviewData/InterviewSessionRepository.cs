@@ -59,16 +59,6 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
         sb.AppendLine(interviewSession.Transcript ?? string.Empty);
         record.Transcript = sb.ToString();
 
-        await db.InterviewSessions.Where(r => r.Id == interviewSession.Id)
-                                  .ExecuteUpdateAsync(r => r.SetProperty(p => p.ResumeLink, record.ResumeLink)
-                                                            .SetProperty(p => p.ResumeText, record.ResumeText)
-                                                            .SetProperty(p => p.ProceedWithoutResume, record.ProceedWithoutResume)
-                                                            .SetProperty(p => p.JobDescriptionLink, record.JobDescriptionLink)
-                                                            .SetProperty(p => p.JobDescriptionText, record.JobDescriptionText)
-                                                            .SetProperty(p => p.ProceedWithoutJobDescription, record.ProceedWithoutJobDescription)
-                                                            .SetProperty(p => p.Transcript, record.Transcript)
-                                                            .SetProperty(p => p.UpdatedAt, record.UpdatedAt));
-
         await db.SaveChangesAsync();
 
         return record;
@@ -83,9 +73,6 @@ public class InterviewSessionRepository(InterviewDataDbContext db) : IInterviewS
         }
 
         record.IsCompleted = true;
-
-        await db.InterviewSessions.Where(p => p.Id == id)
-                                  .ExecuteUpdateAsync(p => p.SetProperty(x => x.IsCompleted, true));
 
         await db.SaveChangesAsync();
 

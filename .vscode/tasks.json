@@ -20,15 +20,6 @@
       "detail": "Run the app with Azure OpenAI"
     },
     {
-      "label": "Run: GitHub Models",
-      "type": "shell",
-      "command": "aspire run --file ./apphost.cs -- --provider GitHubModels",
-      "group": "build",
-      "isBackground": true,
-      "problemMatcher": [],
-      "detail": "Run the app with GitHub Models (free, for local dev/prototyping)"
-    },
-    {
       "label": "Run: GitHub Copilot",
       "type": "shell",
       "command": "aspire run --file ./apphost.cs -- --provider GitHubCopilot --mode CopilotHandOff",

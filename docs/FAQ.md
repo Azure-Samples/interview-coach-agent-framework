@@ -25,7 +25,7 @@ See [learning objectives](LEARNING-OBJECTIVES.md).
 The architecture patterns are solid for production. A few things to think about first:
 
 - Review security settings (content filters, authentication)
-- SQLite won't scale forever — plan for Azure SQL or Cosmos DB under load
+- Cosmos DB runs in serverless mode by default — review throughput (RU/s) and partitioning for heavy load
 - Add proper error handling and monitoring for your use case
 
 ### How is this different from other chatbot samples?
@@ -112,18 +112,6 @@ Yes, just change the config:
 
 See [Azure OpenAI setup](providers/AZURE-OPENAI.md).
 
-### Can I use GitHub Models?
-
-For development, yes:
-
-```json
-"LlmProvider": "GitHubModels"
-```
-
-Rate limits make it unsuitable for production.
-
-See [GitHub Models setup](providers/GITHUB-MODELS.md).
-
 ### Can I use OpenAI Platform (not Azure)?
 
 Not currently supported, but adding it is straightforward:
@@ -181,7 +169,7 @@ Not with `azd`, but the app is just containers. You could deploy to ECS/Fargate 
 
 ### What about scaling?
 
-Container Apps auto-scales on HTTP request count (including scale-to-zero). For storage, swap SQLite for Azure SQL. MCP servers scale independently.
+Container Apps auto-scales on HTTP request count (including scale-to-zero). Storage uses Azure Cosmos DB (serverless), which scales on its own. MCP servers scale independently.
 
 ---
 

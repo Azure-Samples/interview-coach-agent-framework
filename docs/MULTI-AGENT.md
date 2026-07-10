@@ -6,8 +6,8 @@ This project shows three ways to build the interview coach with [Microsoft Agent
 
 | Mode               | Approach                             | Agent Count | LLM Backend                            | Best For                               |
 |--------------------|--------------------------------------|-------------|----------------------------------------|----------------------------------------|
-| **Single**         | Single Agent                         | 1           | Foundry / Azure OpenAI / GitHub Models | Simple deployments, getting started    |
-| **LlmHandOff**     | Multi-Agent Handoff (LLM)            | 5           | Foundry / Azure OpenAI / GitHub Models | Production multi-agent with cloud LLMs |
+| **Single**         | Single Agent                         | 1           | Foundry / Azure OpenAI                 | Simple deployments, getting started    |
+| **LlmHandOff**     | Multi-Agent Handoff (LLM)            | 5           | Foundry / Azure OpenAI                 | Production multi-agent with cloud LLMs |
 | **CopilotHandOff** | Multi-Agent Handoff (GitHub Copilot) | 5           | GitHub Copilot                         | Local development with Copilot         |
 
 ## How to switch modes
@@ -142,7 +142,7 @@ Same 5-agent topology as Mode 2, but backed by the GitHub Copilot SDK instead of
 | Aspect         | Mode 2 (LLM)                                           | Mode 3 (GitHub Copilot)                  |
 |----------------|--------------------------------------------------------|------------------------------------------|
 | Agent creation | `new ChatClientAgent(chatClient, ...)`                 | `copilotClient.AsAIAgent(...)`           |
-| LLM backend    | Cloud provider (Foundry/Azure OpenAI/GitHub Models)    | GitHub Copilot                           |
+| LLM backend    | Cloud provider (Foundry/Azure OpenAI)                 | GitHub Copilot                           |
 | Configuration  | Requires LLM provider setup in `apphost.settings.json` | Requires `GitHubCopilot:Token` in config |
 | Tool passing   | `AITool` instances from MCP clients                    | Same `AITool` instances                  |
 
@@ -192,7 +192,7 @@ This follows the principle of least privilege — agents can only access what th
 
 ### Shared session state
 
-All agents share the same interview session through the InterviewData MCP server. The session (resume, job description, transcript) lives in SQLite and every agent accesses it through MCP tool calls. No agent touches the database directly.
+All agents share the same interview session through the InterviewData MCP server. The session (resume, job description, transcript) lives in Azure Cosmos DB and every agent accesses it through MCP tool calls. No agent touches the database directly.
 
 ### Handoff vs. agent-as-tools
 

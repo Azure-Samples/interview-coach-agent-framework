@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced SQLite persistence with Azure Cosmos DB (NoSQL) via the EF Core Cosmos provider; local development uses the Cosmos DB emulator with Data Explorer
+- Moved the shared AppHost constants, LLM resource factory, and extensions into the `InterviewCoach.AppHost.Core` project
+- Switched the MarkItDown MCP client to the Streamable HTTP endpoint (`/mcp`)
+
+### Removed
+
+- GitHub Models provider connector
+- Azure File Share persistence and the SQLite Web viewer, superseded by Azure Cosmos DB
+
+### Fixed
+
+- MarkItDown container ingress not being marked external when published (endpoint ordering)
+
+## [1.0.0] - 2026-07-10
+
 ### Added
 
 - `.vscode` tasks to launch each LLM provider mode (Microsoft Foundry, Azure OpenAI, GitHub Models, GitHub Copilot)

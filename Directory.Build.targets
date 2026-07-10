@@ -1,0 +1,13 @@
+<Project>
+  <!--
+    The AppHost.Core project is a plain class library that provides shared constants,
+    factories and extensions to the app hosts. It must be referenced as a normal
+    assembly (not an Aspire project resource) so its types are available at compile
+    time. The MSBuild-based AppHost sets IsAspireProjectResource="false" inline, but the
+    file-based app host (apphost.cs) injects its #:project references without that
+    metadata, so it is applied here for every reference to the project.
+  -->
+  <ItemGroup>
+    <ProjectReference Update="**/InterviewCoach.AppHost.Core.csproj" IsAspireProjectResource="false" />
+  </ItemGroup>
+</Project>
