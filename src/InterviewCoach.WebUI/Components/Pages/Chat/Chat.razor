@@ -1,4 +1,7 @@
 ﻿@page "/"
+
+@using System.Diagnostics
+
 @using System.ComponentModel
 @using InterviewCoach.WebUI.Services
 @inject IChatClient ChatClient
@@ -102,9 +105,30 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
 
         try
         {
+
+
+
+            var responseTimer = Stopwatch.StartNew();
+            var measuredDelay = TimeSpan.Zero;
+            var updateCount = 0;
+
+
+
             await foreach (var update in ChatClient.GetStreamingResponseAsync(outboundMessages, chatOptions, cancellationToken))
             {
+
+
+
+                updateCount++;
+
+                var delayStarted = Stopwatch.GetTimestamp();
                 await Task.Delay(50);
+                measuredDelay += Stopwatch.GetElapsedTime(delayStarted);
+
+
+
+
+                // await Task.Delay(50);
 
                 messages.AddMessages(update, filter: c => c is not TextContent);
 
@@ -116,6 +140,17 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
 
                 StateHasChanged();
             }
+
+
+            Logger.LogInformation(
+                "Stream completed in {ElapsedMs} ms across {UpdateCount} updates; "
+                + "artificial delay consumed {DelayMs} ms",
+                responseTimer.Elapsed.TotalMilliseconds,
+                updateCount,
+                measuredDelay.TotalMilliseconds);
+
+
+
         }
         catch (System.Text.Json.JsonException ex)
         {

@@ -137,7 +137,7 @@ builder.Services.AddOpenAIConversations();
 // so that the DevUI can be used to inspect the agent's state and behavior in production scenarios.
 builder.Services.AddDevUI(options => options.AllowRemoteAccess = true);
 
-builder.Services.AddAGUI();
+builder.Services.AddAGUIServer();
 
 var app = builder.Build();
 
@@ -146,7 +146,7 @@ app.MapDefaultEndpoints();
 app.MapOpenAIResponses();
 app.MapOpenAIConversations();
 
-app.MapAGUI(
+app.MapAGUIServer(
     pattern: "ag-ui",
     aiAgent: app.Services.GetRequiredKeyedService<AIAgent>("coach")
 );
