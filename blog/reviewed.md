@@ -1,12 +1,14 @@
-# The hidden 50 ms cost of every AI streaming update
+# Finding hidden latency across a distributed .NET application
 
-Streaming is supposed to make an AI application feel fast. The first part of an answer appears while the model is still producing the rest, so the user can start reading before the response is complete.
+When a distributed application feels slow, the user sees one delay. The code behind that delay may run across a web frontend, backend services, databases, and external APIs. If you profile only the frontend while the backend is slow, the profiler can show that the frontend is healthy without revealing the actual bottleneck.
 
-But an application can add its own latency after the model starts responding. That is what the [Interview Coach](https://aka.ms/agentframework/interviewcoach) sample app does.
+This article shows how to narrow a cross-process performance problem with Visual Studio: identify the process that owns the slow operation, capture its CPU activity, inspect the report, and add a focused measurement when CPU samples cannot explain elapsed time. GitHub Copilot Profiler Agent then acts as a second analyst for the evidence already collected.
 
-## Why the first response felt slow
+The case study uses the [Interview Coach](https://aka.ms/agentframework/interviewcoach) sample, a .NET Aspire application with a Blazor frontend and several backend resources. The eventual cause is in an AI streaming path, but the investigation applies to any distributed .NET application where one user action crosses process boundaries.
 
-The Interview Coach Web UI sends a prompt to a backend agent and renders the agent's response as a stream of updates. I tested it with this prompt:
+## One symptom, several processes
+
+The Interview Coach Web UI sends a prompt to a backend agent and renders the response as a stream of updates. I tested it with this prompt:
 
 ```text
 Hi, I'm Peter. Here's my resume: https://justinyoo.github.io/fake-resumes/resume-peter-parker.pdf. And this is JD: https://justinyoo.github.io/fake-resumes/jd-cloud-solution-architect.pdf
@@ -14,59 +16,32 @@ Hi, I'm Peter. Here's my resume: https://justinyoo.github.io/fake-resumes/resume
 
 The first complete response took roughly 1.5 to 2 minutes. Some of that time was expected: the first turn parses the PDF into Markdown and stores initial data in Cosmos DB. Even with that work in mind, the response felt slower than expected.
 
-I wanted to know where the time was going. Was the machine busy with CPU-intensive agent work? Was the delay in the network or model? Or was the Web UI slowing down the stream after it arrived?
+One interaction crossed the Blazor Web UI, the agent, MCP servers, Cosmos DB, and a hosted model. Before looking for a slow method, I needed to establish which process was doing work and which process was waiting.
 
 Visual Studio's [Performance Profiler](https://learn.microsoft.com/visualstudio/profiling/what-is-a-profiler) was a good place to start.
 
-## What I needed to measure
+## Define the question before collecting data
 
-The task was to profile the process that owns the streaming code and answer two questions:
+I reduced the investigation to two questions:
 
-1. Was `InterviewCoach.WebUI` CPU-bound while it processed the response?
-2. Did the Web UI add measurable waiting time to every streaming update?
+1. Which process owned the slow part of the interaction?
+2. Once that process was isolated, was it computing or waiting?
 
-Interview Coach runs as an Aspire distributed application. AppHost starts the Web UI, agent, MCP servers, and data services as separate processes. A profile of AppHost does not automatically describe the Blazor code running in `InterviewCoach.WebUI`.
+AppHost starts the Web UI, agent, MCP servers, and data services as separate processes. A profile of `InterviewCoach.AppHost` describes the orchestrator. It does not automatically describe the Blazor code in `InterviewCoach.WebUI`.
 
-CPU Usage can collect data from multiple Aspire processes, but this investigation needed an unambiguous Web UI target. I therefore kept the backend resources under Aspire and launched the Web UI separately from Visual Studio.
+CPU Usage can collect from multiple processes, which is useful for an initial system-wide view. Here, the visible slowdown occurred while the Web UI consumed and rendered updates, so I wanted a focused capture of that process. I kept the backend resources under Aspire and launched the Web UI as the Visual Studio profiling target.
 
-## Set up a trustworthy profiling run
+## Target the process that owns the work
 
-### Run the backend resources under Aspire
+This walkthrough assumes the sample is configured for [local Azure provisioning](https://aspire.dev/integrations/cloud/azure/local-provisioning/) and already runs successfully from Visual Studio.
 
-This walkthrough assumes the sample is configured for [local Azure provisioning](https://aspire.dev/integrations/cloud/azure/local-provisioning/).
+Set `InterviewCoach.AppHost` as the startup project, select its HTTPS launch profile, and choose **Debug > Start Without Debugging**. Starting without the debugger leaves AppHost running when the startup project changes later. Once the Aspire resources are ready, stop only the Aspire-managed `webui` resource from the Aspire dashboard. Leave the agent and its dependencies running.
 
-From the repository root, start AppHost:
-
-```powershell
-aspire start --apphost .\src\InterviewCoach.AppHost\InterviewCoach.AppHost.csproj
-```
-
-Wait until the `agent` and `webui` resources are running in the Aspire dashboard.
-
-![Aspire dashboard](./images/image-01.jpg)
-
-For this run, the agent used port 7048 and the Web UI used port 7200. Verify the endpoints before continuing:
-
-```powershell
-Invoke-WebRequest https://localhost:7048/health
-Invoke-WebRequest https://localhost:7200/health
-```
-
-Both requests should return HTTP 200. Aspire can assign different ports after a restart, so use the endpoints shown in your dashboard rather than assuming these values will stay fixed.
-
-Stop only the Aspire-managed Web UI:
-
-```powershell
-aspire resource webui stop
-```
-
-The agent and its dependencies remain under Aspire.
+![Aspire dashboard with the backend resources running](./images/image-01.jpg)
 
 ![Aspire dashboard showing the stopped Web UI](./images/image-02.jpg)
 
-Stopping the resource does not release port 7200. Aspire's DCP proxy continues to reserve the original endpoint, so the standalone Web UI needs different ports.
-
-### Configure a standalone Web UI profile
+The standalone Web UI needs a launch profile that uses its own ports and points service discovery at the running agent. In this capture, the agent's HTTPS endpoint used port 7048. Aspire can assign a different port after a restart, so use the value shown in the dashboard.
 
 Add a `Profiler` profile under `profiles` in `src/InterviewCoach.WebUI/Properties/launchSettings.json`:
 
@@ -89,9 +64,7 @@ The Web UI addresses the agent through a logical service name:
 client.BaseAddress = new Uri("https+http://agent");
 ```
 
-The environment variable maps to the .NET configuration path `Services:agent:https:0`. The configuration-based service discovery provider turns `localhost:7048` into an HTTPS endpoint for the logical `agent` service. The value therefore contains the host and port, not the `https://` prefix.
-
-If Aspire assigns a different agent port, update the profile before starting Visual Studio. Do not commit a machine-specific dynamic port.
+The environment variable maps to `Services:agent:https:0`. The configuration-based service discovery provider resolves `localhost:7048` as the HTTPS endpoint for `agent`. The value contains the host and port, not the `https://` prefix.
 
 In Visual Studio:
 
@@ -105,13 +78,26 @@ In Visual Studio:
 
 ![Visual Studio Performance Profiler](./images/image-03.jpg)
 
-Start the application. When the Web UI is ready, resume profiler collection, submit the test prompt, and stop collection when the response finishes.
+Start the application. When the Web UI is ready, resume collection, submit the test prompt, and stop collection when the response finishes.
 
 ![CPU Usage results](./images/image-04.jpg)
 
-The CPU report did not show an application hot path that explained the long elapsed time. That suggested the Web UI was not CPU-bound during the capture, but it did not identify the cause. CPU Usage records active CPU work; asynchronous waiting does not appear as a large CPU hot path.
+## Read the CPU report before asking Copilot
 
-### Inspect the streaming loop
+Start with the CPU timeline. Select only the interval from submitting the prompt to receiving the final update. This removes startup and unrelated activity from the details below the chart.
+
+Next, open **Call Tree** and enable **Just My Code**. The columns answer different questions:
+
+- **Total CPU** includes CPU samples in a method and everything it called.
+- **Self CPU** includes samples attributed directly to that method.
+
+Use **Expand Hot Path** to follow the most CPU-intensive branch, then search for `GetStreamingResponseAsync` to find the Web UI's streaming path. The **Functions** view is also useful for sorting application methods by Total CPU or Self CPU without navigating the entire tree.
+
+In this capture, the selected interval reported 6.7% CPU usage, and the Call Tree did not show a dominant application hot path that accounted for the long response. That did not prove what caused the delay. It told me something narrower: the Web UI was not CPU-bound during the selected interval.
+
+This distinction matters. CPU Usage samples active processor work. Time spent awaiting I/O, a timer, a lock, or another service can make the user wait without appearing as a CPU hot path. With no CPU hot path explaining the elapsed time, the next step was to inspect the code along the streaming path for an explicit wait.
+
+## Follow the evidence into the streaming loop
 
 The response loop in `src/InterviewCoach.WebUI/Components/Pages/Chat/Chat.razor` contained a useful clue:
 
@@ -198,9 +184,9 @@ For comparison, I removed `await Task.Delay(50)` and ran the same prompt five mo
 
 The live model can produce a different response and update count on every run. Total response time therefore includes model and network variation. It is useful user-experience context, but the delay counter is the measurement that isolates the Web UI's artificial wait.
 
-### Ask Profiler Agent for a second reading
+## Ask Profiler Agent to challenge the diagnosis
 
-Visual Studio 2026 includes [GitHub Copilot Profiler Agent](https://learn.microsoft.com/visualstudio/profiling/profile-with-copilot-agent). I used it to review the CPU session together with the counter values.
+Only after reading the report and measuring the suspected wait, it's worth bringing in [GitHub Copilot Profiler Agent](https://learn.microsoft.com/visualstudio/profiling/profile-with-copilot-agent) for the second thought. I gave it the CPU session, the method under investigation, and the counter values:
 
 ```text
 @Profiler Review this CPU Usage session for InterviewCoach.WebUI. The response contained 193 streaming updates, took 84,813.9868 ms, and accumulated approximately 11,871 ms inside Task.Delay(50), or 61.5088 ms per update. Does the report show significant CPU work in GetStreamingResponseAsync, or is the elapsed time consistent with asynchronous waiting?
