@@ -2,7 +2,7 @@
 
 When a distributed application feels slow, the user sees one delay. The code behind that delay may run across a web frontend, backend services, databases, and external APIs. If you profile only the frontend while the backend is slow, the profiler can show that the frontend is healthy without revealing the actual bottleneck.
 
-This article shows how to narrow a cross-process performance problem with Visual Studio: identify the process that owns the slow operation, capture its CPU activity, inspect the report, and add a focused measurement when CPU samples cannot explain elapsed time. GitHub Copilot Profiler Agent then acts as a second analyst for the evidence already collected.
+This article shows how to narrow a cross-process performance problem with Visual Studio: identify the process that owns the slow operation, capture its CPU activity, inspect the report, and add a focused measurement when CPU samples cannot explain elapsed time. GitHub Copilot Profiler Agent reinforces this workflow with detailed analysis of the captured profile and helps validate the interpretation of the evidence.
 
 The case study uses the [Interview Coach](https://aka.ms/agentframework/interviewcoach) sample, a .NET Aspire application with a Blazor frontend and several backend resources. The eventual cause is in an AI streaming path, but the investigation applies to any distributed .NET application where one user action crosses process boundaries.
 
@@ -184,9 +184,9 @@ For comparison, I removed `await Task.Delay(50)` and ran the same prompt five mo
 
 The live model can produce a different response and update count on every run. Total response time therefore includes model and network variation. It is useful user-experience context, but the delay counter is the measurement that isolates the Web UI's artificial wait.
 
-## Ask Profiler Agent to challenge the diagnosis
+## Use Profiler Agent to deepen the analysis
 
-Only after reading the report and measuring the suspected wait, it's worth bringing in [GitHub Copilot Profiler Agent](https://learn.microsoft.com/visualstudio/profiling/profile-with-copilot-agent) for the second thought. I gave it the CPU session, the method under investigation, and the counter values:
+After reading the report and measuring the suspected wait, I brought up [GitHub Copilot Profiler Agent](https://learn.microsoft.com/visualstudio/profiling/profile-with-copilot-agent) to analyze the CPU session in more detail and validate my interpretation. I gave it the method under investigation and the counter values:
 
 ```text
 @Profiler Review this CPU Usage session for InterviewCoach.WebUI. The response contained 193 streaming updates, took 84,813.9868 ms, and accumulated approximately 11,871 ms inside Task.Delay(50), or 61.5088 ms per update. Does the report show significant CPU work in GetStreamingResponseAsync, or is the elapsed time consistent with asynchronous waiting?
