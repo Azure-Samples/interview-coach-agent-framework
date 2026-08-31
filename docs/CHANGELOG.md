@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-08-31
+
 ### Added
 
 - Restored GitHub Copilot as an LLM provider through the GitHub Copilot SDK and Microsoft Agent Framework adapter
