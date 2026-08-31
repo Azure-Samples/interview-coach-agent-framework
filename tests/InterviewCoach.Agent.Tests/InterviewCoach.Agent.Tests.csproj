@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\InterviewCoach.Agent\InterviewCoach.Agent.csproj" />
+    <ProjectReference Include="..\..\src\InterviewCoach.AppHost.Core\InterviewCoach.AppHost.Core.csproj" Aliases="AppHostCore" />
   </ItemGroup>
 
 </Project>

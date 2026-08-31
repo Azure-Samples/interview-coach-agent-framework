@@ -1,95 +1,81 @@
 # Microsoft Foundry setup
 
-Recommended for production.
-
-## What is Microsoft Foundry?
-
-[Microsoft Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/what-is-foundry?view=foundry) is Azure's platform for building and managing AI applications. It gives you a single portal for model management, content safety, PII detection, cost-optimized model routing, evaluation, and fine-tuning.
+Microsoft Foundry is the default LLM provider. Aspire provisions the Foundry resource and model deployment as part of the application.
 
 ## Prerequisites
 
-- Azure subscription ([Get one free](https://azure.microsoft.com/free))
-- Azure Developer CLI installed ([Download](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd))
-- Azure CLI installed ([Download](https://docs.microsoft.com/cli/azure/install-azure-cli))
+- An [Azure subscription](https://azure.microsoft.com/free)
+- The [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
+- The [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) for deployment
 
-## Step 1: Configure Azure provisioning
+## Authenticate
 
-The Aspire AppHost auto-provisions the Foundry resource using your Azure subscription. Set the required provisioning settings in user secrets:
+Sign in with the Azure CLI:
 
 ```bash
-dotnet user-secrets --file ./apphost.cs set Azure:SubscriptionId "{{YOUR_AZURE_SUBSCRIPTION_ID}}"
-dotnet user-secrets --file ./apphost.cs set Azure:ResourceGroupPrefix "{{YOUR_RESOURCE_GROUP_PREFIX}}"
-dotnet user-secrets --file ./apphost.cs set Azure:Location "{{YOUR_AZURE_LOCATION}}"
+az login
 ```
 
-> [!NOTE]
-> You may also need to store Azure tenant ID to user secrets:
->
-> ```bash
-> dotnet user-secrets --file ./apphost.cs set Azure:TenantId "{{YOUR_TENANT_ID}}"
-> ```
+The agent uses `DefaultAzureCredential`. It reads Azure CLI credentials during local development and uses managed identity after deployment. No Foundry API key is required.
 
-## Step 2: Configure the model deployment (optional)
+If your account belongs to more than one tenant, select the tenant explicitly:
 
-The default model is `gpt-5-mini` with OpenAI format. To change it, update `apphost.settings.json`:
+```bash
+az login --tenant "{{AZURE_TENANT_ID}}"
+```
+
+## Configure the model
+
+Both providers default to `gpt-5-mini`. Foundry also needs the model version, format, SKU, and capacity:
 
 ```json
 {
+  "LlmProvider": "MicrosoftFoundry",
   "MicrosoftFoundry": {
     "DeploymentName": "gpt-5-mini",
-    "ModelVersion": "1",
-    "ModelFormat": "OpenAI"
+    "ModelVersion": "2025-08-07",
+    "ModelFormat": "OpenAI",
+    "SkuName": "GlobalStandard",
+    "SkuCapacity": 100
   }
 }
 ```
 
-## Step 3: Run the app
+`DeploymentName` falls back to `gpt-5-mini` when omitted. Model availability, versions, and quota vary by Azure region.
+
+## Run locally
+
+File-based AppHost:
 
 ```bash
-# Using file-based Aspire (recommended)
-aspire run --file ./apphost.cs
-
-# Using project-based Aspire
-aspire run --project ./src/InterviewCoach.AppHost
+aspire start --apphost ./apphost.cs
 ```
 
-Aspire will automatically provision the Foundry resource and model deployment on first run.
-
-> [!NOTE]
-> You may also need to store Azure tenant ID to user secrets:
->
-> ```bash
-> dotnet user-secrets --file ./apphost.cs set AZURE_TENANT_ID "{{YOUR_TENANT_ID}}"
-> ```
-
-
-## Step 4: Deploy to Azure
+Project-based AppHost:
 
 ```bash
-# Login to Azure
-azd auth login
+aspire start --apphost ./src/InterviewCoach.AppHost
+```
 
-# Provision + deploy
+On the first run, Aspire asks for any missing Azure context, then provisions the Foundry resource and deployment. The local Cosmos DB emulator and MarkItDown container still require Docker.
+
+## Deploy to Azure
+
+```bash
+azd auth login
 azd up
 ```
 
-## Step 5: Clean up
+The deployment assigns the application identity access to the provisioned resources.
 
-When finished, remove all Azure resources:
+## Clean up
 
 ```bash
 azd down --force --purge
 ```
 
-## Next steps
-
-- [Learning objectives](../LEARNING-OBJECTIVES.md)
-- [Architecture overview](../ARCHITECTURE.md)
-- [Tutorials](../TUTORIALS.md)
-- [FAQ](../FAQ.md)
-
 ## Resources
 
-- [Microsoft Foundry Portal](https://ai.azure.com)
-- [Microsoft Foundry Documentation](https://learn.microsoft.com/en-us/azure/ai-foundry/what-is-foundry?view=foundry)
-- [Foundry Agent Service](https://learn.microsoft.com/en-us/azure/ai-foundry/agents/overview?view=foundry)
+- [Microsoft Foundry](https://learn.microsoft.com/azure/ai-foundry/what-is-foundry)
+- [Foundry models](https://learn.microsoft.com/azure/ai-foundry/foundry-models/overview)
+- [DefaultAzureCredential](https://learn.microsoft.com/dotnet/api/azure.identity.defaultazurecredential)

@@ -8,12 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Hosting.Foundry" />
-    <PackageReference Include="Aspire.Hosting.OpenAI" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Aspire.Hosting" />
     <Using Include="Aspire.Hosting.ApplicationModel" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="InterviewCoach.Agent.Tests" />
   </ItemGroup>
 
 </Project>

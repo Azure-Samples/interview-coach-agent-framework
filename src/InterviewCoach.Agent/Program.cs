@@ -4,6 +4,8 @@ using System.Data.Common;
 
 using Azure.Identity;
 
+using GitHub.Copilot;
+
 using InterviewCoach.Agent;
 
 using Microsoft.Agents.AI;
@@ -85,12 +87,11 @@ builder.Services.AddKeyedSingleton<McpClient>("mcp-interview-data", (sp, obj) =>
     return McpClient.CreateAsync(clientTransport, clientOptions, loggerFactory).GetAwaiter().GetResult();
 });
 
-if (config[Constants.LlmProvider] != "MicrosoftFoundry")
-{
-    builder.AddOpenAIClient("chat")
-           .AddChatClient();
-}
-else
+var llmProvider = Enum.TryParse<LlmProvider>(config[Constants.LlmProvider], ignoreCase: true, out var parsedProvider)
+    ? parsedProvider
+    : throw new InvalidOperationException($"LLM provider not specified or invalid. Please set the '{Constants.LlmProvider}' configuration value.");
+
+if (llmProvider == LlmProvider.MicrosoftFoundry)
 {
     var connection = new DbConnectionStringBuilder() { ConnectionString = config.GetConnectionString("chat") };
     var cogServicesEndpoint = (connection.TryGetValue("Endpoint", out var endpointValue) ? endpointValue?.ToString() : throw new InvalidOperationException("Missing Foundry Endpoint")) ?? throw new InvalidOperationException("Missing Foundry Endpoint");
@@ -127,8 +128,24 @@ else
 
     builder.Services.AddSingleton(client.AsIChatClient());
 }
+else if (llmProvider == LlmProvider.GitHubCopilot)
+{
+    var githubToken = config[Constants.GitHubToken];
 
-builder.AddAIAgent("coach");
+    builder.Services.AddSingleton(_ => new CopilotClient(new CopilotClientOptions
+    {
+        BaseDirectory = Path.Combine(Path.GetTempPath(), "interview-coach-copilot"),
+        GitHubToken = githubToken,
+        Mode = CopilotClientMode.Empty,
+        UseLoggedInUser = string.IsNullOrWhiteSpace(githubToken),
+    }));
+}
+else
+{
+    throw new NotSupportedException($"The specified LLM provider '{llmProvider}' is not supported.");
+}
+
+var agentBuilder = builder.AddAIAgent("coach");
 
 builder.Services.AddOpenAIResponses();
 builder.Services.AddOpenAIConversations();
@@ -137,7 +154,7 @@ builder.Services.AddOpenAIConversations();
 // so that the DevUI can be used to inspect the agent's state and behavior in production scenarios.
 builder.Services.AddDevUI(options => options.AllowRemoteAccess = true);
 
-builder.Services.AddAGUI();
+builder.Services.AddAGUIServer();
 
 var app = builder.Build();
 
@@ -146,10 +163,7 @@ app.MapDefaultEndpoints();
 app.MapOpenAIResponses();
 app.MapOpenAIConversations();
 
-app.MapAGUI(
-    pattern: "ag-ui",
-    aiAgent: app.Services.GetRequiredKeyedService<AIAgent>("coach")
-);
+app.MapAGUIServer(agentBuilder, "ag-ui");
 
 // DevUI is intentionally mapped for both development and production environments,
 // so that the DevUI can be used to inspect the agent's state and behavior in production scenarios.

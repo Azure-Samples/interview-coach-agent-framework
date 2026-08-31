@@ -4,26 +4,24 @@ The app supports multiple LLM backends. Pick one in config and go — no code ch
 
 ## Quick comparison
 
-| Provider                                      | Best For                                              | Auth       | Cost               |
-|-----------------------------------------------|-------------------------------------------------------|------------|--------------------|
-| **[Microsoft Foundry](MICROSOFT-FOUNDRY.md)** | Production deployments with Agent Service             | Azure RBAC | Pay-per-use        |
-| **[Azure OpenAI](AZURE-OPENAI.md)**           | Production deployments                                | API Key    | Pay-per-use        |
-<!-- | **[GitHub Copilot](GITHUB-COPILOT.md)**        | Local development and prototyping with GitHub Copilot | GitHub PAT | Free (with limits) | -->
+| Provider                                      | Best for                                      | Authentication | Billing |
+|-----------------------------------------------|-----------------------------------------------|----------------|---------|
+| **[Microsoft Foundry](MICROSOFT-FOUNDRY.md)** | Azure deployments with managed identity       | Azure RBAC     | Azure consumption |
+| **[GitHub Copilot](GITHUB-COPILOT.md)**       | Running without an Azure model deployment     | GitHub token   | Copilot plan usage |
 
 ## Getting started
 
 Pick a provider and follow the guide:
 
 - [Microsoft Foundry](MICROSOFT-FOUNDRY.md) (recommended)
-- [Azure OpenAI](AZURE-OPENAI.md)
-<!-- - [GitHub Copilot](GITHUB-COPILOT.md) -->
+- [GitHub Copilot](GITHUB-COPILOT.md)
 
 ## Switching providers
 
 All providers use the same code. To switch:
 
 1. Update configuration (`apphost.settings.json`)
-2. Set credentials (user secrets or environment variables)
+2. Authenticate with Azure or configure the GitHub token
 3. Restart
 
 ### Configuration examples
@@ -36,43 +34,27 @@ All providers use the same code. To switch:
 
   "MicrosoftFoundry": {
     "DeploymentName": "gpt-5-mini",
-    "ModelVersion": "1",
+    "ModelVersion": "2025-08-07",
     "ModelFormat": "OpenAI"
   }
 }
 ```
 
-**Azure OpenAI:**
+**GitHub Copilot:**
 
 ```json
 {
-  "LlmProvider": "AzureOpenAI",
-
-  "Azure": {
-    "OpenAI": {
-      "Endpoint": "{{AZURE_OPENAI_ENDPOINT}}",
-      "ApiKey": "{{AZURE_OPENAI_API_KEY}}",
-      "DeploymentName": "gpt-5-mini"
-    }
-  }
-}
-```
-
-<!-- **GitHub Copilot:**
-
-```json
-{
-  "AgentMode": "CopilotHandOff",
+  "AgentMode": "HandOff",
 
   "LlmProvider": "GitHubCopilot",
 
   "GitHubCopilot": {
-    "Token": "{{GITHUB_PAT}}"
+    "Model": "gpt-5-mini"
   }
 }
 ```
 
-> **NOTE**: Choosing `GitHubCopilot` as an LLM provider only allows the agent mode of `CopilotHandOff`. -->
+If `Model` is omitted, the app still uses `gpt-5-mini`.
 
 ### Command-line examples
 
@@ -81,22 +63,14 @@ You can also pass the provider as a flag instead of editing config:
 **Microsoft Foundry:**
 
 ```bash
-aspire run --file ./apphost.cs -- --provider MicrosoftFoundry
+aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry
 ```
 
-**Azure OpenAI:**
+**GitHub Copilot:**
 
 ```bash
-aspire run --file ./apphost.cs -- --provider AzureOpenAI
+aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
 ```
-
-<!-- **GitHub Copilot:**
-
-```bash
-aspire run --file ./apphost.cs -- --provider GitHubCopilot --mode CopilotHandOff
-```
-
-> **NOTE**: Choosing `GitHubCopilot` as an LLM provider only allows the agent mode of `CopilotHandOff`. -->
 
 ## Next steps
 

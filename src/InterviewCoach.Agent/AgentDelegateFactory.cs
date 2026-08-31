@@ -1,4 +1,7 @@
-// using GitHub.Copilot.SDK;
+using System.ComponentModel;
+
+using GitHub.Copilot;
+using GitHub.Copilot.Rpc;
 
 using InterviewCoach.Agent;
 
@@ -12,13 +15,11 @@ using ModelContextProtocol.Client;
 public enum AgentMode
 {
     Single,
-    LlmHandOff,
-    CopilotHandOff
+    HandOff
 }
 
 public enum LlmProvider
 {
-    AzureOpenAI,
     MicrosoftFoundry,
     GitHubCopilot
 }
@@ -41,8 +42,7 @@ public static class AgentDelegateFactory
         IHostedAgentBuilder agentBuilder = mode switch
         {
             AgentMode.Single => builder.AddAIAgent(name, CreateSingleAgent),
-            AgentMode.LlmHandOff => builder.AddHandOffWorkflow(name, CreateLlmHandOffWorkflow),
-            // AgentMode.CopilotHandOff => builder.AddHandOffWorkflow(name, CreateCopilotHandOffWorkflow),
+            AgentMode.HandOff => builder.AddHandOffWorkflow(name, CreateHandOffWorkflow),
             _ => throw new NotSupportedException($"The specified agent mode '{mode}' is not supported.")
         };
 
@@ -62,6 +62,153 @@ public static class AgentDelegateFactory
         });
     }
 
+    private static AIAgent CreateProviderAgent(
+        IServiceProvider services,
+        string name,
+        string description,
+        string instructions,
+        IList<AITool>? tools = null)
+    {
+        var config = services.GetRequiredService<IConfiguration>();
+        var provider = Enum.TryParse<LlmProvider>(config[Constants.LlmProvider], ignoreCase: true, out var parsedProvider)
+            ? parsedProvider
+            : throw new InvalidOperationException($"LLM provider not specified or invalid. Please set the '{Constants.LlmProvider}' configuration value.");
+
+        if (provider == LlmProvider.MicrosoftFoundry)
+        {
+            return new ChatClientAgent(
+                chatClient: services.GetRequiredService<IChatClient>(),
+                name: name,
+                description: description,
+                instructions: instructions,
+                tools: tools);
+        }
+
+        if (provider != LlmProvider.GitHubCopilot)
+        {
+            throw new NotSupportedException($"The specified LLM provider '{provider}' is not supported.");
+        }
+
+        var copilotClient = services.GetRequiredService<CopilotClient>();
+        var model = config[Constants.GitHubCopilotModel];
+        var baseAgent = CreateCopilotRunAgent(copilotClient, name, description, model, instructions, tools);
+
+        // Handoff orchestration supplies transfer tools through ChatClientAgentRunOptions.
+        // The Copilot adapter currently ignores run options, so recreate its lightweight
+        // agent wrapper per invocation with the merged static and handoff tool set.
+        return new AIAgentBuilder(baseAgent)
+            .Use(
+                runFunc: (messages, session, options, _, cancellationToken) =>
+                    CreateCopilotRunAgent(
+                        copilotClient,
+                        name,
+                        description,
+                        model,
+                        MergeCopilotInstructions(instructions, options),
+                        MergeCopilotTools(tools, options))
+                    .RunAsync(messages, session, cancellationToken: cancellationToken),
+                runStreamingFunc: (messages, session, options, _, cancellationToken) =>
+                    CreateCopilotRunAgent(
+                        copilotClient,
+                        name,
+                        description,
+                        model,
+                        MergeCopilotInstructions(instructions, options),
+                        MergeCopilotTools(tools, options))
+                    .RunStreamingAsync(messages, session, cancellationToken: cancellationToken))
+            .Build();
+    }
+
+    private static AIAgent CreateCopilotRunAgent(
+        CopilotClient client,
+        string name,
+        string description,
+        string? model,
+        string instructions,
+        IList<AITool>? tools)
+    {
+        return client.AsAIAgent(
+            CreateCopilotSessionConfig(model, instructions, tools),
+            ownsClient: false,
+            name: name,
+            description: description);
+    }
+
+    internal static SessionConfig CreateCopilotSessionConfig(
+        string? model,
+        string instructions,
+        IList<AITool>? tools)
+    {
+        var copilotTools = ToCopilotTools(tools);
+
+        return new SessionConfig
+        {
+            AvailableTools = copilotTools.Select(tool => $"custom:{tool.Name}").ToList(),
+            Model = string.IsNullOrWhiteSpace(model) ? Constants.DefaultModel : model,
+            OnPermissionRequest = PermissionHandler.ApproveAll,
+            SystemMessage = new SystemMessageConfig
+            {
+                Mode = SystemMessageMode.Append,
+                Content = instructions,
+            },
+            Tools = copilotTools,
+        };
+    }
+
+    internal static IList<AITool> MergeCopilotTools(IList<AITool>? configuredTools, AgentRunOptions? options)
+    {
+        var runTools = (options as ChatClientAgentRunOptions)?.ChatOptions?.Tools;
+
+        return (configuredTools ?? [])
+            .Concat(runTools ?? [])
+            .DistinctBy(tool => tool.Name, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    internal static string MergeCopilotInstructions(string instructions, AgentRunOptions? options)
+    {
+        var runInstructions = (options as ChatClientAgentRunOptions)?.ChatOptions?.Instructions;
+
+        return string.IsNullOrWhiteSpace(runInstructions)
+            ? instructions
+            : $"{instructions}{Environment.NewLine}{Environment.NewLine}{runInstructions}";
+    }
+
+    private static IList<AIFunctionDeclaration> ToCopilotTools(IList<AITool>? tools)
+    {
+        return (tools ?? [])
+            .Select(ToCopilotTool)
+            .ToList();
+    }
+
+    private static AIFunctionDeclaration ToCopilotTool(AITool tool)
+    {
+        if (tool is AIFunction function)
+        {
+            return function;
+        }
+
+        if (tool is AIFunctionDeclaration declaration &&
+            declaration.Name.StartsWith(HandoffWorkflowBuilder.FunctionPrefix, StringComparison.Ordinal))
+        {
+            return AIFunctionFactory.Create(
+                CompleteHandoff,
+                new AIFunctionFactoryOptions
+                {
+                    Name = declaration.Name,
+                    Description = declaration.Description,
+                });
+        }
+
+        throw new InvalidOperationException($"Tool '{tool.Name}' cannot be executed by GitHub Copilot.");
+    }
+
+    private static string CompleteHandoff(
+        [Description("The reason for the handoff")] string? reasonForHandoff)
+    {
+        return "Transferred.";
+    }
+
     // ============================================================================
     // MODE 1: Single Agent
     // The original monolithic agent that handles the entire interview process.
@@ -70,16 +217,16 @@ public static class AgentDelegateFactory
     // ============================================================================
     private static AIAgent CreateSingleAgent(IServiceProvider sp, string key)
     {
-        var chatClient = sp.GetRequiredService<IChatClient>();
         var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
         var interviewData = sp.GetRequiredKeyedService<McpClient>("mcp-interview-data");
 
         var markitdownTools = markitdown.ListToolsAsync().GetAwaiter().GetResult();
         var interviewDataTools = interviewData.ListToolsAsync().GetAwaiter().GetResult();
 
-        var agent = new ChatClientAgent(
-            chatClient: chatClient,
+        var agent = CreateProviderAgent(
+            services: sp,
             name: key,
+            description: "Runs the complete interview coaching process.",
             instructions: """
                 You are an AI Interview Coach designed to help users prepare for job interviews.
                 You will guide them through the interview process, provide feedback, and help them improve their skills.
@@ -109,7 +256,7 @@ public static class AgentDelegateFactory
     }
 
     // ============================================================================
-    // MODE 2: Multi-Agent Handoff (ChatClient + LLM Provider)
+    // MODE 2: Multi-Agent Handoff
     // Splits the interview coach into 5 specialized agents connected via the
     // handoff orchestration pattern from Microsoft Agent Framework.
     //
@@ -122,9 +269,8 @@ public static class AgentDelegateFactory
     // a stateless Triage re-routing loop. Triage acts as the initial entry
     // point and fallback for out-of-order user requests.
     // ============================================================================
-    private static Workflow CreateLlmHandOffWorkflow(IServiceProvider sp, string key)
+    private static Workflow CreateHandOffWorkflow(IServiceProvider sp, string key)
     {
-        var chatClient = sp.GetRequiredService<IChatClient>();
         var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
         var interviewData = sp.GetRequiredKeyedService<McpClient>("mcp-interview-data");
 
@@ -137,9 +283,10 @@ public static class AgentDelegateFactory
         // were purely keyword-driven, causing Triage to repeatedly send users back
         // to the Receptionist when the original message mentioned "resume" or "job
         // description" — even after document intake was already complete.
-        var triageAgent = new ChatClientAgent(
-            chatClient: chatClient,
+        var triageAgent = CreateProviderAgent(
+            services: sp,
             name: "triage",
+            description: "Routes the conversation to the correct interview specialist.",
             instructions: """
                 You are the Triage agent for an AI Interview Coach system.
                 Your ONLY job is to analyze the conversation and hand off to the right specialist agent.
@@ -175,9 +322,10 @@ public static class AgentDelegateFactory
         // Handles session creation and document intake. Has all MCP tools.
         // FIX: Now hands off directly to behavioural_interviewer (next phase)
         // instead of back to Triage, to avoid the re-routing loop.
-        var receptionistAgent = new ChatClientAgent(
-            chatClient: chatClient,
+        var receptionistAgent = CreateProviderAgent(
+            services: sp,
             name: "receptionist",
+            description: "Sets up interview sessions and collects resumes and job descriptions.",
             instructions: """
                 You are the Receptionist for an AI Interview Coach system.
                 Your job is to set up the interview session and collect documents.
@@ -199,9 +347,10 @@ public static class AgentDelegateFactory
         // Conducts the behavioural part of the interview.
         // FIX: Now hands off directly to technical_interviewer (next phase)
         // instead of back to Triage.
-        var behaviouralAgent = new ChatClientAgent(
-            chatClient: chatClient,
+        var behaviouralAgent = CreateProviderAgent(
+            services: sp,
             name: "behavioural_interviewer",
+            description: "Conducts the behavioural interview and provides feedback.",
             instructions: """
                 You are the Behavioural Interviewer for an AI Interview Coach system.
                 Your job is to conduct the behavioural part of the interview.
@@ -224,9 +373,10 @@ public static class AgentDelegateFactory
         // Conducts the technical part of the interview.
         // FIX: Now hands off directly to summariser (next phase)
         // instead of back to Triage.
-        var technicalAgent = new ChatClientAgent(
-            chatClient: chatClient,
+        var technicalAgent = CreateProviderAgent(
+            services: sp,
             name: "technical_interviewer",
+            description: "Conducts the technical interview and provides feedback.",
             instructions: """
                 You are the Technical Interviewer for an AI Interview Coach system.
                 Your job is to conduct the technical part of the interview.
@@ -248,9 +398,10 @@ public static class AgentDelegateFactory
         // --- Summariser Agent ---
         // Generates the final interview summary.
         // Hands back to Triage only after summary — this is the end of the sequence.
-        var summariserAgent = new ChatClientAgent(
-            chatClient: chatClient,
+        var summariserAgent = CreateProviderAgent(
+            services: sp,
             name: "summariser",
+            description: "Produces the final interview summary and recommendations.",
             instructions: """
                 You are the Summariser for an AI Interview Coach system.
                 Your job is to generate a comprehensive interview summary.
@@ -294,167 +445,4 @@ public static class AgentDelegateFactory
         return workflow.SetName(key);
     }
 
-    // // ============================================================================
-    // // MODE 3: Multi-Agent Handoff (GitHub Copilot SDK)
-    // // Same 5-agent handoff topology as Mode 2, but each agent is backed by
-    // // the GitHub Copilot SDK instead of a cloud LLM provider.
-    // //
-    // // Prerequisites:
-    // //   - GitHub Copilot CLI installed: https://github.com/github/copilot-sdk
-    // //   - Authenticated via: gh auth login
-    // //   - NuGet package: Microsoft.Agents.AI.GitHub.Copilot
-    // //
-    // // The agents use CopilotClient.AsAIAgent() which provides access to
-    // // GitHub Copilot's AI capabilities including tool use and MCP integration.
-    // // ============================================================================
-    // private static Workflow CreateCopilotHandOffWorkflow(IServiceProvider sp, string key)
-    // {
-    //     var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
-    //     var interviewData = sp.GetRequiredKeyedService<McpClient>("mcp-interview-data");
-
-    //     var markitdownTools = markitdown.ListToolsAsync().GetAwaiter().GetResult();
-    //     var interviewDataTools = interviewData.ListToolsAsync().GetAwaiter().GetResult();
-
-    //     var copilotClient = new CopilotClient();
-    //     copilotClient.StartAsync().GetAwaiter().GetResult();
-
-    //     // --- Triage Agent ---
-    //     // FIX: Made state-aware to prevent re-routing loops (see Mode 2 comments).
-    //     var triageAgent = copilotClient.AsAIAgent(
-    //         name: "triage",
-    //         instructions: """
-    //             You are the Triage agent for an AI Interview Coach system.
-    //             Your ONLY job is to analyze the conversation and hand off to the right specialist agent.
-    //             You do NOT answer questions or conduct interviews yourself.
-
-    //             IMPORTANT: Before routing, review the FULL conversation history to determine
-    //             which phases have already been completed. Do NOT re-route to an agent that
-    //             has already finished its work. The interview follows this sequence:
-    //               1. Receptionist (session setup, document intake)
-    //               2. Behavioural Interviewer
-    //               3. Technical Interviewer
-    //               4. Summariser
-
-    //             Routing rules (apply in order, skipping completed phases):
-    //             - If the receptionist has NOT yet collected the resume and job description
-    //               → hand off to "receptionist"
-    //             - If document intake is complete and behavioural interview has NOT started
-    //               → hand off to "behavioural_interviewer"
-    //             - If behavioural interview is complete and technical interview has NOT started
-    //               → hand off to "technical_interviewer"
-    //             - If technical interview is complete or the user wants to end
-    //               → hand off to "summariser"
-    //             - If the user explicitly requests a specific phase, honour that request.
-    //             - If unclear, ask the user to clarify what they'd like to do.
-
-    //             When a specialist hands back to you, they have COMPLETED their phase.
-    //             Advance to the next phase in the sequence.
-
-    //             Always be brief and supportive. Let the specialists do the detailed work.
-    //             """);
-
-    //     // --- Receptionist Agent ---
-    //     // FIX: Now hands off directly to behavioural_interviewer (see Mode 2 comments).
-    //     var receptionistAgent = copilotClient.AsAIAgent(
-    //         name: "receptionist",
-    //         instructions: """
-    //             You are the Receptionist for an AI Interview Coach system.
-    //             Your job is to set up the interview session and collect documents.
-
-    //             Process:
-    //             1. Fetch an existing interview session or create a new one. Let the user know their session ID.
-    //             2. Ask the user to provide their resume (link or text). Use MarkItDown to parse document links into markdown.
-    //             3. Ask the user to provide the job description (link or text). Use MarkItDown to parse document links into markdown.
-    //             4. Store the resume and job description in the session record.
-    //             5. Once document intake is complete, let the user know and hand off directly to "behavioural_interviewer"
-    //                to begin the interview. Only hand off to "triage" if the user wants to do something unexpected.
-
-    //             The user may choose to proceed without a resume or job description — that's fine.
-    //             Always maintain a supportive and encouraging tone.
-    //             """,
-    //         tools: [.. markitdownTools, .. interviewDataTools]);
-
-    //     // --- Behavioural Interviewer Agent ---
-    //     // FIX: Now hands off directly to technical_interviewer (see Mode 2 comments).
-    //     var behaviouralAgent = copilotClient.AsAIAgent(
-    //         name: "behavioural_interviewer",
-    //         instructions: """
-    //             You are the Behavioural Interviewer for an AI Interview Coach system.
-    //             Your job is to conduct the behavioural part of the interview.
-
-    //             Process:
-    //             1. Fetch the interview session record to get the resume and job description context.
-    //             2. Ask behavioural questions one at a time, tailored to the job description and resume.
-    //             3. After each answer, provide constructive feedback and analysis.
-    //             4. Append all questions, answers, and analysis to the transcript by updating the session record.
-    //             5. After a few questions (typically 3-5), ask if the user wants to continue or move on.
-    //             6. When done, hand off directly to "technical_interviewer" to continue the interview.
-    //                Only hand off to "triage" if the user wants to do something unexpected.
-
-    //             Use the STAR method (Situation, Task, Action, Result) to guide your questions.
-    //             Always maintain a supportive and encouraging tone.
-    //             """,
-    //         tools: [.. interviewDataTools]);
-
-    //     // --- Technical Interviewer Agent ---
-    //     // FIX: Now hands off directly to summariser (see Mode 2 comments).
-    //     var technicalAgent = copilotClient.AsAIAgent(
-    //         name: "technical_interviewer",
-    //         instructions: """
-    //             You are the Technical Interviewer for an AI Interview Coach system.
-    //             Your job is to conduct the technical part of the interview.
-
-    //             Process:
-    //             1. Fetch the interview session record to get the resume and job description context.
-    //             2. Ask technical questions one at a time, tailored to the skills in the job description and resume.
-    //             3. After each answer, provide constructive feedback, correct any misconceptions, and suggest improvements.
-    //             4. Append all questions, answers, and analysis to the transcript by updating the session record.
-    //             5. After a few questions (typically 3-5), ask if the user wants to continue or wrap up.
-    //             6. When done, hand off directly to "summariser" to generate the interview summary.
-    //                Only hand off to "triage" if the user wants to do something unexpected.
-
-    //             Focus on practical, real-world scenarios relevant to the job.
-    //             Always maintain a supportive and encouraging tone.
-    //             """,
-    //         tools: [.. interviewDataTools]);
-
-    //     // --- Summariser Agent ---
-    //     // Hands back to Triage only after summary — end of the sequence.
-    //     var summariserAgent = copilotClient.AsAIAgent(
-    //         name: "summariser",
-    //         instructions: """
-    //             You are the Summariser for an AI Interview Coach system.
-    //             Your job is to generate a comprehensive interview summary.
-
-    //             Process:
-    //             1. Fetch the interview session record to get the full transcript.
-    //             2. Generate a summary that includes:
-    //             - Overview of the interview session
-    //             - Key highlights and strong answers
-    //             - Areas for improvement
-    //             - Specific recommendations for the user
-    //             - Overall readiness assessment
-    //             3. Update the session record with the summary in the transcript.
-    //             4. Mark the interview session as complete.
-    //             5. Present the summary to the user.
-    //             6. Hand off back to triage in case the user wants to do anything else.
-
-    //             Always maintain a supportive and encouraging tone.
-    //             """,
-    //         tools: [.. interviewDataTools]);
-
-    //     // Build the handoff workflow — sequential chain with Triage as fallback.
-    //     // FIX: Same topology change as Mode 2 (see comments above).
-    //     var workflow = AgentWorkflowBuilder
-    //                    .CreateHandoffBuilderWith(triageAgent)
-    //                    .WithHandoffs(triageAgent, [receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent])
-    //                    .WithHandoffs(receptionistAgent, [behaviouralAgent, triageAgent])
-    //                    .WithHandoffs(behaviouralAgent, [technicalAgent, triageAgent])
-    //                    .WithHandoffs(technicalAgent, [summariserAgent, triageAgent])
-    //                    .WithHandoff(summariserAgent, triageAgent)
-    //                    .Build();
-
-    //     return workflow.SetName(key);
-    // }
 }
-

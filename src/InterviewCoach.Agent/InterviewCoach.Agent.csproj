@@ -2,13 +2,11 @@
 
   <PropertyGroup>
     <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
-    <NoWarn>$(NoWarn);MAAIW001</NoWarn>
+    <NoWarn>$(NoWarn);GHCP001;MAAIW001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.OpenAI" />
     <PackageReference Include="Azure.Identity" />
-    <!-- <PackageReference Include="GitHub.Copilot.SDK" /> -->
     <PackageReference Include="Microsoft.Agents.AI" />
     <PackageReference Include="Microsoft.Agents.AI.Foundry" />
     <PackageReference Include="Microsoft.Agents.AI.DevUI" />
@@ -17,7 +15,7 @@
     <PackageReference Include="Microsoft.Agents.AI.Hosting.OpenAI" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" />
     <PackageReference Include="Microsoft.Agents.AI.Workflows" />
-    <!-- <PackageReference Include="Microsoft.Agents.AI.GitHub.Copilot" /> -->
+    <PackageReference Include="Microsoft.Agents.AI.GitHub.Copilot" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
 

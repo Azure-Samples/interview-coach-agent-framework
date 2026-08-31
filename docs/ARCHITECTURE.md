@@ -11,7 +11,7 @@ How the Interview Coach is put together and why.
 A few decisions shaped the design:
 
 1. **MCP for tools** — Tools (document parsing, session storage) live in their own MCP servers. They can be reused across projects and developed independently.
-2. **Provider abstraction** — The LLM backend is swappable at runtime: Foundry or Azure OpenAI.
+2. **Provider abstraction** — The LLM backend is swappable at runtime: Microsoft Foundry or GitHub Copilot.
 3. **Aspire orchestration** — Service discovery, health checks, and telemetry come free from .NET Aspire.
 4. **Stateful sessions** — Interview sessions persist to Azure Cosmos DB so users can pause and resume.
 
@@ -21,12 +21,12 @@ A few decisions shaped the design:
 
 The agent runs the interview. It decides what to ask, when to call tools, and how to respond.
 
-Built on ASP.NET Core, Microsoft Agent Framework, and the OpenAI SDK. Talks to the web UI via the AG-UI protocol and to tools via MCP clients.
+Built on ASP.NET Core and Microsoft Agent Framework. It uses the OpenAI .NET client for Microsoft Foundry and the Agent Framework adapter for the GitHub Copilot SDK. The web UI connects through AG-UI, while MCP clients provide tools.
 
 - Runs as a single agent or as 5 specialists in handoff mode (configurable)
 - Has step-by-step interview instructions (scoped per-agent in handoff mode)
 - Calls MarkItDown (document parsing) and InterviewData (session storage) through MCP
-- Uses the `IChatClient` interface, so the LLM provider is pluggable
+- Creates `ChatClientAgent` instances for Foundry and Copilot-backed `AIAgent` instances for GitHub Copilot
 
 ### 2. InterviewCoach.WebUI (user interface)
 

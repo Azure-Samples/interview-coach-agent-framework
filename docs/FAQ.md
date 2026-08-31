@@ -22,7 +22,7 @@ See [learning objectives](LEARNING-OBJECTIVES.md).
 
 ### Can I use this in production?
 
-The architecture patterns are solid for production. A few things to think about first:
+Treat the repository as a sample and review these areas before production use:
 
 - Review security settings (content filters, authentication)
 - Cosmos DB runs in serverless mode by default — review throughput (RU/s) and partitioning for heavy load
@@ -49,12 +49,12 @@ A .NET library for building AI agents. Gives you structured instructions, tool c
 
 ### How is this different from Semantic Kernel or AutoGen?
 
-| Feature | Agent Framework | Semantic Kernel | AutoGen |
-|---------|----------------|-----------------|---------|
-| Language | .NET, Python | .NET, Python, Java | Python |
-| Focus | Production agents | AI orchestration | Multi-agent research |
-| Hosting | Web APIs | Embedded | Standalone |
-| AG-UI Protocol | Yes | No | No |
+| Feature        | Agent Framework   | Semantic Kernel    | AutoGen              |
+|----------------|-------------------|--------------------|----------------------|
+| Language       | .NET, Python      | .NET, Python, Java | Python               |
+| Focus          | Production agents | AI orchestration   | Multi-agent research |
+| Hosting        | Web APIs          | Embedded           | Standalone           |
+| AG-UI Protocol | Yes               | No                 | No                   |
 
 Agent Framework is optimized for deployable web services. Semantic Kernel is more of a general orchestration library. AutoGen focuses on multi-agent research.
 
@@ -96,29 +96,23 @@ See [Tutorial 2](TUTORIALS.md#tutorial-2-creating-a-custom-mcp-server). Short ve
 
 ## LLM providers
 
-### Why is Foundry the recommended provider?
+### Why is Foundry the default provider?
 
-It bundles model routing (automatic model selection for cost/quality), content safety, monitoring, and evaluation into one platform. It also has a 99.9% uptime SLA.
+Aspire can provision the Foundry resource and model deployment with the rest of the application. The runtime authenticates with Azure RBAC through `DefaultAzureCredential`, so no model API key is stored.
 
 See [Foundry setup](providers/MICROSOFT-FOUNDRY.md).
 
-### Can I use Azure OpenAI instead?
+### Can I use GitHub Copilot instead?
 
-Yes, just change the config:
-
-```json
-"LlmProvider": "AzureOpenAI"
-```
-
-See [Azure OpenAI setup](providers/AZURE-OPENAI.md).
+Yes. Set `LlmProvider` to `GitHubCopilot` and configure a Copilot token. Both `Single` and `HandOff` modes are supported. See [GitHub Copilot setup](providers/GITHUB-COPILOT.md).
 
 ### Can I use OpenAI Platform (not Azure)?
 
 Not currently supported, but adding it is straightforward:
 
-1. Extend `LlmResourceFactory.cs`
-2. Add OpenAI client configuration
-3. Update configuration schema
+1. Extend `LlmProvider` and `LlmResourceFactory.cs`.
+2. Register the provider client in `InterviewCoach.Agent/Program.cs`.
+3. Add the provider branch to `CreateProviderAgent`.
 
 ### Can I use local models (Ollama, LM Studio)?
 
@@ -199,9 +193,9 @@ Yes. The agent exposes standard APIs, so you can replace Blazor with React, buil
 
 ### Where do I get help?
 
-2. **[Search Issues](https://github.com/Azure-Samples/interview-coach-agent-framework/issues)**
-3. **[Open New Issue](https://github.com/Azure-Samples/interview-coach-agent-framework/issues/new)**
-4. **[Stack Overflow](https://stackoverflow.com/questions/tagged/microsoft-agent-framework)** (tag: `microsoft-agent-framework`)
+1. [Search issues](https://github.com/Azure-Samples/interview-coach-agent-framework/issues)
+2. [Open a new issue](https://github.com/Azure-Samples/interview-coach-agent-framework/issues/new)
+3. [Stack Overflow](https://stackoverflow.com/questions/tagged/microsoft-agent-framework)
 
 ---
 

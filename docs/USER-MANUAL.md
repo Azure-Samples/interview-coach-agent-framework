@@ -7,7 +7,7 @@ A walkthrough of a complete interview session, from start to summary.
 The application must be running. Start it with:
 
 ```bash
-aspire run --file ./apphost.cs
+aspire start --apphost ./apphost.cs
 ```
 
 Once all services show ✅ **Running** in the Aspire Dashboard, click the **webui** endpoint to open the Interview Coach chat interface.
@@ -95,7 +95,7 @@ Here's my resume:
        - Led a team of 6 engineers to migrate a monolithic application to an
          event-driven architecture, reducing latency by 40%.
        - Designed and integrated an ML-based recommendation engine using
-         Azure OpenAI and Semantic Kernel, increasing user engagement by 25%.
+         Microsoft Foundry and Semantic Kernel, increasing user engagement by 25%.
 
        Software Engineer — Fabrikam Inc, Redmond, WA (2018–2021)
        - Developed RESTful APIs and real-time data pipelines using C#, Python,
@@ -161,7 +161,7 @@ Here's the job description:
 
        RESPONSIBILITIES
        - Design scalable, resilient cloud architectures using Azure services
-         (AKS, Azure Functions, Cosmos DB, Service Bus, Azure OpenAI).
+         (AKS, Azure Functions, Cosmos DB, Service Bus, Microsoft Foundry).
        - Lead technical discovery sessions with enterprise clients to translate
          business requirements into cloud-native solutions.
        - Build proof-of-concept applications and reference architectures that
@@ -176,7 +176,7 @@ Here's the job description:
          on cloud architecture (Azure preferred, AWS acceptable).
        - Strong proficiency in C#/.NET, Python, or Go for backend services.
        - Hands-on experience with Kubernetes, Terraform, and CI/CD pipelines.
-       - Familiarity with AI/ML integration patterns (Azure OpenAI, Semantic
+       - Familiarity with AI/ML integration patterns (Microsoft Foundry, Semantic
          Kernel, or similar frameworks).
        - Excellent communication skills — able to present to both technical
          and executive audiences.
@@ -297,17 +297,15 @@ Coach: Here's your interview summary:
 
 ## Multi-agent mode
 
-By default the app runs the multi-agent mode with LLM (`AgentMode: LlmHandOff`). To use a single-agent mode or multi-agent with GitHub Copilot instead, set `AgentMode` to either `Single` or `CopilotHandOff` in `apphost.settings.json`:
+By default the app runs the multi-agent handoff workflow (`AgentMode: HandOff`). Set `AgentMode` to `Single` to use one agent instead:
 
 ```json
 {
-  // Single-agent mode
-  "AgentMode": "Single",
-
-  // Multi-agent mode with GitHub Copilot
-  "AgentMode": "CopilotHandOff",
+  "AgentMode": "Single"
 }
 ```
+
+Agent mode and LLM provider are independent. Both `Single` and `HandOff` work with Microsoft Foundry and GitHub Copilot.
 
 In multi-agent mode, five specialized agents collaborate:
 

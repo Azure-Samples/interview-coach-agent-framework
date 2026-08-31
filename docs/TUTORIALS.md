@@ -49,9 +49,10 @@ The agent is configured with tools from two MCP servers:
 var markitdownTools = markitdown.ListToolsAsync().GetAwaiter().GetResult();
 var interviewDataTools = interviewData.ListToolsAsync().GetAwaiter().GetResult();
 
-var agent = new ChatClientAgent(
-    chatClient: chatClient,
+var agent = CreateProviderAgent(
+    services: sp,
     name: key,
+    description: "Runs the complete interview coaching process.",
     instructions: """ ... """,
     tools: [ .. markitdownTools, .. interviewDataTools ]
 );
@@ -180,7 +181,13 @@ await app.RunAsync();
 
 ### Step 4: Register in AppHost
 
-Edit [src/InterviewCoach.Agent/Program.cs](../src/InterviewCoach.Agent/Program.cs):
+Add the new project to the file-based AppHost directives at the top of `apphost.cs`:
+
+```csharp
+#:project ./src/InterviewCoach.Mcp.Tips/InterviewCoach.Mcp.Tips.csproj
+```
+
+Then register the project in `apphost.cs`:
 
 Add after other MCP servers:
 
@@ -194,8 +201,7 @@ Update agent reference:
 ```csharp
 var agent = builder.AddProject<Projects.InterviewCoach_Agent>(ResourceConstants.Agent)
                    .WithExternalHttpEndpoints()
-                   .WithLlmReference(builder.Configuration, args)
-                   .WithEnvironment(ResourceConstants.LlmProvider, builder.Configuration[ResourceConstants.LlmProvider] ?? string.Empty)
+                   .WithLlmReference(config, args)
                    .WithReference(mcpMarkItDown.GetEndpoint("http"))
                    .WithReference(mcpInterviewData)
                    .WithReference(mcpTips)  // Add this line
@@ -255,9 +261,10 @@ var markitdownTools = markitdown.ListToolsAsync().GetAwaiter().GetResult();
 var interviewDataTools = interviewData.ListToolsAsync().GetAwaiter().GetResult();
 var tipsTools = tips.ListToolsAsync().GetAwaiter().GetResult();  // Add this
 
-var agent = new ChatClientAgent(
-    chatClient: chatClient,
+var agent = CreateProviderAgent(
+    services: sp,
     name: key,
+    description: "Runs the complete interview coaching process.",
     instructions: """ ... """,
     tools: [ .. markitdownTools, .. interviewDataTools, .. tipsTools ]  // Add tipsTools
 );
@@ -355,155 +362,68 @@ When asking algorithm questions:
 
 ---
 
-## Tutorial 4: Multi-Agent Pattern
+## Tutorial 4: Extending the handoff workflow
 
-**Goal**: Understand how to extend to multiple specialized agents.
+**Goal**: Add another specialist to the existing multi-agent workflow.
 
-**Duration**: 45 minutes (conceptual + starter code)
+**Duration**: 30 minutes
 
-### The Pattern
+The application already implements a handoff workflow in `CreateHandOffWorkflow`. It uses Triage as the entry point, then moves through Receptionist, Behavioural Interviewer, Technical Interviewer, and Summariser.
 
-Instead of one general interview coach, create:
+### Step 1: Create the specialist
 
-- **Recruiter Agent**: Screens candidates, asks behavioral questions
-- **Technical Agent**: Conducts technical assessment
-- **Coordinator Agent**: Manages the flow between agents
-
-### Step 1: Define Agent Roles
-
-Create `src/InterviewCoach.Agent/AgentRoles.cs`:
+Add a role-specific agent in `CreateHandOffWorkflow`:
 
 ```csharp
-public static class AgentRoles
-{
-    public const string Coordinator = "coordinator";
-    public const string Recruiter = "recruiter";
-    public const string Technical = "technical";
-}
+var systemDesignAgent = CreateProviderAgent(
+    services: sp,
+    name: "system_design_interviewer",
+    description: "Conducts a system design interview and provides feedback.",
+    instructions: """
+        You are the System Design Interviewer.
+        Ask one architecture question at a time.
+        Discuss requirements, trade-offs, reliability, and scalability.
+        Store each question, answer, and assessment in the interview session.
+        When this phase is complete, hand off to "summariser".
+        """,
+    tools: [.. interviewDataTools]);
 ```
 
-### Step 2: Create Specialized Instructions
+Using `CreateProviderAgent` keeps the specialist compatible with both Microsoft Foundry and GitHub Copilot.
+
+### Step 2: Update routing instructions
+
+Add the new phase to the Triage sequence and tell the Technical Interviewer to hand off to `system_design_interviewer` instead of directly to `summariser`.
+
+### Step 3: Connect the handoffs
+
+Add the agent to the workflow graph:
 
 ```csharp
-public static class AgentInstructions
-{
-    public static string GetInstructions(string role) => role switch
-    {
-        AgentRoles.Recruiter => """
-            You are a friendly HR recruiter conducting the initial screening.
-            Focus on:
-            - Cultural fit and soft skills
-            - Communication ability
-            - Motivation and interest in the role
-            - Work history and experience alignment
-            
-            Ask 3-5 behavioral questions using the STAR framework.
-            After completing your questions, hand off to the technical interviewer.
-            """,
-            
-        AgentRoles.Technical => """
-            You are a senior engineer conducting the technical interview.
-            Focus on:
-            - Technical problem-solving ability
-            - System design thinking
-            - Code quality and best practices
-            - Technology depth
-            
-            Conduct 2-3 technical assessments.
-            After completing, provide your assessment to the coordinator.
-            """,
-            
-        AgentRoles.Coordinator => """
-            You coordinate the interview process.
-            - Welcome the candidate
-            - Introduce them to the recruiter agent
-            - After recruiting, transition to technical agent
-            - Collect feedback from both agents
-            - Provide final summary
-            """,
-            
-        _ => throw new ArgumentException($"Unknown role: {role}")
-    };
-}
+var workflow = AgentWorkflowBuilder
+    .CreateHandoffBuilderWith(triageAgent)
+    .WithHandoffs(triageAgent,
+        [receptionistAgent, behaviouralAgent, technicalAgent, systemDesignAgent, summariserAgent])
+    .WithHandoffs(receptionistAgent, [behaviouralAgent, triageAgent])
+    .WithHandoffs(behaviouralAgent, [technicalAgent, triageAgent])
+    .WithHandoffs(technicalAgent, [systemDesignAgent, triageAgent])
+    .WithHandoffs(systemDesignAgent, [summariserAgent, triageAgent])
+    .WithHandoff(summariserAgent, triageAgent)
+    .Build();
 ```
 
-### Step 3: Register Multiple Agents
+### Step 4: Test both providers
 
-Modify `Program.cs`:
+Run the workflow with Microsoft Foundry, then GitHub Copilot:
 
-```csharp
-// Register coordinator agent
-builder.AddAIAgent(
-    name: AgentRoles.Coordinator,
-    createAgentDelegate: (sp, key) => CreateAgent(sp, key, AgentRoles.Coordinator)
-);
-
-// Register recruiter agent
-builder.AddAIAgent(
-    name: AgentRoles.Recruiter,
-    createAgentDelegate: (sp, key) => CreateAgent(sp, key, AgentRoles.Recruiter)
-);
-
-// Register technical agent
-builder.AddAIAgent(
-    name: AgentRoles.Technical,
-    createAgentDelegate: (sp, key) => CreateAgent(sp, key, AgentRoles.Technical)
-);
-
-static ChatClientAgent CreateAgent(IServiceProvider sp, string key, string role)
-{
-    var chatClient = sp.GetRequiredService<IChatClient>();
-    var markitdown = sp.GetRequiredKeyedService<McpClient>("mcp-markitdown");
-    var interviewData = sp.GetRequiredKeyedService<McpClient>("mcp-interview-data");
-    
-    var tools = new List<Tool>();
-    tools.AddRange(markitdown.ListToolsAsync().GetAwaiter().GetResult());
-    tools.AddRange(interviewData.ListToolsAsync().GetAwaiter().GetResult());
-    
-    return new ChatClientAgent(
-        chatClient: chatClient,
-        name: key,
-        instructions: AgentInstructions.GetInstructions(role),
-        tools: tools
-    );
-}
+```bash
+aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOff
+aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
 ```
 
-### Step 4: Agent Handoff Pattern (Conceptual)
+Confirm that Triage can select the new agent and that the normal sequence reaches it after the technical interview.
 
-The coordinator would handle transitions:
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant C as Coordinator Agent
-    participant R as Recruiter Agent
-    participant T as Technical Agent
-
-    U->>C: Connect
-    C->>U: "Let me introduce you to the Recruiter"
-    C-->>R: Handoff
-
-    loop Behavioral Interview
-        R->>U: Ask behavioral question
-        U->>R: Answer
-    end
-    R-->>C: Complete → return to Coordinator
-
-    C->>U: "Now let's move to the technical interview"
-    C-->>T: Handoff
-
-    loop Technical Assessment
-        T->>U: Ask technical question
-        U->>T: Answer
-    end
-    T-->>C: Complete → return to Coordinator
-
-    C->>C: Aggregate feedback
-    C->>U: Final summary
-```
-
-**Note**: Full multi-agent orchestration requires additional workflow management. See [Microsoft Agent Framework Orchestrations](https://learn.microsoft.com/agent-framework/user-guide/workflows/orchestrations/overview) for advanced patterns.
+See [Microsoft Agent Framework handoff orchestration](https://learn.microsoft.com/agent-framework/workflows/orchestrations/handoff) for the underlying workflow API.
 
 ---
 
