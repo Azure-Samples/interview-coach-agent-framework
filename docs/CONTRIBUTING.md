@@ -72,8 +72,9 @@ Before you submit your Pull Request (PR) consider the following guidelines:
   - Rebase your fork and force push to your GitHub repository (this will update your Pull Request):
 
     ```shell
-    git rebase master -i
-    git push -f
+    git fetch upstream
+    git rebase upstream/main
+    git push --force-with-lease
     ```
 
 That's it! Thank you for your contribution!

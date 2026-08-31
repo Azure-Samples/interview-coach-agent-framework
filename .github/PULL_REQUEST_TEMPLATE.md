@@ -33,14 +33,15 @@ cd [repo-name]
 git checkout [branch-name]
 dotnet restore
 dotnet build
+dotnet test --project ./tests/InterviewCoach.Agent.Tests/InterviewCoach.Agent.Tests.csproj
 ```
 
 * Test the code
 <!-- Add steps to run the tests suite and/or manually test -->
 ```bash
-aspire run --file ./apphost.cs
+aspire start --apphost ./apphost.cs
 # OR
-aspire run --project ./src/InterviewCoach.AppHost
+aspire start --apphost ./src/InterviewCoach.AppHost
 ```
 
 ## What to Check

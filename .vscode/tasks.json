@@ -4,29 +4,20 @@
     {
       "label": "Run: Microsoft Foundry",
       "type": "shell",
-      "command": "aspire run --file ./apphost.cs -- --provider MicrosoftFoundry",
+      "command": "aspire start --isolated -- --provider MicrosoftFoundry",
       "group": "build",
       "isBackground": true,
       "problemMatcher": [],
       "detail": "Run the app with Microsoft Foundry (recommended for production)"
     },
     {
-      "label": "Run: Azure OpenAI",
-      "type": "shell",
-      "command": "aspire run --file ./apphost.cs -- --provider AzureOpenAI",
-      "group": "build",
-      "isBackground": true,
-      "problemMatcher": [],
-      "detail": "Run the app with Azure OpenAI"
-    },
-    {
       "label": "Run: GitHub Copilot",
       "type": "shell",
-      "command": "aspire run --file ./apphost.cs -- --provider GitHubCopilot --mode CopilotHandOff",
+      "command": "aspire start --isolated -- --provider GitHubCopilot --mode HandOff",
       "group": "build",
       "isBackground": true,
       "problemMatcher": [],
-      "detail": "Run the app with GitHub Copilot (CopilotHandOff mode only)"
+      "detail": "Run the app in handoff mode with GitHub Copilot"
     }
   ]
 }

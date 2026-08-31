@@ -25,7 +25,6 @@ var mcpInterviewData = builder.AddProject<Projects.InterviewCoach_Mcp_InterviewD
 var agent = builder.AddProject<Projects.InterviewCoach_Agent>(ResourceConstants.Agent)
                    .WithExternalHttpEndpoints()
                    .WithLlmReference(config, args)
-                   .WithEnvironment(ResourceConstants.LlmProvider, config[ResourceConstants.LlmProvider] ?? string.Empty)
                    .WithEnvironment("AZURE_TENANT_ID", config["AZURE_TENANT_ID"] ?? string.Empty)
                    .WithReference(mcpMarkItDown.GetEndpoint("http"))
                    .WithReference(mcpInterviewData)

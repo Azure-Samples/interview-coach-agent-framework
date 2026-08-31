@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Restored GitHub Copilot as an LLM provider through the GitHub Copilot SDK and Microsoft Agent Framework adapter
+
+### Removed
+
+- Azure OpenAI as a selectable LLM provider and its supporting Aspire resource template
+
+### Changed
+
+- Renamed the `LlmHandOff` agent mode to `HandOff`
+- Removed the provider-specific `CopilotHandOff` mode; GitHub Copilot now supports both `Single` and `HandOff`
+- Updated AG-UI hosting to the current `AddAGUIServer` and `MapAGUIServer` APIs
+- Updated setup, architecture, provider, tutorial, and user documentation for the two-provider design
+- Made explicit Copilot tokens optional so local runs can use GitHub CLI credentials
+
 ## [2.0.0] - 2026-07-10
 
 ### Changed

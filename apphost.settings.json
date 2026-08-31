@@ -8,17 +8,9 @@
     }
   },
 
-  "AgentMode": "LlmHandOff",
+  "AgentMode": "HandOff",
 
   "LlmProvider": "MicrosoftFoundry",
-
-  "Azure": {
-    "OpenAI": {
-      "Endpoint": "{{AZURE_OPENAI_ENDPOINT}}",
-      "ApiKey": "{{AZURE_OPENAI_API_KEY}}",
-      "DeploymentName": "gpt-5-mini"
-    }
-  },
 
   "MicrosoftFoundry": {
     "DeploymentName": "gpt-5-mini",
@@ -29,6 +21,6 @@
   },
 
   "GitHubCopilot": {
-    "Token": "{{GITHUB_PAT}}"
+    "Model": "gpt-5-mini"
   }
 }

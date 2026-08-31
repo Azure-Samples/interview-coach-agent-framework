@@ -1,78 +1,57 @@
-# Multi-agent architecture
+# Agent modes
 
-This project shows three ways to build the interview coach with [Microsoft Agent Framework](https://aka.ms/agent-framework). All three are implemented in `src/InterviewCoach.Agent/AgentDelegateFactory.cs` and switchable via config.
+The interview coach supports two agent modes. Both work with Microsoft Foundry and GitHub Copilot.
 
 ## Overview
 
-| Mode               | Approach                             | Agent Count | LLM Backend                            | Best For                               |
-|--------------------|--------------------------------------|-------------|----------------------------------------|----------------------------------------|
-| **Single**         | Single Agent                         | 1           | Foundry / Azure OpenAI                 | Simple deployments, getting started    |
-| **LlmHandOff**     | Multi-Agent Handoff (LLM)            | 5           | Foundry / Azure OpenAI                 | Production multi-agent with cloud LLMs |
-| **CopilotHandOff** | Multi-Agent Handoff (GitHub Copilot) | 5           | GitHub Copilot                         | Local development with Copilot         |
+| Mode      | Approach                                                 | Agents | Best for                                       |
+|-----------|----------------------------------------------------------|--------|------------------------------------------------|
+| `Single`  | One agent handles the full interview                     | 1      | Simpler deployments and debugging              |
+| `HandOff` | Specialists transfer control as the interview progresses | 5      | Focused prompts and tool access for each phase |
 
-## How to switch modes
-
-The agent mode is controlled by the `AgentMode` setting in `apphost.settings.json`:
+Choose the mode and provider independently in `apphost.settings.json`:
 
 ```json
 {
-  // Mode 1: Single agent
-  "AgentMode": "Single",
-
-  // Mode 2: Multi-agent handoff (LLM)
-  "AgentMode": "LlmHandOff",
-
-  // Mode 3: Multi-agent handoff (GitHub Copilot)
-  "AgentMode": "CopilotHandOff"
+  "AgentMode": "HandOff",
+  "LlmProvider": "GitHubCopilot"
 }
 ```
 
-You can also pass the mode as a CLI argument:
+Command-line arguments override the settings file:
 
 ```bash
-# Mode 1: Single agent
-aspire run --file ./apphost.cs -- --mode Single
+# Single agent with Microsoft Foundry
+aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode Single
 
-# Mode 2: Multi-agent handoff (LLM)
-aspire run --file ./apphost.cs -- --mode LlmHandOff
-
-# Mode 3: Multi-agent handoff (GitHub Copilot)
-aspire run --file ./apphost.cs -- --provider GitHubCopilot --mode CopilotHandOff
+# Multi-agent handoff with GitHub Copilot
+aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
 ```
 
-> **NOTE**: Choosing `Copilot` as the agent mode only allows the LLM provider of `GitHubCopilot`.
+## Single mode
 
-## Mode 1: Single agent
-
-The simplest setup — one `ChatClientAgent` does everything.
+`Single` creates one agent with access to the MarkItDown and InterviewData MCP tools. Its instructions cover session setup, document intake, behavioural questions, technical questions, and the final summary.
 
 ```mermaid
 flowchart LR
-    U[User] <--> A[Interview Coach Agent] <--> M[MCP Tools]
+    U[User] <--> A[Interview Coach]
+    A <--> M[MarkItDown MCP]
+    A <--> D[InterviewData MCP]
 ```
 
-The agent has a comprehensive instruction prompt covering session management, document intake, behavioural questions, technical questions, and summarization. All MCP tools (MarkItDown + InterviewData) are available to the single agent.
-See `CreateSingleAgent()` in [AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs).
+Use this mode when one prompt and one tool set are enough.
 
-Good for getting started or when you don't need multi-agent complexity.
+## HandOff mode
 
-## Mode 2: Multi-agent handoff (LLM provider)
-
-Splits the coach into 5 specialized agents connected via the [handoff pattern](https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/handoff).
-
-### What is handoff?
-
-In the handoff pattern, one agent transfers full control of the conversation to another. Unlike "agent-as-tools" (where a primary agent calls others as helpers), the receiving agent takes over entirely. This fits the interview flow well because each phase has its own job.
-
-### Agent topology
+`HandOff` creates five agents connected through Microsoft Agent Framework's handoff workflow:
 
 ```mermaid
 graph TD
-    T["Triage (router)"]
-    R["Receptionist (docs + setup)"]
+    T["Triage"]
+    R["Receptionist"]
     B["Behavioural Interviewer"]
     TI["Technical Interviewer"]
-    S["Summariser (wrap-up)"]
+    S["Summariser"]
 
     T --> R
     T --> B
@@ -87,125 +66,30 @@ graph TD
     S -.-> T
 ```
 
-**Triage** is the entry point and fallback. The happy-path flow is sequential: Receptionist → Behavioural Interviewer → Technical Interviewer → Summariser. Each specialist hands off directly to the next agent in sequence. Specialists can fall back to Triage for out-of-order requests.
+Triage selects the current phase. The normal path runs Receptionist, Behavioural Interviewer, Technical Interviewer, then Summariser. A specialist can return to Triage when the user asks to change direction.
 
-### The 5 agents
+| Agent                   | Job                                                | MCP tools                    |
+|-------------------------|----------------------------------------------------|------------------------------|
+| Triage                  | Routes the conversation                            | None                         |
+| Receptionist            | Creates the session and collects documents         | MarkItDown and InterviewData |
+| Behavioural Interviewer | Runs the behavioural interview                     | InterviewData                |
+| Technical Interviewer   | Runs the technical interview                       | InterviewData                |
+| Summariser              | Writes the final summary and completes the session | InterviewData                |
 
-| Agent                                                   | Role                                                | MCP Tools                  |
-|---------------------------------------------------------|-----------------------------------------------------|----------------------------|
-| **Triage** (`triage`)                                   | Routes messages to the right specialist             | None (pure routing)        |
-| **Receptionist** (`receptionist`)                       | Creates sessions, collects resume & job description | MarkItDown + InterviewData |
-| **Behavioural Interviewer** (`behavioural_interviewer`) | Conducts behavioural questions using STAR method    | InterviewData              |
-| **Technical Interviewer** (`technical_interviewer`)     | Conducts technical questions for the role           | InterviewData              |
-| **Summariser** (`summariser`)                           | Generates comprehensive interview summary           | InterviewData              |
+Each specialist receives only the tools it needs. Interview state remains in Azure Cosmos DB and is accessed through InterviewData MCP rather than directly by an agent.
 
-### How it works in code
+## Provider behavior
 
-Each agent is a `ChatClientAgent` with scoped instructions and tools:
+The workflow does not contain provider-specific copies of the agents:
 
-```csharp
-var triageAgent = new ChatClientAgent(
-    chatClient: chatClient,
-    name: "triage",
-    instructions: "You are the Triage agent. Route messages to the right specialist...");
+- Microsoft Foundry creates `ChatClientAgent` instances through `IChatClient`.
+- GitHub Copilot creates Agent Framework agents through `CopilotClient.AsAIAgent`.
+- The same instructions, MCP tools, and handoff topology are used for every provider.
 
-var receptionistAgent = new ChatClientAgent(
-    chatClient: chatClient,
-    name: "receptionist",
-    instructions: "You are the Receptionist. Set up sessions and collect documents...",
-    tools: [.. markitdownTools, .. interviewDataTools]);
-```
-
-The handoff workflow uses a **sequential chain** topology with Triage as fallback. Each specialist hands off directly to the next phase (not back to Triage), preventing re-routing loops:
-
-```csharp
-var workflow = AgentWorkflowBuilder
-               .CreateHandoffBuilderWith(triageAgent)
-               .WithHandoffs(triageAgent, [receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent])
-               .WithHandoffs(receptionistAgent, [behaviouralAgent, triageAgent])
-               .WithHandoffs(behaviouralAgent, [technicalAgent, triageAgent])
-               .WithHandoffs(technicalAgent, [summariserAgent, triageAgent])
-               .WithHandoff(summariserAgent, triageAgent)
-               .Build();
-
-return workflow;
-```
-
-Good for production scenarios where you want specialized agents with a cloud LLM.
-
-## Mode 3: Multi-agent handoff (GitHub Copilot)
-
-Same 5-agent topology as Mode 2, but backed by the GitHub Copilot SDK instead of a cloud LLM.
-
-### How it differs from Mode 2
-
-| Aspect         | Mode 2 (LLM)                                           | Mode 3 (GitHub Copilot)                  |
-|----------------|--------------------------------------------------------|------------------------------------------|
-| Agent creation | `new ChatClientAgent(chatClient, ...)`                 | `copilotClient.AsAIAgent(...)`           |
-| LLM backend    | Cloud provider (Foundry/Azure OpenAI)                 | GitHub Copilot                           |
-| Configuration  | Requires LLM provider setup in `apphost.settings.json` | Requires `GitHubCopilot:Token` in config |
-| Tool passing   | `AITool` instances from MCP clients                    | Same `AITool` instances                  |
-
-### How it works in code
-
-```csharp
-// Create the Copilot client and start it
-var copilotClient = new CopilotClient();
-await copilotClient.StartAsync();
-
-var triageAgent = copilotClient.AsAIAgent(
-    name: "triage",
-    instructions: "You are the Triage agent...");
-
-var receptionistAgent = copilotClient.AsAIAgent(
-    name: "receptionist",
-    instructions: "You are the Receptionist...",
-    tools: [.. markitdownTools, .. interviewDataTools]);
-
-// Same sequential-chain handoff workflow as Mode 2
-var workflow = AgentWorkflowBuilder
-               .CreateHandoffBuilderWith(triageAgent)
-               .WithHandoffs(triageAgent, [receptionistAgent, behaviouralAgent, technicalAgent, summariserAgent])
-               .WithHandoffs(receptionistAgent, [behaviouralAgent, triageAgent])
-               .WithHandoffs(behaviouralAgent, [technicalAgent, triageAgent])
-               .WithHandoffs(technicalAgent, [summariserAgent, triageAgent])
-               .WithHandoff(summariserAgent, triageAgent)
-               .Build();
-
-return workflow.SetName(key);
-```
-
-Good for local dev when you have GitHub Copilot but don't want to set up a cloud LLM.
-
-## Key concepts
-
-### Tool scoping
-
-Each agent only gets the MCP tools it needs:
-
-- **Triage**: No tools (pure routing via handoff)
-- **Receptionist**: MarkItDown (document parsing) + InterviewData (session management)
-- **Interviewers**: InterviewData only (read/update sessions and transcripts)
-- **Summariser**: InterviewData only (read sessions, mark complete)
-
-This follows the principle of least privilege — agents can only access what they need.
-
-### Shared session state
-
-All agents share the same interview session through the InterviewData MCP server. The session (resume, job description, transcript) lives in Azure Cosmos DB and every agent accesses it through MCP tool calls. No agent touches the database directly.
-
-### Handoff vs. agent-as-tools
-
-| Pattern | Control | Context | Use Case |
-|---------|---------|---------|----------|
-| **Handoff** | Full transfer — receiving agent owns the conversation | Shared via handoff context | Distinct phases with specialized expertise |
-| **Agent-as-Tools** | Central agent retains control, calls others as helpers | Central agent manages context | Helper agents for specific sub-tasks |
-
-This project uses **handoff** because the interview flow has clear phases (intake → behavioural → technical → summary) where each specialist should fully own the conversation during their phase.
+This keeps `AgentMode` focused on orchestration. Changing `LlmProvider` changes the model backend without changing the interview flow.
 
 ## Resources
 
-- [Microsoft Agent Framework — Multi-agent Orchestrations](https://learn.microsoft.com/agent-framework/workflows/orchestrations/)
-- [Microsoft Agent Framework — Handoff Orchestration](https://learn.microsoft.com/agent-framework/workflows/orchestrations/handoff)
-- [GitHub Copilot Agent Provider](https://learn.microsoft.com/agent-framework/agents/providers/github-copilot)
-- [Agent Framework Samples — Workflows](https://github.com/microsoft/Agent-Framework-Samples/tree/main/07.Workflow)
+- [Microsoft Agent Framework multi-agent orchestrations](https://learn.microsoft.com/agent-framework/workflows/orchestrations/)
+- [Handoff orchestration](https://learn.microsoft.com/agent-framework/workflows/orchestrations/handoff)
+- [GitHub Copilot agent provider](https://learn.microsoft.com/agent-framework/agents/providers/github-copilot)
