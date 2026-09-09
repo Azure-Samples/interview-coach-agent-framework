@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+.generated/
+public/downloads/
+public/samples/
+public/*.pdf
+public/reference-assets/
+src/content/docs/reference/

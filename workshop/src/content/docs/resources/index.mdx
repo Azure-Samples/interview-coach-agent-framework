@@ -1,0 +1,36 @@
+---
+title: Samples and checkpoints
+description: Fictional practice documents and safe recovery projects for every coding milestone.
+---
+import Checkpoint from '../../../components/Checkpoint.astro';
+import { siteLink } from '../../../data/course';
+
+## Sample inputs
+
+Use fictional documents rather than your own resume while learning about tool calls, logs, and data persistence.
+
+<ul>
+  <li><a href={siteLink('samples/resume-natasha-romanoff.pdf')}>Sample resume: Natasha Romanoff (PDF)</a></li>
+  <li><a href={siteLink('samples/resume-peter-parker.pdf')}>Sample resume: Peter Parker (PDF)</a></li>
+  <li><a href={siteLink('samples/jd-cloud-solution-architect.pdf')}>Cloud solution architect job description (PDF)</a></li>
+</ul>
+
+Copy the full public link into the coach or download the PDF and attach it. The local preview URL may not be reachable from a container; use the published link or upload route when testing MarkItDown.
+
+## Recover without losing your work
+
+Each archive is a complete project. Extract it into a new folder, copy only your private environment settings where needed, and follow that lesson's observations. The patch shows what changed since the preceding checkpoint.
+
+Direct .NET package versions are pinned in the archives. Application sources are tied to revision `68fd993f`; the final checkpoint differs only in package pins and its workshop information file. The parser image still follows the reference's `latest` tag: record its digest when troubleshooting a later run.
+
+<Checkpoint stage="02-starter" />
+<Checkpoint stage="03-first-coach" />
+<Checkpoint stage="04-tools" />
+<Checkpoint stage="05-mcp-state" />
+<Checkpoint stage="06-documents" />
+<Checkpoint stage="07-handoffs" />
+<Checkpoint stage="08-complete" />
+
+## Beyond the local application
+
+[Deploy to Container Apps](./deployment/) · [Explore hosting and providers](./extensions/) · [Look up a term or symptom](./glossary/)

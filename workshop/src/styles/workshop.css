@@ -1,0 +1,83 @@
+:root {
+  --sl-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --sl-color-accent-low: #123347;
+  --sl-color-accent: #60c4e5;
+  --sl-color-accent-high: #c5effb;
+  --sl-content-width: 49rem;
+  --workshop-panel: #172833;
+  --workshop-border: #3e5868;
+  --workshop-muted: #bdd0dc;
+  --workshop-brand: #83ddf3;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #deeff6;
+  --sl-color-accent: #146487;
+  --sl-color-accent-high: #153c53;
+  --workshop-panel: #f0f6f8;
+  --workshop-border: #bdced7;
+  --workshop-muted: #455e6d;
+  --workshop-brand: #075879;
+}
+html { scroll-padding-top: 6rem; }
+body { letter-spacing: -.008em; }
+.sl-markdown-content { line-height: 1.8; }
+.sl-markdown-content h2 { margin-top: 2.8rem; letter-spacing: -.035em; }
+.sl-markdown-content h3 { letter-spacing: -.018em; }
+.sl-markdown-content :is(a, button, input, summary):focus-visible { outline: 3px solid var(--sl-color-accent); outline-offset: 4px; }
+.eyebrow { display: block; font-size: .72rem; letter-spacing: .12em; font-weight: 750; text-transform: uppercase; color: var(--workshop-brand); }
+.course-intro { padding: 1.8rem 0 2.5rem; border-bottom: 1px solid var(--workshop-border); }
+.course-intro .course-lead { font-size: clamp(2.8rem, 7vw, 4.8rem); font-weight: 760; line-height: 1.05; letter-spacing: -.065em; max-width: 12ch; margin: 1.2rem 0; color: var(--sl-color-white); }
+.course-intro > p:not(.course-lead) { font-size: 1.15rem; max-width: 46ch; }
+.primary-link { display: inline-flex; gap: 2rem; padding: .8rem 1.1rem; background: var(--sl-color-accent-high); color: var(--sl-color-accent-low) !important; font-weight: 700; border-radius: .35rem; text-decoration: none; margin: 1rem 0; }
+.course-meta { display: block; font-size: .85rem; color: var(--workshop-muted); }
+.course-path { list-style: none; padding: 0; }
+.course-path li { margin: 0 !important; }
+.course-path a { display: grid; grid-template-columns: 2.5rem 1fr auto; gap: 1rem; align-items: start; padding: 1.25rem .5rem; border-bottom: 1px solid var(--workshop-border); color: var(--sl-color-white); text-decoration: none; }
+.course-path a:hover { background: var(--workshop-panel); }
+.path-number { color: var(--workshop-brand); font: 700 .9rem ui-monospace, monospace; padding-top: .2rem; }
+.course-path strong { font-size: 1.15rem; }
+.course-path p { margin: .25rem 0 0; font-size: .94rem; color: var(--workshop-muted); line-height: 1.6; }
+.path-arrow { font-size: 1.4rem; }
+.architecture { border: 1px solid var(--workshop-border); padding: 1.3rem; border-radius: .45rem; background: var(--workshop-panel); }
+.architecture figcaption { font-size: .9rem; color: var(--workshop-muted); }
+.architecture-nodes { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-top: 1rem; }
+.architecture details { margin: 0; padding: .7rem; border: 1px solid var(--workshop-border); border-radius: .25rem; }
+.architecture summary { cursor: pointer; font-weight: 700; line-height: 1.5; }
+.architecture summary span { font: .7rem ui-monospace, monospace; color: var(--workshop-brand); margin-right: .6rem; }
+.architecture details p { font-size: .85rem; line-height: 1.6; }
+.architecture-flow { font-size: .8rem; color: var(--workshop-muted); }
+.workshop-hint { border: 1px solid var(--workshop-border); background: var(--workshop-panel); padding: .8rem 1rem; margin: 1.2rem 0; }
+.workshop-hint summary { cursor: pointer; font-weight: 650; }
+.workshop-hint > div { margin-top: .8rem; }
+.knowledge-check { padding: 1.3rem; border: 1px solid var(--workshop-border); border-radius: .45rem; margin: 2rem 0; }
+.knowledge-check fieldset { padding: 0; border: 0; }
+.knowledge-check legend { font-size: 1.05rem; font-weight: 700; padding: 0; }
+.knowledge-check label { display: flex; align-items: baseline; gap: .65rem; border: 1px solid var(--workshop-border); padding: .7rem; border-radius: .25rem; cursor: pointer; margin-top: .6rem; }
+button { font: inherit; cursor: pointer; }
+.knowledge-check button, .lesson-progress button, .source-heading button { background: var(--sl-color-accent-high); color: var(--sl-color-accent-low); border: 1px solid transparent; padding: .45rem .75rem; border-radius: .25rem; margin-top: 1rem; font-weight: 650; font-size: .9rem; }
+button.secondary { background: transparent; color: var(--sl-color-white); border-color: var(--workshop-border); margin-left: .5rem; }
+.check-feedback:empty, .copy-status:empty { display: none; }
+.check-feedback { padding-top: .7rem; border-top: 1px solid var(--workshop-border); }
+.checkpoint { border: 1px solid var(--workshop-border); padding: 1.2rem; background: var(--workshop-panel); margin: 1.5rem 0; border-radius: .25rem; }
+.checkpoint strong { display: block; font-size: 1.1rem; margin-top: .3rem; }
+.checkpoint p { font-size: .9rem; margin: .35rem 0; }
+.checkpoint-actions { display: flex; flex-wrap: wrap; gap: 1rem; margin: .8rem 0; font-weight: 650; }
+.checkpoint small { color: var(--workshop-muted); }
+.lesson-progress { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--workshop-border); }
+.lesson-progress label { display: flex; align-items: baseline; gap: .6rem; margin-top: .7rem; }
+.lesson-progress input, .knowledge-check input { accent-color: var(--sl-color-accent); width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+.progress-status { font-size: .85rem; color: var(--workshop-muted); }
+.action-link { display: block; font-weight: 650; }
+.source-sample { min-width: 0; border: 1px solid var(--workshop-border); border-radius: .3rem; overflow: hidden; }
+.source-heading { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .7rem; background: var(--workshop-panel); }
+.source-heading code { overflow-wrap: anywhere; font-size: .75rem; }
+.source-heading button { margin: 0; flex-shrink: 0; font-size: .75rem; }
+.source-sample pre { margin: 0; border: none; border-radius: 0; max-height: 34rem; overflow: auto; padding: 1rem; }
+.copy-status { padding: .4rem 1rem; font-size: .8rem; }
+.sl-markdown-content table { font-size: .9rem; }
+@media (max-width: 42rem) {
+  .architecture-nodes { grid-template-columns: 1fr; }
+  .course-path a { grid-template-columns: 1.6rem 1fr auto; gap: .6rem; }
+  .source-heading { align-items: start; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }

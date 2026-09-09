@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "sourceRevision": "68fd993f39643d7b458bf1798094be953a1020a5",
+  "packageVersions": {
+    "Aspire.Hosting.Azure": "13.5.3",
+    "Aspire.Hosting.Azure.CosmosDB": "13.5.3",
+    "Aspire.Hosting.Foundry": "13.5.3-preview.1.26425.3",
+    "Aspire.Microsoft.EntityFrameworkCore.Cosmos": "13.5.3",
+    "Azure.Identity": "1.21.0",
+    "GitHub.Copilot.SDK": "1.0.5",
+    "Microsoft.Agents.AI": "1.20.0",
+    "Microsoft.Agents.AI.AGUI": "1.13.0-preview.260703.1",
+    "Microsoft.Agents.AI.DevUI": "1.20.0-preview.260831.1",
+    "Microsoft.Agents.AI.Foundry": "1.20.0-preview.260831.1",
+    "Microsoft.Agents.AI.GitHub.Copilot": "1.20.0",
+    "Microsoft.Agents.AI.Hosting": "1.20.0-preview.260831.1",
+    "Microsoft.Agents.AI.Hosting.AGUI.AspNetCore": "1.20.0-preview.260831.1",
+    "Microsoft.Agents.AI.Hosting.OpenAI": "1.20.0-alpha.260831.1",
+    "Microsoft.Agents.AI.OpenAI": "1.20.0",
+    "Microsoft.Agents.AI.Workflows": "1.20.0",
+    "Microsoft.Extensions.Http.Resilience": "10.9.0",
+    "Microsoft.Extensions.ServiceDiscovery": "10.9.0",
+    "Microsoft.NET.Test.Sdk": "18.10.0",
+    "ModelContextProtocol.AspNetCore": "1.4.1",
+    "OpenTelemetry.Exporter.OpenTelemetryProtocol": "1.18.0",
+    "OpenTelemetry.Extensions.Hosting": "1.18.0",
+    "OpenTelemetry.Instrumentation.AspNetCore": "1.18.0",
+    "OpenTelemetry.Instrumentation.Http": "1.18.0",
+    "OpenTelemetry.Instrumentation.Runtime": "1.18.0",
+    "xunit.v3": "3.2.2",
+    "xunit.runner.visualstudio": "3.1.5"
+  },
+  "stages": [
+    { "id": "02-starter", "title": "The application shell", "description": "A running UI and service shell. No model or cloud resources are connected yet." },
+    { "id": "03-first-coach", "title": "Your first coach", "description": "One Foundry-backed agent, with streamed replies and focused instructions." },
+    { "id": "04-tools", "title": "A coach with a tool", "description": "A deterministic practice-guidance function that the agent can call." },
+    { "id": "05-mcp-state", "title": "MCP and interview records", "description": "A single agent using InterviewData MCP and the Cosmos emulator. The practice tool is removed." },
+    { "id": "06-documents", "title": "Document-aware coaching", "description": "The complete single agent, connected to both InterviewData and MarkItDown MCP servers." },
+    { "id": "07-handoffs", "title": "Five collaborating specialists", "description": "The reference application's full handoff workflow and scoped tool sets." },
+    { "id": "08-complete", "title": "The finished application", "description": "The reference application for your capstone and final source comparison." }
+  ]
+}

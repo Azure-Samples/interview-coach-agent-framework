@@ -1,0 +1,92 @@
+---
+title: "07 · Hand off to specialists"
+description: Build the existing five-agent handoff topology and understand its costs and limits.
+---
+import CodeSample from '../../../components/CodeSample.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import Hint from '../../../components/Hint.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
+import Architecture from '../../../components/Architecture.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+## What we are doing
+
+Split the interview into five specialists: Triage, Receptionist, Behavioural Interviewer, Technical Interviewer, and Summariser. Use Agent Framework handoffs to transfer control between them.
+
+## Why split a working single agent?
+
+The single-agent instructions now contain several responsibilities and two tool sets. Specialists let you focus instructions and assign tools by responsibility. They also add model calls, latency, routing decisions, and more state to reason about.
+
+Keep the single mode available. If its behaviour is sufficient for your use case, it may be the better design.
+
+## How and where
+
+### 1. Assign responsibilities before writing prompts
+
+| Agent | Responsibility | Application tools |
+| --- | --- | --- |
+| Triage | Choose a phase from conversation context | None |
+| Receptionist | Reuse/create the record and gather materials | MarkItDown and InterviewData |
+| Behavioural Interviewer | Ask behavioural questions and record feedback | InterviewData |
+| Technical Interviewer | Ask technical questions and record feedback | InterviewData |
+| Summariser | Summarize and complete the record | InterviewData |
+
+Tool scoping limits what each agent can request. It does not create per-user authorization on the MCP server.
+
+### 2. Implement the workflow factory
+
+In `AgentDelegateFactory.cs`, replace the throwing `CreateHandOffWorkflow` method with a method returning `Workflow`. Retrieve both keyed MCP clients and their tools just as the single agent does.
+
+Construct each specialist with the supplied `CreateProviderAgent` helper. Work through the definition below one agent at a time: compare its role, process, handoff target, and tools against the table before moving to the next.
+
+<Hint title="Full specialist definitions from the reference checkpoint">
+<CodeSample stage="07-handoffs" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="    private static Workflow CreateHandOffWorkflow" end="        // Build the handoff workflow" />
+</Hint>
+
+Do not simply give all five agents the original single-agent prompt. Receptionist owns intake; the interviewers should not re-collect documents after intake has finished.
+
+### 3. Define the permitted transitions
+
+After constructing the specialists, add the workflow builder:
+
+<CodeSample stage="07-handoffs" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="#pragma warning disable MAAIW001" end="        return workflow.SetName(key);" />
+
+Finish the method with `return workflow.SetName(key);`. The supplied `WorkflowExtensions.cs` provides the name adapter. Keep `HandoffToolResultFix.cs` and the existing `CreateFixedAgent` call: they adapt tool-result serialization for this reference version.
+
+The normal route is Receptionist → Behavioural → Technical → Summariser. Specialists can return to Triage for an unexpected request. Routing every normal turn through Triage can repeatedly send the user back to a completed phase.
+
+### 4. Select the mode
+
+Set `"AgentMode": "HandOff"` in `apphost.settings.json`. Keep `"LlmProvider": "MicrosoftFoundry"`. Restart, create a new chat, and follow a short interview.
+
+## See it work
+
+Observe a handoff from intake into a behavioural question, then into a technical question and a summary. Inspect the active agent/tool events rather than assuming a change in tone proves a handoff.
+
+Next, request a different phase mid-interview. Compare the path with the normal flow. Model-driven routing can fail; the graph and instructions are not a guarantee.
+
+<Architecture stage={5} />
+
+<KnowledgeCheck id="handoff-tools" question="Why does Triage have no InterviewData or MarkItDown tools?" options={[
+  { text: 'It delegates work rather than performing intake or persistence', correct: true, explanation: 'The specialist responsible for the work receives the relevant tools. Triage routes using the conversation context.' },
+  { text: 'Triage cannot use the model', explanation: 'Triage still uses a model to decide where to hand off.' },
+  { text: 'MCP only supports one agent', explanation: 'Multiple agents can consume MCP tools. Scoping here is a design choice.' }
+]} />
+
+## Make it yours
+
+Compare `Single` and `HandOff` with the same short fictional interview. Record one benefit, one failure mode, and one cost of specialization. Do not choose a winner solely because one uses more agents.
+
+## If you get stuck
+
+<Hint title="The conversation loops back to intake">
+Check the handoff edges and Triage's awareness of completed phases. Read the actual outgoing instructions. Also confirm that a specialist forwards to the next specialist on the normal path rather than always returning to Triage.
+</Hint>
+
+<Checkpoint stage="07-handoffs" />
+
+## Carry forward
+
+You have reached the reference architecture. The capstone asks you to prove its behaviour and explain its limitations without relying on a happy-path screenshot.
+
+<LessonProgress lessonId="07-handoffs" />

@@ -1,0 +1,62 @@
+---
+title: Hosting, providers, and extensions
+description: Decide what to change next without confusing model providers with agent hosting.
+---
+## What we are doing
+
+Choose a justified next step after the core workshop: another provider, another hosting model, or another capability.
+
+## Why keep these choices separate?
+
+Changing a model provider affects the client/adapter. Changing where an agent runs affects lifecycle, state, networking, identity, and supported tools. Adding a tool affects what the application can do. These are different architectural decisions.
+
+## How and where
+
+### Use the existing GitHub Copilot provider
+
+The reference application supports both `Single` and `HandOff` with its Copilot adapter. Follow the [provider reference](../../reference/providers/github-copilot/) for authentication, then select:
+
+```json
+{
+  "LlmProvider": "GitHubCopilot",
+  "AgentMode": "Single"
+}
+```
+
+Start a new chat and compare the same task. This path needs a Copilot-enabled account and is optional; it does not complete the workshop's Foundry learning objective by itself. Do not remove the supplied handoff compatibility code without checking the adapter version.
+
+### Explore hosting agents in Foundry
+
+The core app creates agents in its .NET process. To consider a managed or hosted agent option, first consult the current [Foundry Agent Service overview](https://learn.microsoft.com/azure/ai-foundry/agents/overview).
+
+Before attempting a migration, answer:
+
+1. Which runtime and agent definition format does the chosen hosting option support?
+2. Who owns conversation state and lifecycle?
+3. Can that runtime reach both MCP servers, and how will it authenticate?
+4. What must change in the AG-UI endpoint and client path?
+5. How will tool permissions, traces, data retention, and deployment costs change?
+
+This is an architecture extension, not a claimed drop-in configuration switch. An executable hosted-agent migration requires a separately verified implementation.
+
+### Add a capability, not an agent by default
+
+Use the existing InterviewData MCP server as the model for a small extension. For example, expose a read-only list of interview competencies from an authoritative source. Define arguments and failure behaviour, implement the tool, discover it, and assign it only to the agent that needs it.
+
+Alternatively, make session updates narrower so transcript appends and document replacement are different operations. Explain how that changes the contract and update the calling instructions accordingly.
+
+## See it work
+
+Name the expected observable change before running. An additional tool should produce an actual invocation and result. A provider swap should preserve the interview flow while using the intended adapter. A hosting migration needs its own lifecycle and connectivity evidence.
+
+## Make it yours
+
+Propose one change and list what stays unchanged. If your design needs a new specialist, explain why a function or a clearer instruction would not be sufficient.
+
+## If you get stuck
+
+Return to the last complete checkpoint. Keep your extension in a separate working folder so you can compare contracts and behaviour without erasing the working application.
+
+## Carry forward
+
+Use the [configuration reference](../../reference/configuration/) and [architecture reference](../../reference/architecture/) as your map. Add a repeatable scenario alongside your extension so future changes have something more precise than "it seemed to work."

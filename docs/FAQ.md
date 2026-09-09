@@ -1,225 +1,45 @@
-# Frequently asked questions
+# Questions and limitations
 
-## General
+## Where should I start?
 
-### What is this sample for?
+Use the [workshop](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/) to build the application step by step. Use these reference pages when you need the actual configuration, topology, or data contracts.
 
-It teaches patterns for building AI agents with:
+## Is Foundry running the agents?
 
-- Microsoft Agent Framework for agent logic
-- MCP for tool extensibility
-- .NET Aspire for multi-service orchestration
-- Multiple LLM provider support
+Not in this repository. The default path uses a Foundry-hosted model; Agent Framework executes the agents in the .NET service. Container Apps is the existing cloud application-hosting target. Foundry agent hosting is a different architecture.
 
-See [learning objectives](LEARNING-OBJECTIVES.md).
+## Is Aspire required by Agent Framework?
 
-### Who is this for?
+No. This app uses Aspire for its multi-service resource graph, configuration, service discovery, and diagnostics. Agent Framework can be used independently.
 
-- .NET developers building AI agents
-- Architects designing multi-service AI apps
-- Anyone exploring Agent Framework or Aspire
-- Engineers looking at deployment patterns for agent systems
+## Why use MCP instead of a local function?
 
-### Can I use this in production?
+An in-process function can be enough for a small application-owned capability. MCP is useful when a separate service owns reusable tools. It adds transport and operational responsibilities, so it is not automatically preferable for every function.
 
-Treat the repository as a sample and review these areas before production use:
+## Does multiple agents mean better results?
 
-- Review security settings (content filters, authentication)
-- Cosmos DB runs in serverless mode by default — review throughput (RU/s) and partitioning for heavy load
-- Add proper error handling and monitoring for your use case
+No. Specialists can clarify instructions and tool scope, but they add routing, latency, cost, and failure modes. This repository preserves `Single` and `HandOff` so you can compare them.
 
-### How is this different from other chatbot samples?
+## Can I resume after refreshing the page?
 
-It goes further than a demo:
+The business record persists in Cosmos, but the current UI does not recover a previous conversation. It creates a new session ID and keeps its message list in memory. A persisted transcript alone does not restore UI or agent context.
 
-- Extensible via MCP (not hard-coded tools)
-- Works with multiple LLM providers
-- Explains the reasoning behind design choices
-- Actually deploys to Azure with `azd up`
+## Are uploaded documents permanent?
 
----
+No. The agent holds uploaded bytes in memory. A restart loses them. See [application usage](USER-MANUAL.md).
 
-## Microsoft Agent Framework
+## Can I swap providers?
 
-### What is Microsoft Agent Framework?
+The implemented options are Microsoft Foundry and GitHub Copilot. Both support the two agent modes. Other providers require code changes; they are not documented as working configuration-only options. See [provider configuration](providers/README.md).
 
-A .NET library for building AI agents. Gives you structured instructions, tool calling, multi-agent orchestration, and OpenAI-compatible APIs.
+## Is the sample production-ready?
 
-[Official docs](https://aka.ms/agent-framework)
+Treat it as a learning application. Review endpoint exposure, development tooling, identity, per-user data access, tool permissions, uploads, untrusted document content, retries, logging, costs, and retention before use with real users.
 
-### How is this different from Semantic Kernel or AutoGen?
+## Why does a local run need Azure?
 
-| Feature        | Agent Framework   | Semantic Kernel    | AutoGen              |
-|----------------|-------------------|--------------------|----------------------|
-| Language       | .NET, Python      | .NET, Python, Java | Python               |
-| Focus          | Production agents | AI orchestration   | Multi-agent research |
-| Hosting        | Web APIs          | Embedded           | Standalone           |
-| AG-UI Protocol | Yes               | No                 | No                   |
+The default provider provisions and calls a Foundry model. The UI and agent can be local while the model resources are in Azure. Starting or stopping local processes is not the same as provisioning or deleting cloud resources.
 
-Agent Framework is optimized for deployable web services. Semantic Kernel is more of a general orchestration library. AutoGen focuses on multi-agent research.
+## Where are failure details?
 
-### Can I use multiple agents?
-
-Yes. The framework supports handoff orchestration (sequential chain with specialists), agent-as-tools (coordinator calls helpers), and single-agent mode.
-
-Switch between them with the `AgentMode` setting in `apphost.settings.json`.
-
-See [multi-agent guide](MULTI-AGENT.md).
-
-### What's the AG-UI protocol?
-
-A standard for agent-to-UI communication. It means you can swap frontends or agent implementations without rewiring everything.
-
-[Learn more](https://docs.ag-ui.com)
-
----
-
-## Model Context Protocol (MCP)
-
-### What is MCP and why use it?
-
-MCP is a protocol for connecting AI agents to external tools and data sources. Tools become reusable across agents and frameworks, language-agnostic (Python tools in .NET agents), and independently deployable.
-
-### When should I use MCP vs. inline tools?
-
-Use MCP when the tool is complex, reusable, or owned by a different team. Use inline tools for trivial, agent-specific functions or when you need to avoid the network hop.
-
-### Can I use existing MCP servers?
-
-Yes. The [MCP Server Registry](https://github.com/modelcontextprotocol/servers) has database connectors, API integrations (Slack, GitHub, Jira), file system access, and more.
-
-### How do I build my own MCP server?
-
-See [Tutorial 2](TUTORIALS.md#tutorial-2-creating-a-custom-mcp-server). Short version: create a .NET project, add `ModelContextProtocol.Server`, implement tools with `[McpServerTool]` attributes, and map the `/mcp` endpoint.
-
----
-
-## LLM providers
-
-### Why is Foundry the default provider?
-
-Aspire can provision the Foundry resource and model deployment with the rest of the application. The runtime authenticates with Azure RBAC through `DefaultAzureCredential`, so no model API key is stored.
-
-See [Foundry setup](providers/MICROSOFT-FOUNDRY.md).
-
-### Can I use GitHub Copilot instead?
-
-Yes. Set `LlmProvider` to `GitHubCopilot` and configure a Copilot token. Both `Single` and `HandOff` modes are supported. See [GitHub Copilot setup](providers/GITHUB-COPILOT.md).
-
-### Can I use OpenAI Platform (not Azure)?
-
-Not currently supported, but adding it is straightforward:
-
-1. Extend `LlmProvider` and `LlmResourceFactory.cs`.
-2. Register the provider client in `InterviewCoach.Agent/Program.cs`.
-3. Add the provider branch to `CreateProviderAgent`.
-
-### Can I use local models (Ollama, LM Studio)?
-
-Not directly. You could point to an OpenAI-compatible endpoint by modifying `LlmResourceFactory`, but local models often have weak tool-calling support.
-
----
-
-## Aspire
-
-### What is Aspire?
-
-A .NET framework for building cloud-native apps. Handles service orchestration, discovery, observability (logs, traces, metrics), and deployment to Azure.
-
-[Official docs](https://aspire.dev)
-
-### Do I need Aspire to use Agent Framework?
-
-No. Aspire makes multi-service dev easier (service discovery, observability), but you can run the agent standalone. You'd just need to manage MCP connections, service URLs, and monitoring yourself.
-
-### Can I deploy without Aspire/azd?
-
-Yes, deploy containers directly:
-
-```bash
-docker compose up  # Local development
-
-# Or deploy to Azure manually
-az containerapp create ...
-```
-
-But you'll lose Aspire's benefits (service discovery, observability).
-
----
-
-## Deployment
-
-### How do I deploy to Azure?
-
-```bash
-azd up
-```
-
-That's it. See the [README](../README.md#5-deploy-to-azure).
-
-### Can I deploy to AWS or GCP?
-
-Not with `azd`, but the app is just containers. You could deploy to ECS/Fargate or Cloud Run — you'd configure networking and environment variables manually.
-
-### What about scaling?
-
-Container Apps auto-scales on HTTP request count (including scale-to-zero). Storage uses Azure Cosmos DB (serverless), which scales on its own. MCP servers scale independently.
-
----
-
-## Customization
-
-### How do I change the interview flow?
-
-Edit the agent instructions in [AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs). See [Tutorial 3](TUTORIALS.md#tutorial-3-customizing-the-agent).
-
-### Can I use this for other domains?
-
-Yes. Change the agent instructions, swap in domain-specific MCP servers, and adjust the UI. The same patterns work for support bots, sales assistants, tutors, or intake forms.
-
-### How do I add new capabilities?
-
-Preferred: create a new MCP server with tools, register it in AppHost, and connect it from the agent. For trivial agent-specific functions, define them inline.
-
-See [Tutorial 2](TUTORIALS.md#tutorial-2-creating-a-custom-mcp-server).
-
-### Can I change the UI framework?
-
-Yes. The agent exposes standard APIs, so you can replace Blazor with React, build a mobile app, or use Electron. The agent doesn't care about the frontend.
-
----
-
-## Troubleshooting
-
-### Where do I get help?
-
-1. [Search issues](https://github.com/Azure-Samples/interview-coach-agent-framework/issues)
-2. [Open a new issue](https://github.com/Azure-Samples/interview-coach-agent-framework/issues/new)
-3. [Stack Overflow](https://stackoverflow.com/questions/tagged/microsoft-agent-framework)
-
----
-
-## Contributing
-
-### How can I contribute?
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
-
-### Can I use this in my project?
-
-Yes, MIT licensed. Use it, modify it, ship it. Attribution is appreciated but not required.
-
----
-
-## Learning resources
-
-### Where should I start?
-
-1. [Run the sample](../README.md)
-2. [Learning objectives](LEARNING-OBJECTIVES.md)
-3. [Architecture overview](ARCHITECTURE.md)
-4. [Tutorials](TUTORIALS.md)
-
----
-
-Still stuck? [Open an issue](https://github.com/Azure-Samples/interview-coach-agent-framework/issues/new).
+Start with the named resource in the Aspire dashboard and the exact failing operation. Use [troubleshooting](TROUBLESHOOTING.md), not prompt changes, for a missing SDK, failed container, denied identity, or inaccessible endpoint.

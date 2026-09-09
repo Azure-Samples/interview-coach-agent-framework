@@ -1,0 +1,91 @@
+---
+title: "03 · Build your first coach"
+description: Connect the supplied Foundry client, define a ChatClientAgent, and follow a streamed conversation.
+---
+import CodeSample from '../../../components/CodeSample.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import Hint from '../../../components/Hint.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
+import Architecture from '../../../components/Architecture.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+## What we are doing
+
+Give the application one agent with a narrow job: ask interview questions, respond to the answer, and offer a short summary. No database, document parser, or specialist workflow yet.
+
+## Why start with one agent?
+
+One agent makes the core loop visible. Agent Framework's `ChatClientAgent` combines an `IChatClient` with instructions and, later, tools. A Foundry client supplies the model connection; it does not define what the interview coach should do.
+
+Instructions guide model behaviour. They do not enforce permissions, guarantee exact wording, or persist data.
+
+## How and where
+
+### 1. Activate the supplied application plumbing
+
+Download the checkpoint below into a separate folder for the supplied plumbing and comparison. In **your working starter**, replace these supplied files with their matching checkpoint versions:
+
+- `src/InterviewCoach.Agent/Program.cs`
+- `apphost.cs`
+- `src/InterviewCoach.AppHost/AppHost.cs`
+- `src/InterviewCoach.WebUI/Components/Pages/Chat/Chat.razor`
+
+These replacements connect the model, register the AG-UI server, and activate the existing chat UI. **Do not replace `AgentDelegateFactory.cs`: implement its method in step 2.** Leave your environment-specific model settings intact.
+
+Inspect `Program.cs`. Find `ChatClient client = new(`, then `builder.Services.AddSingleton(client.AsIChatClient())`. The endpoint and deployment come from Aspire's `chat` connection string. Authentication uses `DefaultAzureCredential`, not an API key stored in the website.
+
+Find `.WithLlmReference(config, args)` in `apphost.cs`. This activates the Foundry model resource. Read the readiness/cost guidance before starting it.
+
+### 2. Implement the single-agent factory
+
+Open `src/InterviewCoach.Agent/AgentDelegateFactory.cs`. Replace the throwing `CreateSingleAgent` method with:
+
+<CodeSample stage="03-first-coach" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="    private static AIAgent CreateSingleAgent" end="    // ============================================================================" />
+
+The supplied `CreateProviderAgent` helper constructs a `ChatClientAgent` for Foundry. Read that branch: the important inputs are the chat client, name, description, instructions, and optional tools. The Copilot branch is supplied compatibility plumbing, not part of this exercise.
+
+### 3. Follow registration into the UI
+
+In `Program.cs`, inspect the registration and endpoint:
+
+<CodeSample stage="03-first-coach" path="src/InterviewCoach.Agent/Program.cs" start="var agentBuilder = " end="// --- File Upload Endpoints ---" />
+
+The existing Blazor client calls `/ag-ui`. You do not need to invent a new REST schema to get a streaming conversation.
+
+Confirm `"AgentMode": "Single"` and `"LlmProvider": "MicrosoftFoundry"` in `apphost.settings.json`. Restart from the root using `aspire start --apphost ./apphost.cs`; stop a previous run with `aspire stop --apphost ./apphost.cs` first if needed.
+
+## See it work
+
+Ask: "Help me prepare for a backend developer interview. Ask one question at a time." Answer the question, then ask: "What could I improve in that answer?"
+
+You should see streamed replies and a response that refers to the preceding answer. Inspect the agent resource's logs. At this stage there should be no InterviewData tool calls and no claim that records were saved.
+
+<Architecture stage={1} />
+
+<KnowledgeCheck id="first-coach" question="Where does the coaching role belong?" options={[
+  { text: 'In the Foundry deployment name', explanation: 'The deployment selects a model. It does not define this application’s interviewing behaviour.' },
+  { text: 'In the agent instructions', correct: true, explanation: 'The factory supplies the role and process. The client separately handles access to the deployed model.' },
+  { text: 'Only in the page heading', explanation: 'UI text does not become agent instructions unless your application explicitly sends it.' }
+]} />
+
+## Make it yours
+
+Change the instructions to ask about a concrete incident instead of a hypothetical situation. Predict the difference, start a new chat, and compare two questions. Keep the one-question-at-a-time boundary.
+
+## If you get stuck
+
+<Hint title="A 401, 403, or unavailable deployment is not a prompt failure">
+Check the chosen tenant, subscription, permissions, and model deployment. Look at the provisioning or HTTP error before changing the agent. Make sure the name in configuration matches an available model configuration for this deployment flow.
+</Hint>
+
+<Hint title="A page of HTML is not an AG-UI stream">
+If the UI reports a response-format error, confirm the client reaches the agent's `/ag-ui` endpoint rather than the UI host or an error page. Follow the named resources in Aspire rather than hard-coding ports.
+</Hint>
+
+<Checkpoint stage="03-first-coach" />
+
+## Carry forward
+
+Your coach can converse but cannot perform an application action. Next, make a real function available and prove that it executes.
+
+<LessonProgress lessonId="03-first-coach" />

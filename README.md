@@ -2,6 +2,10 @@
 
 An AI-powered interview coach that shows how to wire up [Microsoft Agent Framework](https://aka.ms/agent-framework), [Model Context Protocol (MCP)](https://modelcontextprotocol.io), and [Aspire](https://aspire.dev) into a working application you can deploy.
 
+**Build it step by step:** the [interactive workshop](https://codemillmatt.github.io/interview-coach-agent-framework/) starts with an application shell and teaches agents, tools, MCP, state, document intake, and specialist handoffs. It includes downloadable checkpoints, exercises, and local progress tracking.
+
+**Look something up:** [architecture](docs/ARCHITECTURE.md), [configuration](docs/CONFIGURATION.md), [session contracts](docs/SESSION-DATA.md), and [troubleshooting](docs/TROUBLESHOOTING.md) describe the finished app. The agents run in the .NET service using Foundry-hosted models; they are not hosted in Foundry Agent Service.
+
 ## What you'll learn
 
 This sample covers the patterns you'd need for a real agent deployment:
@@ -43,7 +47,7 @@ Microsoft Foundry also requires an [Azure subscription](https://azure.microsoft.
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/Azure-Samples/interview-coach-agent-framework.git
+git clone https://github.com/codemillmatt/interview-coach-agent-framework.git
 cd interview-coach-agent-framework
 ```
 
@@ -92,8 +96,22 @@ azd up
 When finished, remove all Azure resources:
 
 ```bash
-azd down --force --purge
+azd down
 ```
+
+Review the environment and removal scope before confirming. Resources provisioned by local Aspire runs may be separate from the selected `azd` environment; stopping local processes does not remove cloud resources.
+
+### Develop the workshop website
+
+The static Astro/Starlight site is separate from the .NET application:
+
+```bash
+cd workshop
+npm ci
+npm run dev
+```
+
+`npm run build` generates checkpoints, imports the canonical `docs/` reference, and validates the static output. It does not provision Azure resources. See [workshop authoring](workshop/README.md).
 
 ## Next Steps
 

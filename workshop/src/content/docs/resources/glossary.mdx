@@ -1,0 +1,38 @@
+---
+title: Glossary and troubleshooting
+description: Plain-language terms and a practical order for diagnosing an agent application.
+---
+## Terms you will use
+
+| Term | In this application |
+| --- | --- |
+| Model | The Foundry-deployed model that proposes text and tool calls |
+| Agent | Instructions, model access, context, and tools run by Agent Framework |
+| Tool | Application code exposed through a typed, described contract |
+| Tool call | A requested invocation, not proof that an action succeeded |
+| MCP | The protocol used to discover and call tools across services |
+| AG-UI | The agent/UI communication protocol used by the Blazor client |
+| Handoff | A transfer of control between specialists along permitted edges |
+| Workflow | The topology and orchestration of agent execution |
+| Conversation context | Messages/state available to a particular agent conversation |
+| Interview record | The persisted business data in Cosmos: inputs, transcript, completion |
+| Aspire | Local/service orchestration, resource references, health, and telemetry plumbing |
+| Foundry | The Azure model backend used in the core path, not the process running these agents |
+
+## Diagnose from the outside in
+
+| Symptom | First evidence to inspect |
+| --- | --- |
+| Nothing starts | CLI/SDK output and AppHost startup |
+| Cosmos or parser is unhealthy | Container runtime and the specific resource logs |
+| Model authentication failure | Identity, tenant, token scope, and resource permissions |
+| Deployment unavailable | Actual configured model/version/region and quota |
+| No tool calls | Agent tool registration and discovered tool list |
+| Wrong tool arguments | Tool description, parameter contract, and actual invocation |
+| "Saved" but no record | InterviewData result and database contents |
+| Duplicate transcript | Whether updates append the entire prior transcript again |
+| Intake repeats | Current conversation context and handoff topology |
+| UI stream parsing error | Correct `/ag-ui` endpoint and version-specific serialization adapter |
+| Refresh loses the chat | Expected current limitation: no conversation-recovery UI |
+
+Check the [reference troubleshooting page](../../reference/troubleshooting/) for exact project paths. When sharing an error, redact tokens, account identifiers where necessary, document contents, and interview transcripts.

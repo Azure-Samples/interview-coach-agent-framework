@@ -1,0 +1,69 @@
+---
+title: "08 · Complete the interview"
+description: Demonstrate the full interview flow with tool, state, and routing evidence.
+---
+import Checkpoint from '../../../components/Checkpoint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+## What we are doing
+
+Complete a short interview and gather evidence that the application behaves as intended. The final checkpoint contains the reference application, including its existing limitations.
+
+## Why evaluate more than the wording?
+
+Model responses vary. An exact text comparison is a poor way to prove that the right record was updated, a document was parsed, or the workflow transferred control. Check observable actions and state, then assess the usefulness of the feedback.
+
+## How and where
+
+### 1. Run a compact interview
+
+Use the supplied sample resume and job description. Answer one or two questions in each phase. Ask to move on rather than completing a long interview just to exercise the integration.
+
+Record the session ID from this conversation. Inspect the Aspire agent/MCP logs and the Cosmos record as you go.
+
+### 2. Collect evidence
+
+| Scenario | Evidence to inspect |
+| --- | --- |
+| Create/reuse the session | The expected ID is used; later turns do not create unrelated records |
+| Gather documents | Parser result contains sample text; the same record stores it |
+| Skip a document | The interview continues with the absence acknowledged |
+| Behavioural interview | One question at a time and feedback referring to the answer |
+| Technical interview | Handoff occurs and the question fits the role/context |
+| Finish early | A summary is produced and the completion tool is attempted for the intended record |
+| Persist the result | Summary/transcript and completion state match the observed tool calls |
+| Bad link or unavailable tool | A visible failure, not a fabricated claim of successful reading or saving |
+
+Some checks can expose limitations of the sample. Record those failures rather than changing the expected result to make everything look successful.
+
+### 3. Compare your work with the reference
+
+The final project and preceding checkpoint use the same application sources. Use your editor's folder comparison to inspect the files you changed against the final archive.
+
+Confirm that the temporary `get_practice_guidance` tool is gone, both MCP clients are wired, and the actual five-agent topology is present. Keep any deliberate personal prompt changes separate from accidental missing infrastructure.
+
+<Checkpoint stage="08-complete" />
+
+## See it work
+
+You can narrate a complete interview using evidence from the UI, tool events, and stored record. You can explain where the model executes, where the agent executes, and which code performs an action.
+
+This is the core finish line: a local application using a Foundry-hosted model. You do not need to publish a public endpoint to complete the workshop.
+
+## Make it yours
+
+Choose one extension: a narrower update tool, a new interview phase, or a new data source. Write down its contract, permission boundary, observable success, and failure case before changing code.
+
+Explain whether the extension requires another agent. A new tool does not automatically imply a new specialist.
+
+## If you get stuck
+
+Check the earliest point where evidence diverges: configuration → service startup → tool discovery → tool arguments/result → persisted state → final response. Changing a prompt cannot fix a service that never started.
+
+The current UI does not restore an old conversation after refresh. Uploaded files are ephemeral. Model-directed updates and handoffs are not deterministic. Treat the application as a learning sample, not a finished production security design.
+
+## Carry forward
+
+Use the [reference documentation](../../reference/architecture/) when adapting the app. Try [optional deployment](../../resources/deployment/) or [hosting and provider extensions](../../resources/extensions/) only after the local flow is understood.
+
+<LessonProgress lessonId="08-capstone" />

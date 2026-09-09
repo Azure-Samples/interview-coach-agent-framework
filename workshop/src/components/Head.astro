@@ -1,0 +1,9 @@
+---
+const head = Astro.locals.starlightRoute.head.map(item =>
+  item.tag === 'link' && item.attrs?.rel === 'canonical' && String(item.attrs.href).endsWith('/404/')
+    ? { ...item, attrs: { ...item.attrs, href: String(item.attrs.href).replace(/404\/$/, '404.html') } }
+    : item
+);
+---
+{head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
+<meta name="theme-color" content="#153c53" />

@@ -1,0 +1,88 @@
+---
+title: "06 · Read real documents"
+description: Connect MarkItDown over MCP and use extracted text without treating it as trusted instructions.
+---
+import CodeSample from '../../../components/CodeSample.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import Hint from '../../../components/Hint.astro';
+import Architecture from '../../../components/Architecture.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+## What we are doing
+
+Give the coach access to MarkItDown, a separate document-conversion MCP server. It converts a resume or job-description URL into text that the interview tools can persist.
+
+## Why reuse an external server?
+
+Document parsing is not the interviewer's main job. A reusable MCP server can own that work independently and in another language. Your .NET agent consumes its tool descriptions and results without embedding a document parser.
+
+That service boundary also introduces failure cases: inaccessible URLs, unsupported documents, container startup, and untrusted extracted content. MCP does not make arbitrary documents safe.
+
+## How and where
+
+### 1. Start the parser alongside the existing services
+
+Add the MarkItDown resource from this AppHost section:
+
+<CodeSample stage="06-documents" path="apphost.cs" start="var mcpMarkItDown = " end="// Azure Cosmos DB" />
+
+In the agent's AppHost resource chain, add:
+
+```csharp
+.WithReference(mcpMarkItDown.GetEndpoint("http"))
+.WaitFor(mcpMarkItDown)
+```
+
+Keep the existing InterviewData references. Make the same resource change in the supplied project-based AppHost, or use the checkpoint copy of that plumbing. The container image follows the reference's `latest` tag; record the image digest used for your run when comparing results.
+
+### 2. Connect its MCP client
+
+In the agent's `Program.cs`, add this registration alongside the InterviewData client:
+
+<CodeSample stage="06-documents" path="src/InterviewCoach.Agent/Program.cs" start="builder.Services.AddHttpClient(&quot;mcp-markitdown&quot;" end="builder.Services.AddHttpClient(&quot;mcp-interview-data&quot;" />
+
+Compare the two clients. Each has a distinct service name and keyed registration; they are not one shared connection to every MCP server.
+
+### 3. Extend the single agent's intake
+
+Replace `CreateSingleAgent` with the completed single-agent definition:
+
+<CodeSample stage="06-documents" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="    private static AIAgent CreateSingleAgent" end="    // ============================================================================" />
+
+The agent now discovers tools from both servers. Read the instructions in order: reuse the session, gather optional materials, update the record, interview, then summarize.
+
+### 4. Use fictional sample inputs
+
+Open [samples and downloads](../../resources/). Copy a sample PDF link into the chat, or attach a downloaded sample using the supplied upload button. Also try pasting text and explicitly skipping one document.
+
+The upload path is supplied UI plumbing. The agent stores uploaded bytes in memory and returns a URL for the parser. A URL must be reachable from the MarkItDown container; a path on your laptop is not automatically a reachable URL.
+
+## See it work
+
+Inspect a parser tool call, its extracted text, and the subsequent InterviewData update. Then ask a question that uses a skill from the sample document.
+
+Do not count a generic, plausible question as proof that parsing happened. Follow the data through both tool boundaries.
+
+<Architecture stage={4} />
+
+## Make it yours
+
+Try one nonexistent URL and one missing document. Describe how "could not retrieve it" differs from "the user chose to skip it." Keep the rest of the interview usable.
+
+## If you get stuck
+
+<Hint title="The parser cannot read a link">
+Check reachability from the container, redirects, authentication, and the parser's logs. Do not assume an authenticated LinkedIn page or a local filesystem path is publicly fetchable. Use the provided PDFs to separate integration failures from website-specific restrictions.
+</Hint>
+
+<Hint title="A resume contains instructions for the assistant">
+Treat the resume as data. The sample does not implement a complete prompt-injection defense. Use fictional inputs and understand that instructions alone are not a substitute for permission boundaries and validation.
+</Hint>
+
+<Checkpoint stage="06-documents" />
+
+## Carry forward
+
+You now have a complete single-agent application. The next step is a deliberate architectural comparison, not a requirement that every useful agent application must contain multiple agents.
+
+<LessonProgress lessonId="06-documents" />

@@ -1,5 +1,11 @@
 # Contributing to Interview Coach with Microsoft Agent Framework
 
+## Workshop and reference content
+
+Keep guided lessons in `workshop/src/content/docs/` and factual reference in `docs/`. The website imports reference pages; do not maintain a second copy. See [workshop authoring](../workshop/README.md) for checkpoint generation, code samples, local builds, and publishing.
+
+For content changes, run `cd workshop && npm ci && npm run build`. If a lesson changes application code or the reference revision, also validate the generated checkpoints. Preserve legacy sample URLs and never include credentials or real interview documents.
+
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit <https://cla.opensource.microsoft.com>.

@@ -1,0 +1,68 @@
+---
+title: "00 · Agents, models, and the goal"
+description: Separate a model, an agent, its tools, and a workflow before building one.
+---
+import Architecture from '../../../components/Architecture.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+## What we are doing
+
+We are building an interview coach, not an automated hiring system. A person can share practice materials, answer questions, and ask for feedback. The final application moves from document intake to behavioural questions, technical questions, and a summary.
+
+Before writing code, distinguish the parts that can generate a suggestion from the parts that can actually do something.
+
+## Why this is an agent example
+
+A **model** generates outputs from supplied context. It can propose an answer or a tool call. It does not reach into your database merely because the prompt mentions saving a record.
+
+An **agent** combines that model with instructions, context, and application-controlled tools. In a tool loop, the model requests a function, application code executes it, and the result is sent back for the next response. The application decides which tools are available and enforces their contracts.
+
+A **workflow** coordinates multiple steps or agents. Some transitions can be deterministic code; this application's handoffs are model-driven decisions constrained by a topology you define.
+
+An interview is a useful example because the phases are easy to recognize. You can see why a coach needs document text, why a record should survive beyond one response, and why an intake specialist might need different tools from an interviewer.
+
+### Why Foundry?
+
+Foundry gives this application access to a deployed model through Azure identity and a managed endpoint. That is useful when you want model access governed with the rest of an Azure application rather than copying a personal API key into code.
+
+Agent Framework is the library that defines and runs your agents. Foundry hosts the **model** used here. Aspire starts and connects the application's services. None of those names is interchangeable.
+
+## How and where
+
+Trace this example before looking at the complete source:
+
+1. A user asks, "Can you help me prepare for a technical interview?"
+2. The UI sends the message to the .NET agent service.
+3. The agent sends instructions and context to a model in Foundry.
+4. The model may request a tool such as `get_interview_session`.
+5. Your service invokes the tool; the MCP server reads the database.
+6. The result returns to the model, which produces a reply.
+
+<Architecture stage={1} />
+
+In the completed repository, `src/InterviewCoach.Agent/Program.cs` connects the model and service endpoints. `AgentDelegateFactory.cs` defines the coach's behaviour. You will work in both, but not all at once.
+
+## See it work
+
+Read the six steps again and name the component that executes each one. In particular, a model saying "I saved your session" is **not evidence** that a database write occurred. Later, you will inspect the tool result and stored record.
+
+<KnowledgeCheck id="agent-loop" question="The model requests get_interview_session. Who actually reads the database?" options={[
+  { text: 'The model itself', explanation: 'The model proposes the call. It has no direct database connection in this application.' },
+  { text: 'Application code behind the tool', correct: true, explanation: 'The agent service calls InterviewData MCP, whose repository reads Cosmos DB and returns a result.' },
+  { text: 'The workshop website', explanation: 'This site is a static guide. It never connects to your database or Azure account.' }
+]} />
+
+## Make it yours
+
+Sketch a travel assistant or a maintenance assistant. Name one task that needs a real tool and one that only needs a reply. Explain whether multiple agents would help yet.
+
+## If you get stuck
+
+Use a smaller mental model: **the model proposes; your application executes; the workflow coordinates**. A tool adds capability, but also permission, validation, failure, and observability responsibilities.
+
+## Carry forward
+
+Next, separate what runs locally from what can create cloud resources so your first agent interaction is not obscured by setup problems.
+
+<LessonProgress lessonId="00-orientation" />

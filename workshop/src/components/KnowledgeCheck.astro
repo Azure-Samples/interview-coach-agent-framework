@@ -1,0 +1,42 @@
+---
+interface Props {
+  id: string;
+  question: string;
+  options: { text: string; explanation: string; correct?: boolean }[];
+}
+const { id, question, options } = Astro.props;
+if (options.filter(option => option.correct).length !== 1) throw new Error(`Check ${id} needs one correct answer.`);
+---
+<form class="knowledge-check" data-knowledge-check>
+  <fieldset>
+    <legend><span class="eyebrow">Pause and think</span>{question}</legend>
+    {options.map((option, i) => (
+      <label>
+        <input type="radio" name={id} value={i} data-correct={String(!!option.correct)} data-explanation={option.explanation} required />
+        <span>{option.text}</span>
+      </label>
+    ))}
+  </fieldset>
+  <button type="submit">Check my reasoning</button>
+  <button type="reset" class="secondary">Try again</button>
+  <p class="check-feedback" aria-live="polite" aria-atomic="true"></p>
+  <noscript><p>Answers and explanations:</p><ul>{options.map(o => <li>{o.text}: {o.explanation}</li>)}</ul></noscript>
+</form>
+<script>
+  function connectChecks() {
+    document.querySelectorAll<HTMLFormElement>('[data-knowledge-check]').forEach(form => {
+      if (form.dataset.connected) return;
+      form.dataset.connected = 'true';
+      const feedback = form.querySelector<HTMLElement>('.check-feedback')!;
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const selected = form.querySelector<HTMLInputElement>('input:checked');
+        if (!selected) return;
+        feedback.textContent = `${selected.dataset.correct === 'true' ? 'Exactly.' : 'Not quite.'} ${selected.dataset.explanation}`;
+      });
+      form.addEventListener('reset', () => { feedback.textContent = ''; });
+    });
+  }
+  connectChecks();
+  document.addEventListener('astro:page-load', connectChecks);
+</script>

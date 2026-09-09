@@ -1,0 +1,16 @@
+---
+import manifest from '../../labs/manifest.json';
+import { siteLink } from '../data/course';
+interface Props { stage: string }
+const { stage } = Astro.props;
+const entry = manifest.stages.find(item => item.id === stage);
+if (!entry) throw new Error(`Unknown checkpoint: ${stage}`);
+---
+<aside class="checkpoint">
+  <div><span class="eyebrow">A safe place to pick up</span><strong>{entry.title}</strong><p>{entry.description}</p></div>
+  <div class="checkpoint-actions">
+    <a href={siteLink(`downloads/${stage}.zip`)} download>Download complete project</a>
+    <a href={siteLink(`downloads/${stage}.patch`)} download>Read the changes</a>
+  </div>
+  <small>Extract into a new folder. Never replace your work to catch up. Reference: <code>{manifest.sourceRevision.slice(0, 8)}</code>.</small>
+</aside>

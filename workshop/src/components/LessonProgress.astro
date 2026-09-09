@@ -1,0 +1,23 @@
+---
+import { curriculumVersion, lessons, siteLink } from '../data/course';
+interface Props { lessonId: string }
+const { lessonId } = Astro.props;
+const index = lessons.findIndex(lesson => lesson[0] === lessonId);
+if (index < 0) throw new Error(`Unknown lesson ${lessonId}`);
+const next = lessons[index + 1];
+---
+<section class="lesson-progress" data-lesson-progress data-id={lessonId} data-version={curriculumVersion} data-base={import.meta.env.BASE_URL} aria-label="Your progress">
+  <div>
+    <span class="eyebrow">Your progress · {index + 1} of {lessons.length}</span>
+    <label><input type="checkbox" /> I completed this lesson and its checkpoint.</label>
+    <p class="progress-status" aria-live="polite"></p>
+  </div>
+  {next && <a class="action-link" href={siteLink(`workshop/${next[0]}/`)}>Next: {next[1]} <span aria-hidden="true">→</span></a>}
+  <button class="secondary reset-progress" type="button">Reset saved progress</button>
+  <noscript>Progress saving needs JavaScript. All lessons and downloads remain available.</noscript>
+</section>
+<script>
+  import { connectProgress } from '../scripts/progress';
+  connectProgress();
+  document.addEventListener('astro:page-load', connectProgress);
+</script>

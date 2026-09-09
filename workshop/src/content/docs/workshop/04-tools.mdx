@@ -1,0 +1,67 @@
+---
+title: "04 · Give it a tool"
+description: Add a typed function, trace its execution, and distinguish a tool result from generated prose.
+---
+import CodeSample from '../../../components/CodeSample.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import Hint from '../../../components/Hint.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+## What we are doing
+
+Add an in-process function that returns established preparation guidance for a category. This small, deterministic tool is a teaching step. The next module replaces it with the real application's MCP tools.
+
+## Why a function rather than another sentence in the prompt?
+
+A model can invent a plausible preparation tip. A tool can return your application's authoritative data. The distinction becomes important when the action reads a record or changes state.
+
+Static advice could also live in the instructions; this example intentionally keeps the function small so you can inspect the contract before adding a network protocol.
+
+## How and where
+
+### 1. Define the contract
+
+In `AgentDelegateFactory.cs`, update only `CreateSingleAgent`. Add the local `GetPracticeGuidance` function, convert it with `AIFunctionFactory.Create`, and pass the resulting tools into `CreateProviderAgent`:
+
+<CodeSample stage="04-tools" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="    private static AIAgent CreateSingleAgent" end="    // ============================================================================" />
+
+Read the category description and function name before running. Those descriptions help the model choose the right function and arguments. The switch is ordinary C# and remains responsible for invalid input.
+
+### 2. Observe the boundary
+
+Restart the agent and ask: "Use the practice guidance tool to help me prepare for the technical part of the interview."
+
+Put a breakpoint inside `GetPracticeGuidance` or inspect the tool event in the development UI. Check the actual argument. Then compare the returned string with the assistant's explanation.
+
+### 3. Change the source of truth
+
+Edit the technical guidance string in code. Start a new chat and ask again. Do not change the prompt. The result should reflect the changed function output if the tool was called.
+
+## See it work
+
+You can point to a function execution with category `technical`, its deterministic return value, and the assistant's follow-up response. A fluent answer alone does not satisfy this checkpoint.
+
+<KnowledgeCheck id="tool-contract" question="What happens if a tool description is clear but its code accepts unsafe arguments?" options={[
+  { text: 'The description enforces validation', explanation: 'Descriptions guide selection. They are not runtime validation or authorization.' },
+  { text: 'The application still needs to validate arguments', correct: true, explanation: 'A model can propose unexpected inputs. The tool implementation must enforce its contract.' },
+  { text: 'The model automatically rewrites the function', explanation: 'The model cannot rewrite this function. Your application owns the implementation.' }
+]} />
+
+## Make it yours
+
+Add one category and describe it clearly. Then request an unsupported category. Explain whether you want an explicit failure or a typed "not found" result, and what the calling agent should do next.
+
+## If you get stuck
+
+<Hint title="The model answered without calling the tool">
+Verify the tool was passed into the agent, not just declared in code. Check that the name and description match the user's request. Ask explicitly for the tool while investigating; do not mistake that diagnostic prompt for guaranteed production routing.
+</Hint>
+
+<Checkpoint stage="04-tools" />
+
+## Carry forward
+
+You now understand the application/model boundary. MCP moves that tool boundary across a service connection so another process can own reusable capabilities.
+
+<LessonProgress lessonId="04-tools" />

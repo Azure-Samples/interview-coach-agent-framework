@@ -1,0 +1,26 @@
+{
+  "name": "interview-coach-workshop",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "prepare:content": "node scripts/build-checkpoints.mjs && node scripts/import-reference.mjs",
+    "dev": "npm run prepare:content && astro dev",
+    "build": "npm run prepare:content && astro build && node scripts/validate-content.mjs",
+    "preview": "astro preview",
+    "test": "node --test scripts/*.test.mjs",
+    "check": "astro check",
+    "check:labs": "node scripts/validate-checkpoints.mjs"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "8.0.1",
+    "@astrojs/starlight": "0.42.0",
+    "astro": "7.3.2"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "typescript": "6.0.3"
+  }
+}

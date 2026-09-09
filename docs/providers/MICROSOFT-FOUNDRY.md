@@ -2,6 +2,8 @@
 
 Microsoft Foundry is the default LLM provider. Aspire provisions the Foundry resource and model deployment as part of the application.
 
+The agents execute in the .NET service; this is a Foundry-hosted model connection, not a Foundry Agent Service hosting implementation. Local runs can provision billable Azure resources.
+
 ## Prerequisites
 
 - An [Azure subscription](https://azure.microsoft.com/free)
@@ -66,13 +68,15 @@ azd auth login
 azd up
 ```
 
-The deployment assigns the application identity access to the provisioned resources.
+Inspect the deployed application identity and its access to the provisioned resources. Successful local Azure CLI authentication does not prove that the deployed identity has the required permissions.
 
 ## Clean up
 
 ```bash
-azd down --force --purge
+azd down
 ```
+
+Review the selected environment and removal scope before confirming. This does not necessarily remove resources provisioned by a separate local Aspire run. Keep an inventory and remove only workshop-owned resources.
 
 ## Resources
 
