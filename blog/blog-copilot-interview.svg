@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title description">
+<title id="title">Build an interview coach with GitHub Copilot SDK</title>
+<desc id="description">A Blazor interview interface connects to agents orchestrated by Microsoft Agent Framework. The embedded GitHub Copilot SDK runtime handles model interactions and application tool calls. MarkItDown MCP reads documents. InterviewData MCP stores interview records in Cosmos DB. The sample does not expose built-in shell or filesystem tools.</desc>
+<rect width="1600" height="900" fill="#ffffff"/>
+<text x="80" y="145.65" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="67" font-weight="700" fill="#000000">Build an interview coach</text>
+<text x="83" y="201.05" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="700" fill="#000000">with GitHub Copilot SDK</text>
+<text x="90" y="261.2" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#000000" letter-spacing="1.5">YOUR INTERFACE</text>
+<rect x="70" y="290" width="325" height="330" rx="26" fill="none" stroke="#0078D4" stroke-width="2"/>
+<text x="100" y="345.55" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="700" fill="#000000">Interview Coach</text>
+<text x="100" y="380" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#000000">Blazor chat interface</text>
+<polyline points="100,406 365,406" fill="none" stroke="#D5D9E2" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="100" y="435" width="265" height="88" rx="16" fill="none" stroke="#0078D4" stroke-width="2"/>
+<text x="119" y="469" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#000000">Practice questions</text>
+<text x="119" y="494" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#000000">and personal feedback</text>
+<rect x="100" y="550" width="110" height="44" rx="22" fill="#CFE4FA" stroke="#0078D4" stroke-width="1"/>
+<text x="155" y="576.15" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#000000">Resume</text>
+<rect x="220" y="550" width="145" height="44" rx="22" fill="#CFE4FA" stroke="#0078D4" stroke-width="1"/>
+<text x="292.5" y="576.15" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="400" fill="#000000">Job description</text>
+<rect x="465" y="254" width="635" height="454" rx="28" fill="none" stroke="#BFC7D4" stroke-width="2"/>
+<text x="495" y="306.6" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#000000">Agent Framework</text>
+<text x="495" y="343" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#000000">Specialist agents and handoffs</text>
+<rect x="515" y="380" width="530" height="228" rx="24" fill="none" stroke="#5C2D91" stroke-width="4"/>
+<text x="545" y="443.15" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="37" font-weight="700" fill="#000000">GitHub Copilot SDK</text>
+<text x="545" y="479.8" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="400" fill="#000000">Embedded agent runtime</text>
+<polyline points="545,503 1015,503" fill="none" stroke="#D5D9E2" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+<ellipse cx="549.5" cy="533.5" rx="3.5" ry="3.5" fill="#5C2D91" stroke="#5C2D91" stroke-width="1"/>
+<text x="568" y="536.9" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="#000000">Model interactions</text>
+<ellipse cx="549.5" cy="571.5" rx="3.5" ry="3.5" fill="#5C2D91" stroke="#5C2D91" stroke-width="1"/>
+<text x="568" y="574.9" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="#000000">Application tool calls</text>
+<text x="495" y="668.9" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="400" fill="#000000">Your instructions define the interview.</text>
+<polyline points="398,421 503,421" fill="none" stroke="#0078D4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="491.9171812132264,427.79493397609855 503,421 491.9171812132264,414.20506602390145" fill="none" stroke="#0078D4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="503,459 398,459" fill="none" stroke="#0078D4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="409.0828187867736,452.20506602390145 398,459 409.0828187867736,465.79493397609855" fill="none" stroke="#0078D4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1200" y="261.2" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="400" fill="#000000" letter-spacing="1.5">YOUR TOOLS</text>
+<rect x="1180" y="290" width="350" height="144" rx="24" fill="none" stroke="#0078D4" stroke-width="2"/>
+<text x="1205" y="343.6" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#000000">MarkItDown MCP</text>
+<text x="1205" y="384" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#000000">Read candidate documents</text>
+<rect x="1180" y="480" width="350" height="144" rx="24" fill="none" stroke="#0078D4" stroke-width="2"/>
+<text x="1205" y="533.6" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#000000">InterviewData MCP</text>
+<text x="1205" y="574" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#000000">Save interview context</text>
+<polyline points="1048,483 1135,483 1135,363 1168,363" fill="none" stroke="#5C2D91" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="1156.9171812132265,369.79493397609855 1168,363 1156.9171812132265,356.20506602390145" fill="none" stroke="#5C2D91" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="1135,483 1135,552 1168,552" fill="none" stroke="#5C2D91" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="1156.9171812132265,558.7949339760986 1168,552 1156.9171812132265,545.2050660239014" fill="none" stroke="#5C2D91" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="1355,628 1355,687" fill="none" stroke="#0078D4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="1348.2050660239015,675.9171812132264 1355,687 1361.7949339760985,675.9171812132264" fill="none" stroke="#0078D4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="1225" y="701" width="260" height="100" rx="20" fill="none" stroke="#BFC7D4" stroke-width="2"/>
+<text x="1355" y="739.75" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="700" fill="#000000">Cosmos DB</text>
+<text x="1355" y="775.05" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="400" fill="#000000">Interview records</text>
+<text x="782.5" y="768.85" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="400" fill="#000000">Interview-specific tools</text>
+<text x="782.5" y="802" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="400" fill="#000000">No built-in shell or filesystem tools</text>
+<polyline points="80,841 1520,841" fill="none" stroke="#D5D9E2" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="800" y="880.8" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="400" fill="#000000">Copilot runs the agent. Your application defines the job.</text>
+</svg>
