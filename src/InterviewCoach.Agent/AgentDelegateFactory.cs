@@ -305,16 +305,20 @@ public static class AgentDelegateFactory
                   3. Technical Interviewer
                   4. Summariser
 
-                Routing rules (apply in order, skipping completed phases):
+                Routing rules (apply in order; the latest user request takes priority over earlier messages):
+                - If the user wants to stop or finish, hand off to "summariser" immediately.
+                  Do not restart intake or ask another interview question.
+                - If the user explicitly requests a specific phase, honour that request.
+                - If the user is answering the latest technical question, hand off to "technical_interviewer".
+                - If the user is answering the latest behavioural question, hand off to "behavioural_interviewer".
                 - If the receptionist has NOT yet collected the resume and job description
                   → hand off to "receptionist"
                 - If document intake is complete and behavioural interview has NOT started
                   → hand off to "behavioural_interviewer"
                 - If behavioural interview is complete and technical interview has NOT started
                   → hand off to "technical_interviewer"
-                - If technical interview is complete or the user wants to end
+                - If technical interview is complete
                   → hand off to "summariser"
-                - If the user explicitly requests a specific phase, honour that request.
                 - If unclear, ask the user to clarify what they'd like to do.
 
                 When a specialist hands back to you, they have COMPLETED their phase.
@@ -414,7 +418,8 @@ public static class AgentDelegateFactory
                 Your job is to generate a comprehensive interview summary.
 
                 Process:
-                1. Fetch the interview session record to get the full transcript.
+                1. Fetch the interview session record to get the full transcript. Also review the latest user
+                   message for a final answer that has not been saved yet, and include that new answer in the update.
                 2. Generate a summary that includes:
                 - Overview of the interview session
                 - Key highlights and strong answers
