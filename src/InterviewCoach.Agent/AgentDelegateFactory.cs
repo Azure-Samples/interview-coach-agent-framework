@@ -234,8 +234,9 @@ public static class AgentDelegateFactory
                 Use the provided tools to manage interview sessions, capture resume and job description, ask both behavioral and technical questions, analyze responses, and generate summaries.
 
                 Here's the overall process you should follow:
-                01. Start by fetching an existing interview session and let the user know their session ID.
-                02. If there's no existing session, create a new interview session by the session ID and let the user know their session ID.
+                01. Start by calling get_interview_session with the application-provided SessionId.
+                02. If no record is returned, call add_interview_session with that exact ID before any update.
+                    update_interview_session cannot create a missing record. Report the session ID after lookup or creation succeeds.
                 03. Once you have the session, then keep using this session record for all subsequent interactions. DO NOT create a new session again.
                 04. Ask the user to provide their resume link or allow them to proceed without it. The user may provide the resume in text form if they prefer.
                 05. Next, request the job description link or let them proceed without it. The user may provide the job description in text form if they prefer.
@@ -331,7 +332,9 @@ public static class AgentDelegateFactory
                 Your job is to set up the interview session and collect documents.
 
                 Process:
-                1. Fetch an existing interview session or create a new one. Let the user know their session ID.
+                1. Call get_interview_session with the application-provided SessionId. If no record exists,
+                   call add_interview_session with that exact ID before any update. An update cannot create a record.
+                   Let the user know the session ID after lookup or creation succeeds.
                 2. Ask the user to provide their resume (link or text). Use MarkItDown to parse document links into markdown.
                 3. Ask the user to provide the job description (link or text). Use MarkItDown to parse document links into markdown.
                 4. Store the resume and job description in the session record.

@@ -26,11 +26,9 @@
         You are a professional interview coach who helps the user prepare for both behavioral and technical questions.
         """;
 
-    private int statefulMessageCount;
     private readonly ChatOptions chatOptions = new();
     private readonly List<ChatMessage> messages = new();
     private string sessionId = Guid.Empty.ToString();
-    private string? lastSessionId;
     private ChatMessage? systemPromptMessage;
     private ChatMessage? sessionIdMessage;
     private CancellationTokenSource? currentResponseCancellation;
@@ -39,7 +37,6 @@
 
     protected override void OnInitialized()
     {
-        statefulMessageCount = 0;
         AddSessionSystemMessages();
         chatOptions.Tools = [];
         chatOptions.ConversationId = sessionId;
@@ -48,12 +45,6 @@
     private async Task AddUserMessageAsync(ChatMessage userMessage)
     {
         CancelAnyCurrentResponse();
-
-        if (string.Equals(lastSessionId, sessionId, StringComparison.Ordinal) == false)
-        {
-            statefulMessageCount = 0;
-            lastSessionId = sessionId;
-        }
 
         // If a file is attached, upload it and append the URL to the message
         var file = chatInput?.AttachedFile;
@@ -86,12 +77,11 @@
         currentResponseMessage = new ChatMessage(ChatRole.Assistant, [responseText]);
         currentResponseCancellation = new();
 
-        var outboundMessages = BuildOutboundMessages();
+        var outboundMessages = messages.ToArray();
         await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage,
 currentResponseCancellation.Token);
 
         messages.Add(currentResponseMessage!);
-        statefulMessageCount = chatOptions.ConversationId is not null ? messages.Count : 0;
         currentResponseMessage = null;
     }
 
@@ -143,7 +133,6 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
         messages.Clear();
         AddSessionSystemMessages();
         chatOptions.ConversationId = sessionId;
-        statefulMessageCount = 0;
         await chatInput!.FocusAsync();
     }
 
@@ -158,22 +147,6 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
         messages.Add(sessionIdMessage);
 
         Logger.LogInformation("Started new chat session with SessionId: {SessionId}", sessionId);
-    }
-
-    private IEnumerable<ChatMessage> BuildOutboundMessages()
-    {
-        var baseMessages = messages.Skip(statefulMessageCount);
-
-        if (systemPromptMessage is null || sessionIdMessage is null)
-        {
-            return baseMessages;
-        }
-
-        var outboundMessages = new[] { systemPromptMessage, sessionIdMessage }
-            .Concat(baseMessages.Where(m => ReferenceEquals(m, systemPromptMessage) == false &&
-                                            ReferenceEquals(m, sessionIdMessage) == false));
-
-        return outboundMessages;
     }
 
     public void Dispose()

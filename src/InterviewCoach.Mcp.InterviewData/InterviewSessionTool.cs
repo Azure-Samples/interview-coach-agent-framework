@@ -1,5 +1,6 @@
 using System.ComponentModel;
 
+using ModelContextProtocol;
 using ModelContextProtocol.Server;
 
 namespace InterviewCoach.Mcp.InterviewData;
@@ -9,15 +10,15 @@ public interface IInterviewSessionTool
     Task<InterviewSession> AddInterviewSessionAsync(InterviewSession record);
     Task<IEnumerable<InterviewSession>> GetAllInterviewSessionsAsync();
     Task<InterviewSession?> GetInterviewSessionAsync(Guid id);
-    Task<InterviewSession?> UpdateInterviewSessionAsync(InterviewSession record);
-    Task<InterviewSession?> CompleteInterviewSessionAsync(Guid id);
+    Task<InterviewSession> UpdateInterviewSessionAsync(InterviewSession record);
+    Task<InterviewSession> CompleteInterviewSessionAsync(Guid id);
 }
 
 [McpServerToolType]
 public class InterviewSessionTool(IInterviewSessionRepository repository, ILogger<InterviewSessionTool> logger) : IInterviewSessionTool
 {
     [McpServerTool(Name = "add_interview_session", Title = "Add an interview session")]
-    [Description("Adds an interview session to database.")]
+    [Description("Creates a new interview session in the database. Use this after get_interview_session returns no record; update_interview_session cannot create one.")]
     public async Task<InterviewSession> AddInterviewSessionAsync(
         [Description("The interview session details")] InterviewSession record
     )
@@ -41,7 +42,7 @@ public class InterviewSessionTool(IInterviewSessionRepository repository, ILogge
     }
 
     [McpServerTool(Name = "get_interview_session", Title = "Get an interview session")]
-    [Description("Gets an interview session from the database by ID.")]
+    [Description("Gets an interview session from the database by ID. Returns no record when the session has not been created.")]
     public async Task<InterviewSession?> GetInterviewSessionAsync(
         [Description("The ID of the interview session")] Guid id
     )
@@ -60,8 +61,8 @@ public class InterviewSessionTool(IInterviewSessionRepository repository, ILogge
     }
 
     [McpServerTool(Name = "update_interview_session", Title = "Update an interview session")]
-    [Description("Updates an interview session in the database.")]
-    public async Task<InterviewSession?> UpdateInterviewSessionAsync(
+    [Description("Updates an existing interview session. This does not create a missing session; call add_interview_session first.")]
+    public async Task<InterviewSession> UpdateInterviewSessionAsync(
         [Description("The interview session details")] InterviewSession record
     )
     {
@@ -70,7 +71,8 @@ public class InterviewSessionTool(IInterviewSessionRepository repository, ILogge
         {
             logger.LogWarning("Interview session with ID '{id}' not found.", record.Id);
 
-            return default;
+            throw new McpException(
+                $"Interview session '{record.Id}' does not exist. Call add_interview_session before updating it.");
         }
 
         logger.LogInformation("Updated interview session with ID '{id}'", record.Id);
@@ -79,8 +81,8 @@ public class InterviewSessionTool(IInterviewSessionRepository repository, ILogge
     }
 
     [McpServerTool(Name = "complete_interview_session", Title = "Complete an interview session")]
-    [Description("Completes an interview session in the database.")]
-    public async Task<InterviewSession?> CompleteInterviewSessionAsync(
+    [Description("Marks an existing interview session as complete. This does not create a missing session.")]
+    public async Task<InterviewSession> CompleteInterviewSessionAsync(
         [Description("The interview session details")] Guid id
     )
     {
@@ -89,7 +91,8 @@ public class InterviewSessionTool(IInterviewSessionRepository repository, ILogge
         {
             logger.LogWarning("Interview session with ID '{id}' not found.", id);
 
-            return default;
+            throw new McpException(
+                $"Interview session '{id}' does not exist. Call add_interview_session before completing it.");
         }
 
         logger.LogInformation("Completed interview session: '{id}'", id);
