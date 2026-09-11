@@ -1,32 +1,45 @@
-# GitHub Copilot setup
+# GitHub Copilot configuration
 
-Use GitHub Copilot as the model backend without provisioning an Azure model deployment.
+The standalone application supports GitHub Copilot as an optional model provider. The agents run in the .NET service and use the same InterviewData and MarkItDown services. Run this path from the repository using the main README. The workshop uses Foundry and omits this implementation from its downloads.
 
 ## Prerequisites
 
 - A GitHub account with Copilot access
 - The [GitHub CLI](https://cli.github.com/) for local authentication
 
-The NuGet package includes the Copilot CLI runtime used by the SDK. You do not need to install it separately.
+The pinned NuGet package supplies the CLI runtime used by the SDK.
 
 ## Configure authentication
 
 For local development, sign in with GitHub CLI:
 
 ```bash
+# Bash
 gh auth login
 gh auth status
 ```
 
-The SDK checks `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, stored Copilot credentials, and GitHub CLI credentials. The application does not require a token in `appsettings.json`.
+```powershell
+# PowerShell
+gh auth login
+gh auth status
+```
+
+The SDK can use environment tokens or stored/local authentication. The application passes an explicit configured token when present; otherwise it sets `UseLoggedInUser` so the SDK can use available local credentials. Keep tokens in private configuration.
 
 For automation or deployment, set `COPILOT_GITHUB_TOKEN`. You can also store `GitHubCopilot:Token` in AppHost user secrets:
 
 ```bash
+# Bash
 dotnet user-secrets --file ./apphost.cs set GitHubCopilot:Token "{{GITHUB_TOKEN}}"
 ```
 
-Explicit tokens take precedence over ambient credentials. Classic personal access tokens with the `ghp_` prefix are not supported. Use a fine-grained `github_pat_` token, an OAuth user token, or a GitHub App user token.
+```powershell
+# PowerShell
+dotnet user-secrets --file ./apphost.cs set GitHubCopilot:Token "{{GITHUB_TOKEN}}"
+```
+
+Explicit tokens take precedence over ambient credentials. Use a supported fine-grained `github_pat_`, OAuth user, or GitHub App user token with the required Copilot access. Avoid classic `ghp_` personal access tokens for this path. Consult the [SDK authentication reference](https://docs.github.com/copilot/how-tos/copilot-sdk/auth/authenticate).
 
 > [!NOTE]
 > `aspire start --isolated` uses an isolated user-secrets scope. Prefer GitHub CLI authentication for isolated runs, or set the token in that isolated AppHost instance.
@@ -47,21 +60,30 @@ Model availability depends on the Copilot plan and organization policy. Use `Cop
 
 ## Troubleshoot authentication
 
-`401 Bad credentials` means an explicit token was rejected. Check or remove the configured AppHost secret so the SDK can use GitHub CLI authentication:
+For `401 Bad credentials`, inspect whether an explicit AppHost token is overriding working local authentication. List secrets only in a private terminal; that output can expose their values. Remove an obsolete override to return to local authentication:
 
 ```bash
+# Bash
 dotnet user-secrets --file ./apphost.cs list
 dotnet user-secrets --file ./apphost.cs remove GitHubCopilot:Token
 gh auth status
 ```
 
-Do not leave template values such as `{{GITHUB_PAT}}` in configuration.
+```powershell
+# PowerShell
+dotnet user-secrets --file ./apphost.cs list
+dotnet user-secrets --file ./apphost.cs remove GitHubCopilot:Token
+gh auth status
+```
+
+Replace template values such as `{{GITHUB_PAT}}` in private configuration before running.
 
 ## Run the app
 
 GitHub Copilot supports both agent modes:
 
 ```bash
+# Bash
 # Multi-agent workflow
 aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
 
@@ -69,13 +91,28 @@ aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
 aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode Single
 ```
 
-For the project-based AppHost:
+```powershell
+# PowerShell
+# Multi-agent workflow
+aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
+
+# Single-agent workflow
+aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode Single
+```
+
+For the completed project-based AppHost, configure its own settings first. Workshop learners reach this entry point after applying the capstone's support patch:
 
 ```bash
+# Bash
 aspire start --apphost ./src/InterviewCoach.AppHost -- --provider GitHubCopilot --mode HandOff
 ```
 
-The SDK runs in empty mode. Copilot receives the interview instructions and the MCP tools assigned to each agent, but it does not receive Copilot CLI's built-in shell, filesystem, or coding tools.
+```powershell
+# PowerShell
+aspire start --apphost ./src/InterviewCoach.AppHost -- --provider GitHubCopilot --mode HandOff
+```
+
+`Program.cs` selects `CopilotClientMode.Empty`. The adapter supplies interview instructions and assigned MCP tools; built-in shell, filesystem, and coding tools stay disabled. It also merges handoff instructions and transfer tools supplied at run time. Retain that adapter when comparing modes.
 
 ## Usage limits
 

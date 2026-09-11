@@ -1,80 +1,39 @@
-# LLM provider options
+# Model providers
 
-The app supports multiple LLM backends. Pick one in config and go — no code changes.
+The reference application implements Microsoft Foundry and GitHub Copilot. Select one with `LlmProvider`; select single-agent or handoff orchestration separately with `AgentMode`.
 
-## Quick comparison
+| Provider | Application path | Access |
+| --- | --- | --- |
+| [Microsoft Foundry](MICROSOFT-FOUNDRY.md) | OpenAI-compatible client, `IChatClient`, `ChatClientAgent` | Azure identity, resource permissions, model deployment/quota |
+| [GitHub Copilot](GITHUB-COPILOT.md) | `CopilotClient` and Agent Framework adapter | Copilot-enabled account and supported authentication |
 
-| Provider                                      | Best for                                      | Authentication | Billing |
-|-----------------------------------------------|-----------------------------------------------|----------------|---------|
-| **[Microsoft Foundry](MICROSOFT-FOUNDRY.md)** | Azure deployments with managed identity       | Azure RBAC     | Azure consumption |
-| **[GitHub Copilot](GITHUB-COPILOT.md)**       | Running without an Azure model deployment     | GitHub token   | Copilot plan usage |
+The workshop uses only Foundry and omits the alternative implementation from its downloads. To use the Copilot path, run the standalone repository using the main README rather than a workshop checkpoint.
 
-## Getting started
+## Select the implemented provider
 
-Pick a provider and follow the guide:
-
-- [Microsoft Foundry](MICROSOFT-FOUNDRY.md) (recommended)
-- [GitHub Copilot](GITHUB-COPILOT.md)
-
-## Switching providers
-
-All providers use the same code. To switch:
-
-1. Update configuration (`apphost.settings.json`)
-2. Authenticate with Azure or configure the GitHub token
-3. Restart
-
-### Configuration examples
-
-**Microsoft Foundry:**
+In `apphost.settings.json`, keep the model-specific section and set both selections:
 
 ```json
 {
   "LlmProvider": "MicrosoftFoundry",
-
-  "MicrosoftFoundry": {
-    "DeploymentName": "gpt-5-mini",
-    "ModelVersion": "2025-08-07",
-    "ModelFormat": "OpenAI"
-  }
+  "AgentMode": "Single"
 }
 ```
 
-**GitHub Copilot:**
-
-```json
-{
-  "AgentMode": "HandOff",
-
-  "LlmProvider": "GitHubCopilot",
-
-  "GitHubCopilot": {
-    "Model": "gpt-5-mini"
-  }
-}
-```
-
-If `Model` is omitted, the app still uses `gpt-5-mini`.
-
-### Command-line examples
-
-You can also pass the provider as a flag instead of editing config:
-
-**Microsoft Foundry:**
+Or override them from the root AppHost:
 
 ```bash
-aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry
-```
-
-**GitHub Copilot:**
-
-```bash
+# Bash
 aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
 ```
 
-## Next steps
+```powershell
+# PowerShell
+aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
+```
 
-- [Learning objectives](../LEARNING-OBJECTIVES.md)
-- [Architecture overview](../ARCHITECTURE.md)
-- [Tutorials](../TUTORIALS.md)
-- [FAQ](../FAQ.md)
+Authenticate for the chosen provider before starting. Restart and create a new chat after switching. Follow the provider-specific reference for model selection and authentication; the available models depend on your account and configuration.
+
+These settings apply to the completed root AppHost. Optional deployment uses the project-based AppHost's own settings. In the learner scaffold, that project stays in its starter state until the capstone patch restores its completed graph. See [entry points and precedence](../CONFIGURATION.md#entry-points-and-precedence).
+
+Both provider paths use the same interview roles and MCP services. Check each provider's actual tool calls and saved records when comparing behavior. Additional providers require code changes to model setup and agent construction.

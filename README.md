@@ -1,172 +1,74 @@
 # Interview Coach with Microsoft Agent Framework
 
-An AI-powered interview coach that shows how to wire up [Microsoft Agent Framework](https://aka.ms/agent-framework), [Model Context Protocol (MCP)](https://modelcontextprotocol.io), and [Aspire](https://aspire.dev) into a working application you can deploy.
+An interview-practice application built with Microsoft Agent Framework, models hosted in Microsoft Foundry, MCP tools, and Aspire. It collects a resume and job description, asks behavioural and technical questions, gives feedback, and saves an interview summary.
 
-**Build it step by step:** the [interactive workshop](https://codemillmatt.github.io/interview-coach-agent-framework/) starts with an application shell and teaches agents, tools, MCP, state, document intake, and specialist handoffs. It includes downloadable checkpoints, exercises, and local progress tracking.
+## Two ways to engage with this repository
 
-**Look something up:** [architecture](docs/ARCHITECTURE.md), [configuration](docs/CONFIGURATION.md), [session contracts](docs/SESSION-DATA.md), and [troubleshooting](docs/TROUBLESHOOTING.md) describe the finished app. The agents run in the .NET service using Foundry-hosted models; they are not hosted in Foundry Agent Service.
+**[Learn by building](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/):** The workshop guides you through constructing the application from a cloud-free starter. Fifteen lessons start with tool setup and a completed-example run in Chapter 0. Then keep working in a separate starter: create an agent, stream its replies, add tools and records, read documents, and build specialist handoffs. The starter supplies the UI, repository, and a source-derived `WorkshopHosting.cs` helper for model authentication, client setup, optional Copilot support, and DevUI. It starts cloud-free. In the first-agent lesson you write the `ChatClientAgent` constructor and coaching instructions, then activate the supplied hosting. Core orchestration edits stay in root `apphost.cs`; the capstone's explicit support patch prepares the completed deployment entry point.
 
-## What you'll learn
+**[Run the finished application](#run-the-repository):** This repository contains the completed application. Clone it, configure it, and run it to see the interview coach in action. Use the reference documentation below to understand the architecture, configuration, and data contracts. You don't need the workshop to run the finished version.
 
-This sample covers the patterns you'd need for a real agent deployment:
+For an exact setting or contract, use the [architecture](docs/ARCHITECTURE.md), [configuration](docs/CONFIGURATION.md), [agent modes](docs/MULTI-AGENT.md), and [session data](docs/SESSION-DATA.md) references.
 
-- Building AI agents with Microsoft Agent Framework
-- Multi-agent handoff orchestration — single agent vs. 5 specialized agents
-- Model Context Protocol (MCP) for adding tools without touching agent code
-- Running multiple services together with Aspire
-- Keeping conversation state across sessions
-- Swapping LLM providers (Microsoft Foundry and GitHub Copilot)
-- Deploying to Azure with `azd up`
+## How the application works
 
-See [learning objectives](docs/LEARNING-OBJECTIVES.md) for the full breakdown.
+The browser connects to a server-interactive Blazor UI. The WebUI server sends chat messages to the .NET agent service through AG-UI. Agent Framework runs either one coach or a handoff workflow with triage, receptionist, behavioural interviewer, technical interviewer, and summariser roles. The workflow transfers control between roles that share the configured model deployment.
 
-## Architecture
+InterviewData MCP exposes the Cosmos-backed interview repository. MarkItDown MCP extracts document text. The model requests tool calls, and application code executes them.
 
-![Overall architecture](./assets/architecture.png)
+The agents run in the application's .NET process. Foundry hosts the model. Aspire starts the local services and supplies their connections. The UI message list and session ID live in the WebUI's server-side Blazor circuit. Refreshing creates a new circuit and session; earlier interview records remain available through InterviewData.
 
-The app is split into a few services:
+## Run the repository
 
-- **Aspire** orchestrates everything (service discovery, health checks, config)
-- **WebUI** is a Blazor chat interface
-- **Agent** runs the interview logic via Microsoft Agent Framework
-- **MCP Servers** handle document parsing (MarkItDown) and session storage (InterviewData)
-- **LLM Provider** talks to Microsoft Foundry or GitHub Copilot
+The commands below run the completed application in this checkout. Both root `apphost.cs` and `src/InterviewCoach.AppHost` contain the completed resource graph here. Workshop downloads have their own staged scaffold; their project-based AppHost stays in its starter state until capstone finalization. See [entry points](docs/ARCHITECTURE.md#local-and-deployed-entry-points).
 
-See [architecture overview](docs/ARCHITECTURE.md) for how the pieces fit together.
+For the pinned, guided version, start with [Chapter 0](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/00-orientation/). To run the current checkout, install .NET 10, the Aspire CLI, a compatible container engine, and the Azure CLI.
 
-## Prerequisites
+**A local run can provision billable Azure resources.** The default AppHost declares a Foundry resource and model deployment. Before starting, confirm the subscription, region, model availability, quota, provisioning permissions, and cleanup owner. See [Foundry configuration](docs/providers/MICROSOFT-FOUNDRY.md). Use fictional interview data and a development environment you own.
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
-- [Visual Studio 2026](https://visualstudio.microsoft.com/downloads/) or [VS Code](https://code.visualstudio.com/download) + [C# Dev Kit](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csdevkit)
-- [Docker Desktop](https://docs.docker.com/desktop/) or equivalent container runtime
-
-Microsoft Foundry also requires an [Azure subscription](https://azure.microsoft.com/free) and the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli). GitHub Copilot requires a Copilot-enabled account and GitHub authentication. See [LLM provider options](docs/providers/README.md).
-
-## Getting Started
-
-### 1. Clone Repository
-
-```bash
+```sh
 git clone https://github.com/codemillmatt/interview-coach-agent-framework.git
 cd interview-coach-agent-framework
-```
-
-### 2. Choose an LLM provider
-
-Microsoft Foundry is the default. Aspire provisions its resource and `gpt-5-mini` deployment when the app starts. See the [Foundry setup guide](docs/providers/MICROSOFT-FOUNDRY.md), or use [GitHub Copilot](docs/providers/GITHUB-COPILOT.md) without provisioning an Azure model.
-
-### 3. Configure authentication
-
-For Microsoft Foundry, sign in with the Azure CLI:
-
-```bash
 az login
+az account show --query "{subscription:name, subscriptionId:id, tenant:tenantId}" --output table
 ```
 
-The agent uses `DefaultAzureCredential`: Azure CLI credentials locally and managed identity when deployed. For GitHub Copilot, follow the [GitHub authentication setup](docs/providers/GITHUB-COPILOT.md#configure-authentication).
+Review `apphost.settings.json` before the next command. It selects `MicrosoftFoundry` and `HandOff` by default and requests a specific model version and capacity. The agent uses `DefaultAzureCredential`; do not put API keys in source.
 
-### 4. Run the Application
+From the repository root, with the container engine running:
 
-Start all services with .NET Aspire:
-
-```bash
+```sh
 aspire start --apphost ./apphost.cs
 ```
 
-**What happens next:**
+Open the dashboard URL printed by Aspire, inspect the resources, and use the `webui` endpoint when its dependencies are ready. Try the [fictional samples](samples/) and inspect the saved record as described in [application usage](docs/USER-MANUAL.md).
 
-1. Open the Aspire Dashboard from the URL printed in the terminal.
-2. Wait for the services to report `Running`.
-3. Open the `webui` endpoint.
+The application also implements [GitHub Copilot](docs/providers/GITHUB-COPILOT.md) as an optional provider and [single-agent mode](docs/MULTI-AGENT.md#single-mode) as a simpler baseline.
 
-### 5. Deploy to Azure
+## Stop and clean up
 
-Deploy the entire application to Azure Container Apps with one command:
+From the folder that started the AppHost:
 
-```bash
-# Login to Azure
-azd auth login
-
-# Provision resources and deploy
-azd up
+```sh
+aspire stop --apphost ./apphost.cs
 ```
 
-### 6. Clean Up Resources
+**Cloud resources remain until cleanup.** Keep an inventory of the resources created by each run. If you later use the optional [Container Apps deployment](https://codemillmatt.github.io/interview-coach-agent-framework/resources/deployment/), its `azd` environment has a separate cleanup scope. Follow the [cleanup reference](docs/DEPLOYMENT.md#remove-only-the-resources-you-own) and remove only resources you own.
 
-When finished, remove all Azure resources:
+This is a learning sample. Review authentication, per-user record access, exposed development endpoints, uploads, and retention before using real interview data or opening it to other users.
 
-```bash
-azd down
-```
+## Develop the workshop website
 
-Review the environment and removal scope before confirming. Resources provisioned by local Aspire runs may be separate from the selected `azd` environment; stopping local processes does not remove cloud resources.
+The static Astro/Starlight website is separate from the .NET application. With Node 24 installed:
 
-### Develop the workshop website
-
-The static Astro/Starlight site is separate from the .NET application:
-
-```bash
+```sh
 cd workshop
 npm ci
 npm run dev
 ```
 
-`npm run build` generates checkpoints, imports the canonical `docs/` reference, and validates the static output. It does not provision Azure resources. See [workshop authoring](workshop/README.md).
+The build generates source-backed checkpoints and imports the canonical reference from `docs/` without Azure credentials. See [workshop authoring](workshop/README.md) for the content and checkpoint contracts.
 
-## Next Steps
+## Project information
 
-### Learn
-
-- [Learning objectives](docs/LEARNING-OBJECTIVES.md)
-- [Architecture overview](docs/ARCHITECTURE.md)
-- [Tutorials](docs/TUTORIALS.md)
-- [FAQ](docs/FAQ.md)
-
-### Alternative LLM providers
-
-The default is Microsoft Foundry, but you can also use:
-
-- [GitHub Copilot](docs/providers/GITHUB-COPILOT.md) — GitHub Copilot SDK integration
-
-### Alternative agent mode
-
-The default is `HandOff`. You can switch to:
-
-- [`Single`](docs/MULTI-AGENT.md#single-mode) - single-agent mode
-
-## Additional Resources
-
-### Microsoft Foundry
-
-- [What is Microsoft Foundry?](https://learn.microsoft.com/azure/ai-foundry/what-is-foundry?view=foundry)
-- [Foundry models](https://learn.microsoft.com/azure/ai-foundry/foundry-models/overview)
-
-### Microsoft Agent Framework
-
-- [Framework Documentation](https://aka.ms/agent-framework)
-- [Multi-agent orchestration](https://learn.microsoft.com/agent-framework/workflows/orchestrations/)
-- [AG-UI Protocol](https://docs.ag-ui.com/introduction)
-
-### Model Context Protocol
-
-- [MarkItDown MCP Server](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp)
-- [MCP Specification](https://modelcontextprotocol.io)
-- [MCP Server Registry](https://github.com/modelcontextprotocol/servers)
-
-### Aspire
-
-- [Aspire Documentation](https://aspire.dev)
-- [Integrations](https://aspire.dev/integrations/overview/)
-- [Deployment](https://aspire.dev/deployment/overview/)
-
-## Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
-
-## License
-
-This project is licensed under the MIT License - see [LICENSE.md](LICENSE.md) for details.
-
----
-
-Built by the CoreAI DevRel team | Questions? Check the [FAQ](docs/FAQ.md) or open an [issue](https://github.com/Azure-Samples/interview-coach-agent-framework/issues/new).
+[Contributing](docs/CONTRIBUTING.md) explains how to report issues and submit changes. The project uses the [MIT license](LICENSE.md).

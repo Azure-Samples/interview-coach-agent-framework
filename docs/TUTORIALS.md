@@ -1,23 +1,27 @@
-# Tutorials
+# Tutorial links
 
-The guided learning path now lives in the [interactive workshop](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/). It starts with an application shell and builds toward the reference implementation. These entries preserve the older tutorial links.
+The [workshop](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/) is the guided build. Chapter 0 combines prerequisites and a completed-app run; the following lessons build agent capabilities in your separate starter.
+
+**If you're using the finished application as a reference** (not learning the build), see [architecture reference](ARCHITECTURE.md) and [configuration reference](CONFIGURATION.md) for how the components work together and how to configure them. This page maps topics to the workshop lessons; you don't need them to run or understand the sample.
 
 ## Tutorial 1: Understanding the Interview Flow
 
-Begin with [agents and the goal](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/00-orientation/), then [build the first coach](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/03-first-coach/). For the finished topology, use the [architecture reference](ARCHITECTURE.md).
+[Check your tools and run the completed example](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/00-orientation/#check-your-tools), then [start your workshop app](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/01-starter/). The [architecture reference](ARCHITECTURE.md) maps the finished processes and supplied scaffold.
 
 ## Tutorial 2: Creating a Custom MCP Server
 
-Learn a [local tool](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/04-tools/) before [MCP and persistent session tools](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/05-mcp-state/).
+Start with [an in-process C# tool](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/04-tools/), then [expose InterviewData's MCP server](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/05-mcp-server/) and [connect the coach to its tools](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/06-mcp-state/). [Persistence](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/07-persistence/) follows a record through its lifecycle.
 
 ## Tutorial 3: Customizing the Agent
 
-The [first-coach lesson](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/03-first-coach/) includes an instruction experiment with an observable result.
+[Create the Foundry-backed agent](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/02-first-coach/) and [connect the chat UI](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/03-streaming/). Change instructions only after you can trace a real request through that path.
+
+[Extract a sample resume](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/08-document-extraction/), then [use its text as interview context](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/09-documents/). The [upload contract](USER-MANUAL.md#upload-contract) covers attached files.
 
 ## Tutorial 4: Extending the handoff workflow
 
-Build the actual [specialist handoff flow](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/07-handoffs/) before adding another agent. Use [agent modes](MULTI-AGENT.md) for the configuration reference.
+[Make the first two-agent handoff](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/10-first-handoff/), [add the interviewers](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/11-interviewers/), then [finish with the summary agent](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/12-handoffs/). The [agent-mode reference](MULTI-AGENT.md) lists the completed graph's eleven edges and tool assignments.
 
 ## Tutorial 5: Adding Evaluation and Feedback
 
-The [capstone](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/08-capstone/) evaluates actions and state as well as reply quality. Additional tools and evaluation features are [optional extensions](https://codemillmatt.github.io/interview-coach-agent-framework/resources/extensions/), not claims about what the current app already implements.
+[Complete the supplied hosting finalization and run your interview](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/13-capstone/), then [trace a failed step and an early finish](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/14-debugging/). Check tool results, routing, and stored data alongside feedback quality. After the capstone, use [optional extensions](https://codemillmatt.github.io/interview-coach-agent-framework/resources/extensions/) or the [deployment reference](DEPLOYMENT.md).

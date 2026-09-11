@@ -2,44 +2,52 @@
 
 ## Where should I start?
 
-Use the [workshop](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/) to build the application step by step. Use these reference pages when you need the actual configuration, topology, or data contracts.
+**If you want to build the application yourself:** Start with the [workshop path](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/). Chapter 0 includes tool checks and a completed-example run. You then open a separate cloud-free starter and build in that folder through 15 lessons.
+
+**If you just want to run and understand the finished application:** See the root README's [Run the repository](../README.md#run-the-repository) section for standalone instructions. Use this FAQ and the reference pages below for settings, topology, and data contracts. You don't need the workshop.
+
+Below is guidance for anyone learning the architecture or extending the application.
+
+## What does the starter supply?
+
+The Blazor UI, EF Core repository, service defaults, and `WorkshopHosting.cs` are supplied. The helper wraps source-derived Foundry model/authentication and DevUI code. You create the `ChatClientAgent` and instructions before activating hosting in the first-agent lesson. Core orchestration edits use root `apphost.cs`; the capstone support patch restores the completed deployment entry point. See [scaffold and finalization](ARCHITECTURE.md#workshop-scaffold-and-finalization).
 
 ## Is Foundry running the agents?
 
-Not in this repository. The default path uses a Foundry-hosted model; Agent Framework executes the agents in the .NET service. Container Apps is the existing cloud application-hosting target. Foundry agent hosting is a different architecture.
+The default path uses a Foundry-hosted model. Agent Framework executes the agents in the .NET service. Container Apps is the existing cloud application-hosting target. A move to managed agent hosting needs the architecture work described in [changing the hosting model](ARCHITECTURE.md#changing-the-hosting-model).
 
 ## Is Aspire required by Agent Framework?
 
-No. This app uses Aspire for its multi-service resource graph, configuration, service discovery, and diagnostics. Agent Framework can be used independently.
+Agent Framework can be used independently. This app uses Aspire for its multi-service resource graph, configuration, service discovery, and diagnostics.
 
 ## Why use MCP instead of a local function?
 
-An in-process function can be enough for a small application-owned capability. MCP is useful when a separate service owns reusable tools. It adds transport and operational responsibilities, so it is not automatically preferable for every function.
+An in-process function works well for a small application-owned capability. MCP is useful when a separate service owns reusable tools. It adds transport and operational responsibilities. The workshop lets you try both: a local function, then a server and client in separate lessons.
 
-## Does multiple agents mean better results?
+## Do more agents mean better results?
 
-No. Specialists can clarify instructions and tool scope, but they add routing, latency, cost, and failure modes. This repository preserves `Single` and `HandOff` so you can compare them.
+Compare the results for your task. Specialists separate instructions and tool assignments while adding routing, context handling, and model calls. This repository preserves `Single` and `HandOff` for comparison with the same inputs. The five roles share the selected model deployment and transfer control between phases.
 
 ## Can I resume after refreshing the page?
 
-The business record persists in Cosmos, but the current UI does not recover a previous conversation. It creates a new session ID and keeps its message list in memory. A persisted transcript alone does not restore UI or agent context.
+Refreshing starts a new Blazor circuit and session. Earlier interview records remain in Cosmos and can be fetched by ID. Conversation recovery would require additional code to restore UI and agent context. See [state ownership](SESSION-DATA.md#state-ownership), which also explains the workshop website's separate chapter-progress storage.
 
 ## Are uploaded documents permanent?
 
-No. The agent holds uploaded bytes in memory. A restart loses them. See [application usage](USER-MANUAL.md).
+Uploads last for the agent process's lifetime. A restart loses those bytes. See the [upload contract](USER-MANUAL.md#upload-contract) for limits and access boundaries.
 
 ## Can I swap providers?
 
-The implemented options are Microsoft Foundry and GitHub Copilot. Both support the two agent modes. Other providers require code changes; they are not documented as working configuration-only options. See [provider configuration](providers/README.md).
+The implemented options are Microsoft Foundry and GitHub Copilot. Both support the two agent modes in the standalone repository. The workshop includes only the Foundry implementation. Additional providers require code changes. See [provider configuration](providers/README.md).
 
 ## Is the sample production-ready?
 
-Treat it as a learning application. Review endpoint exposure, development tooling, identity, per-user data access, tool permissions, uploads, untrusted document content, retries, logging, costs, and retention before use with real users.
+Treat it as a learning application in a restricted development environment. Review [endpoint exposure, identity, record access, and retained data](DEPLOYMENT.md#review-access-and-data-handling) before use with real users.
 
 ## Why does a local run need Azure?
 
-The default provider provisions and calls a Foundry model. The UI and agent can be local while the model resources are in Azure. Starting or stopping local processes is not the same as provisioning or deleting cloud resources.
+The default provider declares and calls a Foundry model. The UI and agent can be local while model resources are in Azure. The workshop starter activates that model access in the first-agent lesson. Cloud resources remain until cleanup; inventory the example and learner runs separately. See [cleanup](DEPLOYMENT.md#remove-only-the-resources-you-own).
 
 ## Where are failure details?
 
-Start with the named resource in the Aspire dashboard and the exact failing operation. Use [troubleshooting](TROUBLESHOOTING.md), not prompt changes, for a missing SDK, failed container, denied identity, or inaccessible endpoint.
+Start with the named resource in the Aspire dashboard and the exact failing operation. [Troubleshooting](TROUBLESHOOTING.md) covers missing SDKs, failed containers, denied identities, and inaccessible endpoints.
