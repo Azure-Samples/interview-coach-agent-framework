@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace InterviewCoach.Mcp.InterviewData;
@@ -11,7 +13,9 @@ public class InterviewSession
     public string? JobDescriptionLink { get; set; }
     public string? JobDescriptionText { get; set; }
     public bool ProceedWithoutJobDescription { get; set; }
+    [Description("Stored transcript on read. On update, send only new text to append; never copy the stored transcript back.")]
     public string? Transcript { get; set; }
+    [Description("Completion status on read. Updates ignore this field; call complete_interview_session to finish.")]
     public bool IsCompleted { get; set; } = false;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;

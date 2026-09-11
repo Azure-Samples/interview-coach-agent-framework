@@ -61,7 +61,7 @@ public class InterviewSessionTool(IInterviewSessionRepository repository, ILogge
     }
 
     [McpServerTool(Name = "update_interview_session", Title = "Update an interview session")]
-    [Description("Updates an existing interview session. This does not create a missing session; call add_interview_session first.")]
+    [Description("Updates an existing session: replaces the six document fields and APPENDS Transcript. Fetch first, preserve ResumeLink, ResumeText, ProceedWithoutResume, JobDescriptionLink, JobDescriptionText and ProceedWithoutJobDescription, and send ONLY NEW transcript text. Never resend the stored transcript. This cannot create a record or set IsCompleted; use add_interview_session or complete_interview_session for those operations.")]
     public async Task<InterviewSession> UpdateInterviewSessionAsync(
         [Description("The interview session details")] InterviewSession record
     )
@@ -81,9 +81,9 @@ public class InterviewSessionTool(IInterviewSessionRepository repository, ILogge
     }
 
     [McpServerTool(Name = "complete_interview_session", Title = "Complete an interview session")]
-    [Description("Marks an existing interview session as complete. This does not create a missing session.")]
+    [Description("Marks an existing interview session as complete and returns the saved record with IsCompleted true. Call this after saving the summary; update_interview_session cannot mark completion. This does not create a missing session.")]
     public async Task<InterviewSession> CompleteInterviewSessionAsync(
-        [Description("The interview session details")] Guid id
+        [Description("The exact application-provided session ID to complete")] Guid id
     )
     {
         var completed = await repository.CompleteInterviewSessionAsync(id).ConfigureAwait(false);

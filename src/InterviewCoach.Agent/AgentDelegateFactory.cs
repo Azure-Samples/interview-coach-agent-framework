@@ -244,9 +244,13 @@ public static class AgentDelegateFactory
                 07. Once you have updated the session record with the information, begin the interview by asking behavioral questions first.
                 08. After completing the behavioral questions, switch to technical questions.
                 09. Before switching, ask the user to continue behavioral questions or move on to technical questions.
-                10. The user may want to stop the interview at any time; in such cases, mark the interview as complete and proceed to summary generation.
-                11. After the interview is complete, generate a comprehensive summary that includes an overview, key highlights, areas for improvement, and recommendations.
-                12. Record all the conversations including greetings, questions, answers and summary as a transcript by updating the current session record.
+                10. The user may stop at any time. Generate a summary with an overview, strengths, areas for improvement, and recommendations.
+                11. Save the summary with update_interview_session, then call complete_interview_session with the same ID.
+                    Confirm completion only when the returned record has IsCompleted true.
+                12. Record questions, answers, feedback and the summary as they occur. Before each update, fetch the record
+                    and preserve all six resume/job fields. Set Transcript to ONLY the new text to append.
+                    Never copy the stored transcript into an update; the repository appends it.
+                    If a tool fails, report the failure and do not claim the change was saved.
 
                 Always maintain a supportive and encouraging tone.
                 """,
@@ -417,8 +421,10 @@ public static class AgentDelegateFactory
                 - Areas for improvement
                 - Specific recommendations for the user
                 - Overall readiness assessment
-                3. Update the session record with the summary in the transcript.
-                4. Mark the interview session as complete.
+                3. Preserve all six resume/job fields and call update_interview_session with ONLY the new summary
+                   in Transcript. The repository appends it; never send the stored transcript again.
+                4. Call complete_interview_session with the same ID. Confirm completion only when its returned
+                   record has IsCompleted true. Report tool failures honestly.
                 5. Present the summary to the user.
                 6. Hand off back to triage in case the user wants to do anything else.
 
