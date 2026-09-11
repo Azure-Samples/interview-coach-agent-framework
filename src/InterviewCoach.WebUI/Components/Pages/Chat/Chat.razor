@@ -74,15 +74,20 @@
         await chatInput!.FocusAsync();
 
         var responseText = new TextContent("");
-        currentResponseMessage = new ChatMessage(ChatRole.Assistant, [responseText]);
-        currentResponseCancellation = new();
+        var responseMessage = new ChatMessage(ChatRole.Assistant, [responseText]);
+        currentResponseMessage = responseMessage;
+        using var responseCancellation = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        currentResponseCancellation = responseCancellation;
 
         var outboundMessages = messages.ToArray();
-        await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage,
-currentResponseCancellation.Token);
+        await GetStreamingResponseAsync(outboundMessages, responseText, responseMessage, responseCancellation.Token);
 
-        messages.Add(currentResponseMessage!);
-        currentResponseMessage = null;
+        if (ReferenceEquals(currentResponseMessage, responseMessage))
+        {
+            messages.Add(responseMessage);
+            currentResponseMessage = null;
+            currentResponseCancellation = null;
+        }
     }
 
     private async Task GetStreamingResponseAsync(IEnumerable<ChatMessage> outboundMessages, TextContent responseText,
@@ -94,7 +99,7 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
         {
             await foreach (var update in ChatClient.GetStreamingResponseAsync(outboundMessages, chatOptions, cancellationToken))
             {
-                await Task.Delay(50);
+                await Task.Delay(50, cancellationToken);
 
                 messages.AddMessages(update, filter: c => c is not TextContent);
 
@@ -114,6 +119,23 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
             ChatMessageItem.NotifyChanged(responseMessage);
             StateHasChanged();
         }
+        catch (OperationCanceledException ex)
+        {
+            if (ReferenceEquals(currentResponseMessage, responseMessage))
+            {
+                Logger.LogWarning(ex, "The interview coach request timed out for conversation {ConversationId}", chatOptions.ConversationId);
+                responseText.Text = "The coach took too long to respond. Your chat is still here. Check the agent logs before retrying; a tool may already have saved part of this turn.";
+                ChatMessageItem.NotifyChanged(responseMessage);
+                StateHasChanged();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "The interview coach request failed for conversation {ConversationId}", chatOptions.ConversationId);
+            responseText.Text = "The coach service could not complete the request. Your chat is still here. Check the agent logs and saved record before retrying.";
+            ChatMessageItem.NotifyChanged(responseMessage);
+            StateHasChanged();
+        }
     }
 
     private void CancelAnyCurrentResponse()
@@ -123,8 +145,9 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
             messages.Add(currentResponseMessage);
         }
 
-        currentResponseCancellation?.Cancel();
         currentResponseMessage = null;
+        currentResponseCancellation?.Cancel();
+        currentResponseCancellation = null;
     }
 
     private async Task ResetConversationAsync()

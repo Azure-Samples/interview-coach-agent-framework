@@ -11,10 +11,16 @@ builder.AddServiceDefaults();
 builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
 
+#pragma warning disable EXTEXP0001
 builder.Services.AddHttpClient("agent", client =>
 {
     client.BaseAddress = new Uri("https+http://agent");
-});
+    client.Timeout = TimeSpan.FromMinutes(5);
+})
+// A model turn can take longer than the default 30-second policy. Retrying a
+// state-changing agent POST could repeat tool writes.
+.RemoveAllResilienceHandlers();
+#pragma warning restore EXTEXP0001
 
 builder.Services.AddScoped<FileUploadService>();
 
