@@ -111,6 +111,13 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
 
                 StateHasChanged();
             }
+            if (string.IsNullOrWhiteSpace(responseText.Text) && !cancellationToken.IsCancellationRequested)
+            {
+                Logger.LogWarning("The agent completed without visible text for conversation {ConversationId}", chatOptions.ConversationId);
+                responseText.Text = "The coach returned no reply. Check the agent logs and saved record before retrying; a tool may already have changed the record.";
+                ChatMessageItem.NotifyChanged(responseMessage);
+                StateHasChanged();
+            }
         }
         catch (System.Text.Json.JsonException ex)
         {
