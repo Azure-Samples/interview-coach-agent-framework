@@ -308,6 +308,8 @@ public static class AgentDelegateFactory
                 Routing rules (apply in order; the latest user request takes priority over earlier messages):
                 - If the user wants to stop or finish, hand off to "summariser" immediately.
                   Do not restart intake or ask another interview question.
+                - If the latest message supplies a new or replacement resume or job description, hand off to
+                  "receptionist" first, even if it also asks to begin practice. A URL alone is not parsed document text.
                 - If the user explicitly requests a specific phase, honour that request.
                 - If the user is answering the latest technical question, hand off to "technical_interviewer".
                 - If the user is answering the latest behavioural question, hand off to "behavioural_interviewer".
