@@ -298,8 +298,8 @@ public static class AgentDelegateFactory
                 You do NOT answer questions or conduct interviews yourself.
 
                 IMPORTANT: Before routing, review the FULL conversation history to determine
-                which phases have already been completed. Do NOT re-route to an agent that
-                has already finished its work. The interview follows this sequence:
+                which phases have already been completed. Repeat an earlier phase only for
+                changed input or an explicit user request. The interview follows this sequence:
                   1. Receptionist (session setup, document intake)
                   2. Behavioural Interviewer
                   3. Technical Interviewer
@@ -323,8 +323,8 @@ public static class AgentDelegateFactory
                   → hand off to "summariser"
                 - If unclear, ask the user to clarify what they'd like to do.
 
-                When a specialist hands back to you, they have COMPLETED their phase.
-                Advance to the next phase in the sequence.
+                A specialist may return to you for changed input or an early finish.
+                Read the handoff reason and apply the routing rules; a return does not always mean a phase is complete.
 
                 Always be brief and supportive. Let the specialists do the detailed work.
                 """);
@@ -347,7 +347,10 @@ public static class AgentDelegateFactory
                    Let the user know the session ID after lookup or creation succeeds.
                 2. Ask the user to provide their resume (link or text). Use MarkItDown to parse document links into markdown.
                 3. Ask the user to provide the job description (link or text). Use MarkItDown to parse document links into markdown.
-                4. Store the resume and job description in the session record.
+                4. Save parsed or pasted text in ResumeText and JobDescriptionText; saving a URL alone is insufficient.
+                   A failed fetch does not complete intake. Ask for corrected input or explicit permission to skip it.
+                   Before each update, call get_interview_session and preserve all six resume/job fields.
+                   Set Transcript to ONLY new text to append, and verify the returned document fields before handoff.
                 5. Once document intake is complete, let the user know and hand off directly to "behavioural_interviewer"
                    to begin the interview. Only hand off to "triage" if the user wants to do something unexpected.
 
@@ -372,7 +375,8 @@ public static class AgentDelegateFactory
                 1. Fetch the interview session record to get the resume and job description context.
                 2. Ask behavioural questions one at a time, tailored to the job description and resume.
                 3. After each answer, provide constructive feedback and analysis.
-                4. Append all questions, answers, and analysis to the transcript by updating the session record.
+                4. Before each update, call get_interview_session and preserve all six resume/job fields.
+                   Set Transcript to ONLY the new questions, answers, and analysis to append; never resend old text.
                 5. After a few questions (typically 3-5), ask if the user wants to continue or move on.
                 6. When done, hand off directly to "technical_interviewer" to continue the interview.
                    Only hand off to "triage" if the user wants to do something unexpected.
@@ -398,7 +402,8 @@ public static class AgentDelegateFactory
                 1. Fetch the interview session record to get the resume and job description context.
                 2. Ask technical questions one at a time, tailored to the skills in the job description and resume.
                 3. After each answer, provide constructive feedback, correct any misconceptions, and suggest improvements.
-                4. Append all questions, answers, and analysis to the transcript by updating the session record.
+                4. Before each update, call get_interview_session and preserve all six resume/job fields.
+                   Set Transcript to ONLY the new questions, answers, and analysis to append; never resend old text.
                 5. After a few questions (typically 3-5), ask if the user wants to continue or wrap up.
                 6. When done, hand off directly to "summariser" to generate the interview summary.
                    Only hand off to "triage" if the user wants to do something unexpected.
