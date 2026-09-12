@@ -7,10 +7,10 @@ const entry = manifest.stages.find(item => item.id === stage);
 if (!entry) throw new Error(`Unknown checkpoint: ${stage}`);
 ---
 <aside class="checkpoint">
-  <div><span class="eyebrow">A safe place to pick up</span><strong>{entry.title}</strong><p>{entry.description}</p></div>
+  <div><span class="eyebrow">Checkpoint files</span><strong>{entry.title}</strong><p>{entry.description}</p></div>
   <div class="checkpoint-actions">
-    <a href={siteLink(`downloads/${stage}.zip`)} download>Download complete project</a>
-    <a href={siteLink(`downloads/${stage}.patch`)} download>Read the changes</a>
+    <a href={siteLink(`downloads/${'archive' in entry ? entry.archive : `${stage}.zip`}`)} download>{stage === '02-starter' ? 'Download interview-coach-lab-starter.zip' : 'Download project archive'}</a>
+    {stage !== '02-starter' && <a href={siteLink(`downloads/${stage}.patch`)} download>Download change patch</a>}
   </div>
-  <small>Extract into a new folder. Never replace your work to catch up. Reference: <code>{manifest.sourceRevision.slice(0, 8)}</code>.</small>
+  <small>{stage === '02-starter' ? 'Download once, then keep editing the same interview-coach-lab project throughout the workshop.' : 'Optional recovery or comparison copy: extract separately and keep your working project.'} Reference: <code>{manifest.sourceTag ?? manifest.sourceRevision.slice(0, 8)}</code>.</small>
 </aside>

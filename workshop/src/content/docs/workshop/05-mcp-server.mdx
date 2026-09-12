@@ -1,0 +1,128 @@
+---
+title: Expose interview tools with MCP
+description: Start the supplied InterviewData service and list its five MCP tools.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+The **InterviewData** project already has a repository for creating and reading interview records. We'll expose its operations through Model Context Protocol (MCP), start the service, and ask it which tools are available.
+
+Continue in the same `interview-coach-lab` project from the previous chapter. The coach keeps its local `practice-guidance` tooling function for this lesson. Work in the **InterviewData** project and root `apphost.cs`.
+
+## Give the repository operations tool names
+
+Open `src/InterviewCoach.Mcp.InterviewData/InterviewSessionTool.cs`.
+
+<CodeStep id="mcp-tool-imports" />
+
+<CodeStep id="mcp-tool-class" />
+
+`McpServerToolType` marks the class for discovery.
+
+Next we'll add an attribute to each method, starting with the operation that creates a record:
+
+<CodeStep id="mcp-expose-add-interview-session" />
+
+`Name` becomes the public tool name. The existing descriptions explain the operation and its arguments to a client.
+
+Apply the same pattern to listing, lookup, update, and completion:
+
+<CodeStep id="mcp-expose-get-interview-sessions" />
+
+<CodeStep id="mcp-expose-get-interview-session" />
+
+<CodeStep id="mcp-expose-update-interview-session" />
+
+<CodeStep id="mcp-expose-complete-interview-session" />
+
+
+## Publish the tools on an HTTP endpoint
+
+In `src/InterviewCoach.Mcp.InterviewData/Program.cs`, register the MCP server, scan this assembly for tools, and map `/mcp`:
+
+<CodeStep id="mcp-server-imports" />
+
+<CodeStep id="mcp-server-registration" />
+
+<CodeStep id="mcp-server-route" />
+
+The existing database context and repository registrations stay in place.
+
+Now apply the supplied resource declaration in root `apphost.cs`. It starts the Cosmos emulator and InterviewData, with database `interviewdb` and container `interviewsessions`.
+
+<CodeStep id="mcp-resources-file-apphost" />
+
+:::caution[Resources and cost]
+Local run mode uses the Cosmos emulator. Your configured Foundry model remains cloud-backed and model calls incur charges. Use your approved environment and the root run command below; publishing this graph can provision managed resources.
+:::
+
+## List the tools from your terminal
+
+Start your container engine, then run from the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Wait for `mcp-interview-data` to be running in the Aspire dashboard. Copy its **HTTP endpoint**, including the actual host and port. Replace `http://ACTUAL-ENDPOINT` below with that address and append `/mcp` once:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+dotnet run --file tools/list-mcp-tools.cs -- http://ACTUAL-ENDPOINT/mcp
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+dotnet run --file tools/list-mcp-tools.cs -- http://ACTUAL-ENDPOINT/mcp
+```
+
+</TabItem>
+</Tabs>
+
+The probe is supplied in your starter's `tools` folder. It initializes an MCP client, calls `ListToolsAsync`, and prints each returned name. The output should include all five:
+
+```text
+add_interview_session
+get_interview_sessions
+get_interview_session
+update_interview_session
+complete_interview_session
+```
+
+You now have a discoverable server. Connecting those tools to the coach is the next lesson.
+
+<Hint title="If the probe cannot discover the tools">
+
+For a connection error, compare the URL with the dashboard endpoint and confirm InterviewData is running. The terminal probe needs the dashboard's host and port. If it connects but lists no tools, check the class and method attributes, assembly registration, and `/mcp` mapping.
+
+The probe only lists tools; creating a record comes next.
+
+</Hint>
+
+<Checkpoint stage="05-mcp-server" />
+
+<LessonProgress lessonId="05-mcp-server" />

@@ -9,7 +9,7 @@ if (options.filter(option => option.correct).length !== 1) throw new Error(`Chec
 ---
 <form class="knowledge-check" data-knowledge-check>
   <fieldset>
-    <legend><span class="eyebrow">Pause and think</span>{question}</legend>
+    <legend><span class="eyebrow">Check your understanding</span>{question}</legend>
     {options.map((option, i) => (
       <label>
         <input type="radio" name={id} value={i} data-correct={String(!!option.correct)} data-explanation={option.explanation} required />
@@ -17,10 +17,10 @@ if (options.filter(option => option.correct).length !== 1) throw new Error(`Chec
       </label>
     ))}
   </fieldset>
-  <button type="submit">Check my reasoning</button>
-  <button type="reset" class="secondary">Try again</button>
+  <button type="submit">Check answer</button>
+  <button type="reset" class="secondary">Clear answer</button>
   <p class="check-feedback" aria-live="polite" aria-atomic="true"></p>
-  <noscript><p>Answers and explanations:</p><ul>{options.map(o => <li>{o.text}: {o.explanation}</li>)}</ul></noscript>
+  <noscript><p>Read the answer explanations:</p><ul>{options.map(o => <li>{o.text}: {o.explanation}</li>)}</ul></noscript>
 </form>
 <script>
   function connectChecks() {
@@ -32,7 +32,7 @@ if (options.filter(option => option.correct).length !== 1) throw new Error(`Chec
         event.preventDefault();
         const selected = form.querySelector<HTMLInputElement>('input:checked');
         if (!selected) return;
-        feedback.textContent = `${selected.dataset.correct === 'true' ? 'Exactly.' : 'Not quite.'} ${selected.dataset.explanation}`;
+        feedback.textContent = `${selected.dataset.correct === 'true' ? 'Correct.' : 'Incorrect.'} ${selected.dataset.explanation}`;
       });
       form.addEventListener('reset', () => { feedback.textContent = ''; });
     });

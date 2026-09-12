@@ -1,38 +1,41 @@
 ---
 title: Glossary and troubleshooting
-description: Plain-language terms and a practical order for diagnosing an agent application.
+description: Find a term or choose the next place to inspect a failed request.
 ---
-## Terms you will use
+Use these definitions while reading the code. Follow the reference links for implementation details.
+
+## Terms in the code
 
 | Term | In this application |
 | --- | --- |
 | Model | The Foundry-deployed model that proposes text and tool calls |
 | Agent | Instructions, model access, context, and tools run by Agent Framework |
 | Tool | Application code exposed through a typed, described contract |
-| Tool call | A requested invocation, not proof that an action succeeded |
+| Tool call | A model-requested invocation with arguments; inspect the result to know whether it succeeded |
 | MCP | The protocol used to discover and call tools across services |
-| AG-UI | The agent/UI communication protocol used by the Blazor client |
+| AG-UI | The protocol between the WebUI server's `AGUIChatClient` and the agent's `/ag-ui` endpoint |
+| Blazor circuit | The server-side UI connection and component state associated with a browser connection |
 | Handoff | A transfer of control between specialists along permitted edges |
 | Workflow | The topology and orchestration of agent execution |
-| Conversation context | Messages/state available to a particular agent conversation |
+| Conversation context | Messages and state available to an agent run |
 | Interview record | The persisted business data in Cosmos: inputs, transcript, completion |
 | Aspire | Local/service orchestration, resource references, health, and telemetry plumbing |
-| Foundry | The Azure model backend used in the core path, not the process running these agents |
+| Foundry | The Azure model backend used in the core path |
+| WorkshopHosting | Supplied model/authentication and DevUI helper activated in the first-agent lesson |
 
-## Diagnose from the outside in
+## Find the failed boundary
 
 | Symptom | First evidence to inspect |
 | --- | --- |
 | Nothing starts | CLI/SDK output and AppHost startup |
 | Cosmos or parser is unhealthy | Container runtime and the specific resource logs |
 | Model authentication failure | Identity, tenant, token scope, and resource permissions |
-| Deployment unavailable | Actual configured model/version/region and quota |
 | No tool calls | Agent tool registration and discovered tool list |
-| Wrong tool arguments | Tool description, parameter contract, and actual invocation |
 | "Saved" but no record | InterviewData result and database contents |
-| Duplicate transcript | Whether updates append the entire prior transcript again |
-| Intake repeats | Current conversation context and handoff topology |
+| Duplicate transcript | New text passed to the append operation |
 | UI stream parsing error | Correct `/ag-ui` endpoint and version-specific serialization adapter |
-| Refresh loses the chat | Expected current limitation: no conversation-recovery UI |
+| Refresh starts a new chat | Blazor circuit and session lifecycle |
 
-Check the [reference troubleshooting page](../../reference/troubleshooting/) for exact project paths. When sharing an error, redact tokens, account identifiers where necessary, document contents, and interview transcripts.
+The [troubleshooting reference](../../reference/troubleshooting/) covers the full failure list. For a record or refresh question, use [state ownership](../../reference/session-data/#state-ownership) and [update semantics](../../reference/session-data/#update-semantics). For routing, use the [handoff graph](../../reference/multi-agent/#handoff-mode).
+
+Share the checkpoint, failing operation, and redacted error. Keep credentials, document contents, and transcripts private.

@@ -1,0 +1,97 @@
+---
+title: Make your first handoff
+description: Build a two-agent workflow and watch triage transfer intake to the receptionist.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+We'll split intake into two roles. Triage sends the conversation to the receptionist, which collects and saves the interview materials. You'll see that transfer before adding any interviewers.
+
+Continue in the same `interview-coach-lab` project from the previous chapter. Keep `CreateSingleAgent` intact for later comparison. Work in `src/InterviewCoach.Agent/AgentDelegateFactory.cs` and root `apphost.settings.json`.
+
+<ConceptDiagram kind="first-handoff" />
+
+Handoffs can add model calls and cost. Use the short fictional example below with your existing approved Foundry setup.
+
+## Connect the workflow to the supplied host
+
+Apply the supplied adapter in `AddHandOffWorkflow`. It lets the existing endpoint host a workflow:
+
+<CodeStep id="handoff-hosting-adapter" />
+
+<Hint title="What the hosting adapter does">
+
+`AddWorkflow` registers the workflow, and `AsAIAgent` adapts it to the hosted-agent interface. `CreateFixedAgent` uses the supplied compatibility helper to serialize string tool results for this pinned AG-UI integration. Keep that helper and `WorkshopHosting.cs` in place.
+
+</Hint>
+
+## Define the two roles and their routes
+
+Apply the next four edits as one group before building. The last edit adds the workflow's return statement.
+
+<CodeStep id="handoff-workflow-tools" />
+
+The workflow discovers the same two MCP tool sets as the single coach.
+
+<CodeStep id="handoff-triage-agent" />
+
+Triage receives routing instructions and knows about the receptionist. Its handoff tools come from the workflow.
+
+<CodeStep id="handoff-receptionist-agent" />
+
+The receptionist gets MarkItDown and InterviewData tools. It collects the inputs, saves them, and reports that intake is complete. Its instructions describe the two-agent stage you're building.
+
+<CodeStep id="handoff-two-agent-graph" />
+
+The graph starts at triage and permits a transfer to the receptionist and a return to triage.
+
+Select `HandOff` in root `apphost.settings.json`:
+
+<CodeStep id="handoff-mode-file-settings" />
+
+Leave the project-based AppHost settings unchanged.
+
+## Watch intake change hands
+
+From the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Open `coach` in DevUI for a fresh conversation. Supply an exercise ID here because the WebUI normally supplies the session ID:
+
+```text
+Use session ID 22222222-2222-4222-8222-222222222222.
+Set up an interview with this fictional resume text: "I build C# web APIs."
+The job description is "Backend developer." Save these inputs.
+```
+
+Inspect the transfer from `triage` to `receptionist` in the run details, then the receptionist's InterviewData calls. Find the same ID in `interviewdb` / `interviewsessions` and check both saved text fields. Use a fresh GUID when repeating this exercise.
+
+At this checkpoint, the receptionist finishes by reporting that the interview specialists are still to come. You've built the first handoff and saved its intake result.
+
+<Checkpoint stage="07-first-handoff" />
+
+<LessonProgress lessonId="10-first-handoff" />

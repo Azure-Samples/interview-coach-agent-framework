@@ -1,29 +1,34 @@
 ---
-title: Your learning path
-description: The build order, supplied scaffolding, and finish line for the Interview Coach workshop.
+title: Going through the workshop
+description: Check your tools, try an interview, then build the coach one working step at a time.
 ---
 import WorkshopPath from '../../../components/WorkshopPath.astro';
+import { siteLink } from '../../../data/course';
+
+We'll be using .NET with the Microsoft Agent Framework, Microsoft Foundry, Docker, and more throughout this workshop.
+
+Chapter 0 checks the prerequisites and lets us try the finished app to make sure everything is installed correctly. In Chapter 1, we'll open a separate starter and keep editing it for the rest of the course. Each build chapter ends with a working version and a short check.
+<br/>
+If you want to jump right in: <a class="action-link" href={siteLink('workshop/00-orientation/')}>Start Chapter 0: Get ready and try the interview coach</a>
+
+## How to be successful
+
+The starter supplies the Blazor chat interface, Aspire helpers, and database repository. We'll write the agent instructions, tool connections, and handoff rules. Every build and Aspire command will be able to be run from your working folder's root.
+
+Each code step specifies a file to edit and shows exactly what to add, replace, or remove. Apply the steps in order and finish the whole edit group before building the application. Some edits depend on the next one to compile. We've included expandable notes for explanations on topics tangential to this course, so you can read more when a detail interests you.
+
+After building the app, try the chapter's input and look for its expected result. Early on, that's a reply to your question. Later, we'll look for a tool invocation, a saved record, or a handoff.
+
+## Keep your place
+
+Mark a chapter complete after trying its check. Completion marks appear in the sidebar and chapter list, and the landing page's continue action takes you to your next unfinished chapter. Your progress is remembered in this browser.
+
+## Get a fresh starting point
+
+We've provided a final working sample at the end of each chapter. Extract one into a new folder and keep your existing work alongside it. Before starting a cloud-backed checkpoint, check which Azure resources that folder may create; separate folders can have separate provisioning contexts.
+
+<p><a href={siteLink('resources/')}>Samples and checkpoints</a> are available throughout the build. Use the <a href={siteLink('reference/')}>reference documentation</a> for a fuller explanation of configuration or runtime behaviour. Deployment and other providers are optional; we'll use the local application with Foundry in the core course.</p>
+
+## Course organization
 
 <WorkshopPath />
-
-## What you bring
-
-Working knowledge of C#, dependency injection, and basic HTTP applications. Set aside a full day, or work through the modules across several sessions. You can leave and return to the guide; completed lessons are remembered in this browser.
-
-## What we supply
-
-The Blazor UI, service defaults, Aspire project structure, and Cosmos data model/repository. You focus on the agent instructions, tool contracts, MCP connections, state usage, and handoffs. Each lesson names both the code you change and the infrastructure you inherit.
-
-## What you will finish
-
-A local application with the same Foundry-backed single-agent and five-specialist modes as the reference repository. The final download is compared against a pinned reference revision, not a separate look-alike demo.
-
-The agents run in the .NET service. **Using a Foundry model is not the same thing as hosting your agent in Foundry Agent Service.** Cloud deployment and other hosting options are separate extension paths.
-
-## How to work through a lesson
-
-Read the what and why before revealing the solution. Make the change in your own project, predict a result, then use the checkpoint's observations to decide whether it worked. Mark the lesson complete only after that.
-
-If you get stuck, use a hint before the full solution. To catch up, extract a checkpoint into a **new folder**. There are no reset commands that discard your work, no required branch changes, and no quizzes that block your progress.
-
-Keep a short note of the model deployment, package versions, and sample input you used. Generated prose varies; your goal is to explain the behaviour and its evidence, not match a screenshot word for word.

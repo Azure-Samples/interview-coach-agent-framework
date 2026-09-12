@@ -1,25 +1,54 @@
 ---
-title: Build an interview coach
-description: Learn Microsoft Agent Framework and Foundry by adding one capability at a time to a working .NET application.
-template: splash
+title: Build multi-agent applications with Agent Framework and Foundry
+description: Write the C# code that connects agents to a Foundry model, gives them tools, saves information, and lets them hand conversations to one another.
+tableOfContents: false
+prev: false
+next: false
 ---
-import WorkshopPath from '../../components/WorkshopPath.astro';
-import Architecture from '../../components/Architecture.astro';
+import CourseStart from '../../components/CourseStart.astro';
+import ConceptDiagram from '../../components/ConceptDiagram.astro';
+import { siteLink } from '../../data/course';
 
-<WorkshopPath />
+Welcome to the Building a multi-agent application with Microsoft Agent Framework (MAF) and Microsoft Foundry.
 
-## A real application. A deliberate starting point.
+In this workshop we're going to build an _interview coach_ application that is composed of 5 agents. We'll use Microsoft Agent Framework to run the interview agents in .NET and Foundry to host their model.
 
-You will build a coach that collects a resume and job description, asks behavioural and technical questions, and saves useful feedback. Start with the supplied Blazor and Aspire shell. Add the agent, give it tools, connect persistent data, and then split the work between specialists.
+In the finished app, a triage agent routes us to a receptionist agent, behavioural and technical interviewer agents, and a summarize agent.
 
-This workshop is for **C#/.NET developers who are new to agents**. You do not need prior experience with Agent Framework, MCP, or Foundry. You do need a local development environment and Azure model access.
+We'll use Microsoft Agent Framework to create the interview coach's agents and Foundry to host their model. The finished coach has five roles: triage, receptionist, behavioural interviewer, technical interviewer, and summariser. We'll build a single coach first, give it the tools it needs, then divide the interview into those specialist roles.
 
-<Architecture stage={5} />
+This workshop contains both the finished app, and a starter Aspire application that we'll use to build the lessons with. A Blazor chat interface is already included in the Aspire app, so that gives us somewhere to try each agent change as we make it.
 
-## Understand the choice before writing the code
+<CourseStart />
 
-Every lesson begins with what you are adding and why it belongs in the application. Then you make specific edits in named files, run the result, and explain what happened. Hints and complete checkpoints are available without replacing your own work.
+## The interview agents structure
 
-The site does not run your application or collect Azure credentials. Progress stays in your browser. Your code runs on your machine; your model runs in Foundry.
+The interview coach agents reads a fictional resume and job description, asks one question at a time, and gives feedback on the answers. At the end, it saves a summary. This diagram shows the usual path through the five roles (or agents). Later in the workshop we'll add routes to change the flow between the agents.
 
-[Check the prerequisites](./workshop/01-readiness/) · [Browse the reference](./reference/architecture/) · [Get the sample inputs](./resources/)
+<ConceptDiagram kind="interview-flow" />
+
+The workshop supplies fictional resumes, job description and practice questions/answers so you don't have to make those up as you go.
+
+## Why use more than one agent?
+
+Document intake needs a parser and instructions about collecting information. A technical interviewer needs the saved context and instructions about asking useful questions. Giving those jobs separate agents lets us adjust one role's prompt and tools without rewriting the others.
+
+However, that separation adds work: we have to decide who takes the next turn and carry the interview context between roles. We'll first build a single coach that handles the whole interview, then split the responsibilities.
+
+## The workshop's format
+
+We'll use the Microsoft Agent Framework and its `ChatClientAgent`. Give it coaching instructions, and stream its replies into the chat page. Then we'll write a C# tool and connect services through Model Context Protocol (MCP) so the coach can save records and read documents. Finally, we'll build the handoffs and investigate a failed tool request.
+
+To help speed development, each chapter specifies the files to edit and gives us something specific to try. All while working in the same project. Checkpoint downloads will be available at the end of each chapter if want a fresh starting point or a comparison with your code.
+
+## How the application runs
+
+The diagram below shows the services behind the job candidate's conversation. The agents run in our .NET application and share a configured Foundry model deployment. The local InterviewData service stores records through a Cosmos emulator, and a MarkItDown container extracts document text.
+
+<ConceptDiagram kind="overview" />
+
+## Before you begin
+
+You should be comfortable reading and editing C#. We'll introduce agents, MCP, and Foundry as we use them.
+
+<p><a href={siteLink('workshop/')}>Your workshop path</a> begins with tools, Azure permissions, and a short example run. The model-backed runs can create billable resources; Chapter 0 covers approval and cleanup before we start them.</p>

@@ -1,68 +1,96 @@
-import { lessons } from '../data/course';
+import { chapters, legacyChapterIds, previousCurriculumVersions } from '../data/course';
+import {
+  continueLink, createProgressStore, nextChapterLink, progressKey, progressSummary
+} from './progress-state.mjs';
 
-const memory = new Map<string, string[]>();
-const knownIds = new Set<string>(lessons.map(lesson => lesson[0]));
+type ProgressStore = ReturnType<typeof createProgressStore>;
+type ProgressState = ReturnType<ProgressStore['read']>;
 
-function readProgress(key: string): { ids: string[]; warning: string } {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return { ids: memory.get(key) ?? [], warning: '' };
-    const value: unknown = JSON.parse(raw);
-    if (!Array.isArray(value) || !value.every(id => typeof id === 'string' && knownIds.has(id))) {
-      return { ids: memory.get(key) ?? [], warning: 'Saved progress could not be read. Mark completed lessons again, or reset it.' };
-    }
-    return { ids: value, warning: '' };
-  } catch (error) {
-    if (error instanceof SyntaxError) return { ids: memory.get(key) ?? [], warning: 'Saved progress is damaged. Your lessons are still available; reset progress to start fresh.' };
-    return { ids: memory.get(key) ?? [], warning: 'Browser storage is unavailable. Progress lasts only while this page is open.' };
+const stores = new Map<string, ProgressStore>();
+const connectedControls = new WeakSet<Element>();
+let listening = false;
+
+function context(root: HTMLElement) {
+  const { base, version } = root.dataset;
+  if (base === undefined || !version) throw new Error('Progress needs a base path and curriculum version.');
+  const key = progressKey(base, version);
+  let store = stores.get(key);
+  if (!store) {
+    store = createProgressStore({ base, version, previousVersions: previousCurriculumVersions, chapters, legacyChapterIds }, () => window.localStorage);
+    stores.set(key, store);
   }
+  return { base, store };
+}
+
+function setLink(link: HTMLAnchorElement, value: { href: string; label: string }) {
+  link.href = value.href;
+  link.textContent = value.label;
+}
+
+function renderProgress(key: string, state: ProgressState) {
+  document.querySelectorAll<HTMLElement>('[data-progress-root]').forEach(root => {
+    const { base, store } = context(root);
+    if (store.key !== key) return;
+    root.querySelectorAll<HTMLElement>('[data-progress-summary]').forEach(summary => {
+      summary.textContent = progressSummary(state, chapters);
+    });
+    root.querySelectorAll<HTMLElement>('[data-progress-id]').forEach(item => {
+      const completed = state.ids.includes(item.dataset.progressId ?? '');
+      item.dataset.completed = String(completed);
+      if (item.dataset.progressLabel) {
+        item.setAttribute('aria-label', `${item.dataset.progressLabel}, ${completed ? 'completed' : 'not completed'}`);
+      }
+    });
+    root.querySelectorAll<HTMLInputElement>('[data-progress-toggle]').forEach(checkbox => {
+      checkbox.checked = state.ids.includes(checkbox.dataset.progressToggle ?? '');
+    });
+    root.querySelectorAll<HTMLAnchorElement>('[data-continue]').forEach(link => {
+      setLink(link, continueLink(state.ids, chapters, base, link.dataset.startAt === 'chapter' ? 'chapter' : 'overview'));
+    });
+    root.querySelectorAll<HTMLAnchorElement>('[data-progress-next]').forEach(link => {
+      setLink(link, nextChapterLink(state.ids, chapters, base, link.dataset.progressNext ?? ''));
+    });
+  });
 }
 
 export function connectProgress() {
-  document.querySelectorAll<HTMLElement>('[data-lesson-progress]').forEach(panel => {
-    if (panel.dataset.connected) return;
-    panel.dataset.connected = 'true';
-    const key = `interview-coach:${panel.dataset.base}:v${panel.dataset.version}`;
-    const id = panel.dataset.id!;
-    const checkbox = panel.querySelector<HTMLInputElement>('input')!;
-    const status = panel.querySelector<HTMLElement>('.progress-status')!;
-    const current = readProgress(key);
-    checkbox.checked = current.ids.includes(id);
-    status.textContent = current.warning || `${current.ids.length} of ${lessons.length} lessons completed on this browser.`;
-    checkbox.addEventListener('change', () => {
-      const existing = readProgress(key);
-      const ids = new Set(existing.ids);
-      checkbox.checked ? ids.add(id) : ids.delete(id);
-      const value = [...ids];
-      memory.set(key, value);
-      try {
-        localStorage.setItem(key, JSON.stringify(value));
-        status.textContent = `${value.length} of ${lessons.length} lessons completed on this browser.`;
-      } catch {
-        status.textContent = 'Progress updated for this page only; browser storage is unavailable.';
-      }
+  if (typeof document === 'undefined') return;
+  const active = new Set<ProgressStore>();
+  document.querySelectorAll<HTMLElement>('[data-progress-root]').forEach(root => {
+    const { store } = context(root);
+    active.add(store);
+    root.querySelectorAll<HTMLInputElement>('[data-progress-toggle]').forEach(checkbox => {
+      if (connectedControls.has(checkbox)) return;
+      connectedControls.add(checkbox);
+      checkbox.addEventListener('change', () => {
+        renderProgress(store.key, store.toggle(checkbox.dataset.progressToggle ?? '', checkbox.checked));
+      });
     });
-    panel.querySelector('button')!.addEventListener('click', () => {
-      if (!confirm('Reset completion for every lesson in this workshop version? This will not change your code.')) return;
-      memory.set(key, []);
-      checkbox.checked = false;
-      try { localStorage.removeItem(key); status.textContent = 'Progress reset. Your project files are unchanged.'; }
-      catch { status.textContent = 'Progress reset for this page; browser storage is unavailable.'; }
+    root.querySelectorAll<HTMLButtonElement>('[data-progress-reset]').forEach(button => {
+      if (connectedControls.has(button)) return;
+      connectedControls.add(button);
+      button.addEventListener('click', () => {
+        if (!window.confirm('Clear the completion marks for this version of the workshop? Your project files and earlier workshop records will stay unchanged.')) return;
+        renderProgress(store.key, store.reset());
+      });
     });
   });
-  document.querySelectorAll<HTMLAnchorElement>('[data-continue]').forEach(link => {
-    const key = `interview-coach:${link.dataset.base}:v${link.dataset.version}`;
-    const { ids, warning } = readProgress(key);
-    const summary = link.parentElement?.querySelector('[data-course-progress]');
-    if (summary && (ids.length || warning)) summary.textContent = warning || `${ids.length} of ${lessons.length} lessons completed on this browser.`;
-    const next = lessons.find(lesson => !ids.includes(lesson[0]));
-    if (ids.length && next) {
-      link.href = `${link.dataset.base!.replace(/\/$/, '')}/workshop/${next[0]}/`;
-      link.textContent = `Continue: ${next[1]}`;
+  active.forEach(store => renderProgress(store.key, store.read()));
+  if (listening) return;
+  listening = true;
+  document.addEventListener('astro:page-load', connectProgress);
+  window.addEventListener('pageshow', connectProgress);
+  window.addEventListener('storage', event => {
+    if (event.storageArea) {
+      try {
+        if (event.storageArea !== window.localStorage) return;
+      } catch {
+        stores.forEach(store => renderProgress(store.key, store.read()));
+        return;
+      }
     }
-    if (!next) {
-      link.href = `${link.dataset.base!.replace(/\/$/, '')}/workshop/08-capstone/`;
-      link.textContent = 'Review your completed workshop';
-    }
+    stores.forEach(store => {
+      if (store.accepts(event.key)) renderProgress(store.key, store.sync(event.key));
+    });
   });
 }

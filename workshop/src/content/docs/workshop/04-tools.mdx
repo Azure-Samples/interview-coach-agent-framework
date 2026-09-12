@@ -1,67 +1,88 @@
 ---
-title: "04 · Give it a tool"
-description: Add a typed function, trace its execution, and distinguish a tool result from generated prose.
+title: Give the coach a C# tool
+description: Register a practice-guidance function and watch the coach use its result.
 ---
-import CodeSample from '../../../components/CodeSample.astro';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
 import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
 import Hint from '../../../components/Hint.astro';
-import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
 
-## What we are doing
+We're going to create a function that allows our coach to return custom interview advice. This way when an interviewee is practicing and they ask for custom advice, the model can reach for specific advice tailored for it via a "tool".
 
-Add an in-process function that returns established preparation guidance for a category. This small, deterministic tool is a teaching step. The next module replaces it with the real application's MCP tools.
+We'll add that functionality in this chapter. You'll be able to see the model request `get_practice_guidance`, inspect the C# result, and read a reply that uses it.
 
-## Why a function rather than another sentence in the prompt?
+Continue in the same `interview-coach-lab` project from the previous chapter. All the changes will occur in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`.
 
-A model can invent a plausible preparation tip. A tool can return your application's authoritative data. The distinction becomes important when the action reads a record or changes state.
+<ConceptDiagram kind="tool-loop" />
 
-Static advice could also live in the instructions; this example intentionally keeps the function small so you can inspect the contract before adding a network protocol.
+## Write and register the function
 
-## How and where
+Inside `CreateSingleAgent`, add this local function before `CreateProviderAgent`. Its two return values give us an easy result to recognize.
 
-### 1. Define the contract
+<CodeStep id="tools-practice-function" />
 
-In `AgentDelegateFactory.cs`, update only `CreateSingleAgent`. Add the local `GetPracticeGuidance` function, convert it with `AIFunctionFactory.Create`, and pass the resulting tools into `CreateProviderAgent`:
+The parameter description tells the model which categories to choose. The switch accepts `behavioural` and `technical`, ignores case, and rejects other values.
 
-<CodeSample stage="04-tools" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="    private static AIAgent CreateSingleAgent" end="    // ============================================================================" />
+<CodeStep id="tools-function-registration" />
 
-Read the category description and function name before running. Those descriptions help the model choose the right function and arguments. The switch is ordinary C# and remains responsible for invalid input.
+`AIFunctionFactory.Create` wraps the delegate as a callable tool. Its name and description help the model select it. The function runs inside the agent process.
 
-### 2. Observe the boundary
+<CodeStep id="tools-agent-instructions" />
 
-Restart the agent and ask: "Use the practice guidance tool to help me prepare for the technical part of the interview."
+The final edit passes the tool list to the agent and adds a reason to call it: a request for preparation tips.
 
-Put a breakpoint inside `GetPracticeGuidance` or inspect the tool event in the development UI. Check the actual argument. Then compare the returned string with the assistant's explanation.
+## Ask for technical preparation tips
 
-### 3. Change the source of truth
+From your working project root:
 
-Edit the technical guidance string in code. Start a new chat and ask again. Do not change the prompt. The result should reflect the changed function output if the tool was called.
+<Tabs syncKey="shell">
+<TabItem label="Bash">
 
-## See it work
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
 
-You can point to a function execution with category `technical`, its deterministic return value, and the assistant's follow-up response. A fluent answer alone does not satisfy this checkpoint.
+</TabItem>
+<TabItem label="PowerShell">
 
-<KnowledgeCheck id="tool-contract" question="What happens if a tool description is clear but its code accepts unsafe arguments?" options={[
-  { text: 'The description enforces validation', explanation: 'Descriptions guide selection. They are not runtime validation or authorization.' },
-  { text: 'The application still needs to validate arguments', correct: true, explanation: 'A model can propose unexpected inputs. The tool implementation must enforce its contract.' },
-  { text: 'The model automatically rewrites the function', explanation: 'The model cannot rewrite this function. Your application owns the implementation.' }
-]} />
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
 
-## Make it yours
+</TabItem>
+</Tabs>
 
-Add one category and describe it clearly. Then request an unsupported category. Explain whether you want an explicit failure or a typed "not found" result, and what the calling agent should do next.
+Open `coach` in DevUI and send:
 
-## If you get stuck
+```text
+Call get_practice_guidance with category technical, then explain how I
+could use that guidance while answering an API-design interview question.
+```
 
-<Hint title="The model answered without calling the tool">
-Verify the tool was passed into the agent, not just declared in code. Check that the name and description match the user's request. Ask explicitly for the tool while investigating; do not mistake that diagnostic prompt for guaranteed production routing.
+In the run details, open the tool call. Check that `category` is `technical` and the result in the chat is similar to:
+
+```text
+Clarify assumptions, explain your approach, and discuss tradeoffs.
+```
+
+The coach most likely will expand that sentence into an example answer. You've now followed one request through the function and back into the conversation.
+
+<Hint title="Try an unsupported category">
+
+Ask for `get_practice_guidance` with category `baseball`. Inspect the arguments the model sends: it may ask for clarification or choose a supported category. If `baseball` reaches the function, the switch throws `ArgumentException` with `Choose behavioural or technical.`
+
+For a closer look, put a debugger breakpoint inside `GetPracticeGuidance` and inspect `category`. You can leave the source unchanged throughout this experiment.
+
 </Hint>
 
+Keep the function as written. We'll replace it with interview-record tools after exposing their MCP server.
+
 <Checkpoint stage="04-tools" />
-
-## Carry forward
-
-You now understand the application/model boundary. MCP moves that tool boundary across a service connection so another process can own reusable capabilities.
 
 <LessonProgress lessonId="04-tools" />

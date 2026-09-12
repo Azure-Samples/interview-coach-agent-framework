@@ -2,21 +2,23 @@
 interface Props { stage?: number }
 const { stage = 0 } = Astro.props;
 const nodes = [
-  ['Blazor UI', 'The learner-facing application renders messages and streams replies over AG-UI.'],
+  ['Blazor UI', 'The chat interface displays messages and streams replies over AG-UI.'],
   ['.NET agent service', 'Your code supplies instructions, manages tool execution, and hosts the Agent Framework agent.'],
   ...(stage >= 1 ? [['Foundry model', 'The model proposes replies and tool calls. It runs in Foundry; the agent loop runs in your service.']] : []),
-  ...(stage >= 2 ? [['Application tools', 'Typed functions execute outside the model and return actual results.']] : []),
-  ...(stage >= 3 ? [['InterviewData MCP → Cosmos DB', 'The agent calls session tools over MCP. The server stores interview records, not the browser UI state.']] : []),
+  ...(stage === 2 ? [['Application tool', 'The practice-guidance function runs in your application and returns its result to the model.']] : []),
+  ...(stage >= 3 ? [['InterviewData MCP → Cosmos DB', 'The agent calls session tools over MCP. The server saves interview records in Cosmos DB.']] : []),
   ...(stage >= 4 ? [['MarkItDown MCP', 'A separate container converts document URLs into text. Treat its output as untrusted input.']] : []),
   ...(stage >= 5 ? [['Five specialists', 'Triage routes; Receptionist gathers inputs; Behavioural and Technical conduct the interview; Summariser completes it.']] : [])
 ];
 ---
 <figure class="architecture">
-  <figcaption><span class="eyebrow">The application at this point</span>Select a component to see its responsibility. This is a diagram, not a live service monitor.</figcaption>
+  <figcaption><strong>Application architecture</strong><p>Open a component to see its role at this stage of our build.</p></figcaption>
   <div class="architecture-nodes">
     {nodes.map(([name, detail], i) => (
       <details><summary><span aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{name}</summary><p>{detail}</p></details>
     ))}
   </div>
-  <p class="architecture-flow">User → UI → agent service ↔ model. The service executes tool calls and sends results back to the model.</p>
+  <p class="architecture-flow">{stage === 0
+    ? 'User → Blazor UI. The starter opens the supplied interface while we prepare the agent service.'
+    : `User → UI → agent service ↔ model.${stage >= 2 ? ' The service executes tool calls and sends results back to the model.' : ' The agent sends messages to the model and streams its reply.'}`}</p>
 </figure>

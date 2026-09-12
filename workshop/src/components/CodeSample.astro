@@ -1,7 +1,7 @@
 ---
 import { readFileSync } from 'node:fs';
 import { resolve, relative, isAbsolute } from 'node:path';
-import { Code } from 'astro:components';
+import SourceCode from './SourceCode.astro';
 import manifest from '../../labs/manifest.json';
 interface Props { stage: string; path: string; start?: string; end?: string; lang?: 'csharp' | 'json' | 'bash' | 'xml' }
 const { stage, path, start, end, lang = 'csharp' } = Astro.props;
@@ -10,7 +10,7 @@ const root = resolve('.generated/checkpoints', stage);
 const file = resolve(root, path);
 const rel = relative(root, file);
 if (rel.startsWith('..') || isAbsolute(rel)) throw new Error(`Invalid sample path ${path}`);
-const source = readFileSync(file, 'utf8').replace(/^\uFEFF/, '');
+const source = readFileSync(file, 'utf8');
 let code = source;
 if (start) {
   const index = source.indexOf(start);
@@ -24,18 +24,5 @@ if (end) {
 }
 ---
 <div class="source-sample">
-  <div class="source-heading"><code>{path}</code><button type="button" data-copy-source>Copy code</button></div>
-  <Code code={code.trimEnd()} lang={lang} theme="github-dark" />
-  <p class="copy-status" aria-live="polite"></p>
+  <SourceCode code={code} lang={lang} title={path} />
 </div>
-<script>
-  document.querySelectorAll<HTMLButtonElement>('[data-copy-source]').forEach(button => {
-    button.addEventListener('click', async () => {
-      const parent = button.closest('.source-sample')!;
-      const status = parent.querySelector('.copy-status')!;
-      const text = parent.querySelector('pre code')!.textContent!;
-      try { await navigator.clipboard.writeText(text); status.textContent = 'Code copied.'; }
-      catch { status.textContent = 'Clipboard unavailable. Select the code and copy it manually.'; }
-    });
-  });
-</script>

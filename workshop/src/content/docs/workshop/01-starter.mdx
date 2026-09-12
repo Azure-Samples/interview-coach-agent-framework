@@ -1,0 +1,98 @@
+---
+title: Start your workshop app
+description: Open a separate working folder and run the supplied cloud-free application shell.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+We'll start our own copy of the workshop app and open its home page. The starter has the Blazor interface and supporting projects ready for us. We'll create the coach in the next chapter.
+
+Keep the completed example in its own folder. Our new working folder will hold all the changes we make through the course.
+
+## Open your working folder
+
+<Checkpoint stage="02-starter" />
+
+Download `interview-coach-lab-starter.zip` once and extract it into a new folder named `interview-coach-lab`, beside `interview-coach-example`, not inside it. Open `interview-coach-lab` in your editor. You should see `apphost.cs`, `apphost.settings.json`, and `InterviewCoach.slnx` at its root. If the archive created an extra enclosing folder, use the directory containing those files.
+
+Keep working in this same `interview-coach-lab` project from here through Chapter 14. You won't need another clone or starter download. Later checkpoint archives are optional comparison or recovery copies; extract them separately so they don't overwrite your work.
+
+This starter runs entirely locally. Its AppHost starts the `agent` service shell and `webui`; model access, database services, and document parsing remain inactive.
+
+<ConceptDiagram kind="starter" />
+
+## Start the shell
+
+Open a terminal at the `interview-coach-lab` root and run:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Open the dashboard URL printed by Aspire, then open the `webui` endpoint. The page should say:
+
+```text
+Your application shell is running.
+Coaching is not connected to this page yet.
+```
+
+The dashboard should show `agent` and `webui` running without a Foundry deployment or tool-service containers. If an Azure provisioning prompt appears, stop and check that you opened `interview-coach-lab-starter.zip` in the new folder.
+
+## Find the next edits
+
+These are the files we'll use to create the first coach:
+
+| File | What we'll add |
+| --- | --- |
+| `src/InterviewCoach.Agent/AgentDelegateFactory.cs` | The agent and its coaching instructions |
+| `src/InterviewCoach.Agent/Program.cs` | Hosting and development-interface activation |
+| `apphost.cs` | The model resource reference |
+
+Use the root `apphost.cs` throughout the course. Leave the project-based AppHost unchanged; a supplied capstone patch prepares its final wiring.
+
+<Hint title="What is already supplied?">
+The starter includes chat and upload components, the database repository, and service defaults. `WorkshopHosting.cs` contains the model-client, authentication, provider, and DevUI setup we'll activate next. It stays dormant until we call `builder.AddWorkshopHosting()`. The current startup creates no runtime model client.
+
+The throwing agent-factory methods mark the code we'll replace. You can leave the supplied helper implementations as they are.
+</Hint>
+
+If startup fails, read the build output or the failing resource's logs. A fresh starter archive is available above if you want to compare files; extract it into another folder to keep your work.
+
+Once the shell is running, stop it from the same root before the next chapter's edits:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+<LessonProgress lessonId="01-starter" />

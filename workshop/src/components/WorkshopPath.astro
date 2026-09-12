@@ -1,23 +1,27 @@
 ---
-import { lessons, siteLink, curriculumVersion } from '../data/course';
+import { chapterGroups, curriculumVersion, siteLink } from '../data/course';
 ---
-<div class="course-intro">
-  <span class="eyebrow">A Microsoft Agent Framework + Foundry workshop</span>
-  <p class="course-lead">Build something you can explain.</p>
-  <p>Add one capability at a time to a .NET interview coach. Understand the choice, write the code, and see what changed.</p>
-  <a class="primary-link" href={siteLink('workshop/00-orientation/')} data-continue data-base={import.meta.env.BASE_URL} data-version={curriculumVersion}>Start the workshop <span aria-hidden="true">→</span></a>
-  <span class="course-meta">C# / .NET · Self-paced · One full day · 9 modules</span>
-  <span class="course-meta" data-course-progress aria-live="polite">No account needed. Progress stays in this browser.</span>
-</div>
-<ol class="course-path">
-  {lessons.map(([id, title, description], index) => (
-    <li><a href={siteLink(`workshop/${id}/`)}>
-      <span class="path-number" aria-hidden="true">{String(index).padStart(2, '0')}</span>
-      <div><strong>{title}</strong><p>{description}</p></div>
-      <span class="path-arrow" aria-hidden="true">↗</span>
-    </a></li>
+<div data-progress-root data-base={import.meta.env.BASE_URL} data-version={curriculumVersion}>
+  {chapterGroups.map(group => (
+    <section class="course-path-group" aria-label={group.label}>
+      <h3>{group.label}</h3>
+      <ol class="course-path" start={group.chapters[0].number}>
+        {group.chapters.map(({ id, number, title, description }) => (
+          <li value={number}><a
+            href={siteLink(`workshop/${id}/`)}
+            data-progress-id={id}
+            data-progress-label={`Chapter ${number}: ${title}`}
+            aria-label={`Chapter ${number}: ${title}`}
+          >
+            <span class="path-number" aria-hidden="true">{number}</span>
+            <div><strong>{title}</strong> <span class="workshop-completion">Completed</span><p>{description}</p></div>
+            <span class="path-arrow" aria-hidden="true">→</span>
+          </a></li>
+        ))}
+      </ol>
+    </section>
   ))}
-</ol>
+</div>
 <script>
   import { connectProgress } from '../scripts/progress';
   connectProgress();

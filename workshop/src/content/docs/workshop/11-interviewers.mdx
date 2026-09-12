@@ -1,0 +1,102 @@
+---
+title: Add the interviewers
+description: Add behavioural and technical agents that use the saved interview context.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+Take the saved intake into an interview. We'll add behavioural and technical specialists, answer a question, and follow the transfer between them.
+
+Continue in the same `interview-coach-lab` project from the previous chapter. All edits belong in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`. Keep the single coach and existing hosting setup.
+
+<ConceptDiagram kind="interviewers" />
+
+## Give intake a next destination
+
+Update triage so it can choose among the receptionist and both interviewers:
+
+<CodeStep id="specialists-triage-agent" />
+
+Then change the receptionist's final intake step to transfer directly to the behavioural interviewer:
+
+<CodeStep id="specialists-receptionist-agent" />
+
+The receptionist still owns document collection. The new destination lets practice start as soon as those inputs are saved.
+
+## Add the two interview roles
+
+Both interviewers fetch the record and append questions, answers, and feedback. Focus on what differs in their instructions.
+
+<CodeStep id="specialists-behavioural-agent" />
+
+The behavioural interviewer asks about experience and uses STAR: Situation, Task, Action, Result. Its next phase is `technical_interviewer`.
+
+<CodeStep id="specialists-technical-agent" />
+
+The technical interviewer asks practical questions grounded in the saved materials. When we ask to finish at this checkpoint, it gives feedback and ends the turn. Unexpected requests can return to `triage`. Summary generation arrives in the next lesson.
+
+Both interviewers receive InterviewData tools. The receptionist already saved the document text they need.
+
+Connect the four agents before building:
+
+<CodeStep id="specialists-interviewer-graph" />
+
+## Move from behavioural to technical practice
+
+From the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Open a fresh `coach` conversation in DevUI:
+
+```text
+Use session ID 33333333-3333-4333-8333-333333333333.
+My fictional resume says I maintain C# APIs and integration tests.
+The job is backend developer on a reliability team.
+Save these inputs and start with one behavioural question.
+```
+
+Answer with a fictional example of catching an API regression before release. Then ask:
+
+```text
+Let's move to technical practice. Ask a question related to my API work.
+```
+
+In the run details, follow the transfer from `behavioural_interviewer` to `technical_interviewer`. Open the technical agent's record lookup and compare its context with the question it asks.
+
+In Cosmos Data Explorer, check that the same record contains the new behavioural exchange and retains both input fields. The update contract still requires preserving document fields and sending only new transcript text. Use a fresh GUID if you repeat the exercise.
+
+<Hint title="How the roles share context">
+
+The saved record carries the resume, job description, and transcript. Each interviewer fetches that context through InterviewData. Triage uses the conversation to select a phase and has no application tools.
+
+`WithHandoffs` declares the destinations each active agent can choose. The four agents take turns; each transfer follows one permitted edge.
+
+</Hint>
+
+<Checkpoint stage="07-interviewers" />
+
+<LessonProgress lessonId="11-interviewers" />

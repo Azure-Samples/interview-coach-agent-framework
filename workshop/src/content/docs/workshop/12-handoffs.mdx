@@ -1,0 +1,94 @@
+---
+title: Finish with a summary agent
+description: Add the summariser, complete the handoff graph, and save the final feedback.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+Give the interview a saved ending. We'll add a summariser that reads the transcript, writes feedback, and marks the session complete.
+
+Continue in the same `interview-coach-lab` project from the previous chapter. All edits are in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`. The receptionist and behavioural interviewer keep their existing definitions.
+
+## Add the summary destination
+
+Update triage to include the summariser and consider completed phases when routing:
+
+<CodeStep id="summary-triage-agent" />
+
+Change the technical interviewer's final step to hand off directly to the summary:
+
+<CodeStep id="summary-technical-agent" />
+
+Now define the summariser. It receives InterviewData tools so it can read the transcript, append its summary, and call completion:
+
+<CodeStep id="specialists-summariser-agent" />
+
+Finish the edit group by replacing the four-agent builder with the full graph:
+
+<CodeStep id="specialists-handoff-graph" />
+
+The usual interview now reaches the summariser after technical practice:
+
+<ConceptDiagram kind="interview-flow" />
+
+## Save the final feedback
+
+From the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Open a fresh `coach` conversation in DevUI:
+
+```text
+Use session ID 44444444-4444-4444-8444-444444444444.
+My fictional resume says I build C# APIs and review integration tests.
+The job is backend developer. Save those inputs.
+Let's do one behavioural question and one technical question.
+```
+
+Answer the behavioural question, request technical practice, and answer that question. Then ask the coach to finish and save a summary.
+
+In the run details, follow the transfer from `technical_interviewer` to `summariser`. Inspect the summariser's record lookup, update, and completion calls.
+
+Find the same ID in Cosmos Data Explorer. `Transcript` should include feedback about your answers and the final summary; `IsCompleted` should be `true`. The summary update must preserve document fields and append only new text. Use a fresh GUID for another run.
+
+<Hint title="All eleven permitted handoffs">
+
+| Active agent | Allowed destinations |
+| --- | --- |
+| `triage` | `receptionist`, `behavioural_interviewer`, `technical_interviewer`, `summariser` |
+| `receptionist` | `behavioural_interviewer`, `triage` |
+| `behavioural_interviewer` | `technical_interviewer`, `triage` |
+| `technical_interviewer` | `summariser`, `triage` |
+| `summariser` | `triage` |
+
+The graph permits these transfers; the active agent chooses one using its instructions and conversation context. We'll exercise an early-finish route in the debugging lesson.
+
+</Hint>
+
+<Checkpoint stage="07-handoffs" />
+
+<LessonProgress lessonId="12-handoffs" />

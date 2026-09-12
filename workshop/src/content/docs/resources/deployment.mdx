@@ -1,70 +1,48 @@
 ---
-title: "Optional · Deploy the application"
-description: Understand the existing Container Apps deployment path, its prerequisites, and cleanup boundaries.
+title: Optional deployment and cleanup
+description: Prepare a completed capstone for optional deployment and clean up owned resources.
 ---
-## What we are doing
+import { Tabs, TabItem } from '@astrojs/starlight/components';
 
-Deploy the existing Aspire application to Azure Container Apps. This is an optional extension after the local capstone, not a requirement to finish the workshop.
+Deployment is optional after the completed capstone. Azure Container Apps hosts the existing .NET services; the agents continue to execute in `InterviewCoach.Agent`.
 
-The .NET service continues to run the agents. Foundry continues to provide the model. This operation does not move the agents into Foundry Agent Service.
+**Use an approved, access-restricted development environment with fictional data.** Review [development endpoints, record access, and upload retention](../../reference/deployment/#review-access-and-data-handling) before exposing the app.
 
-## Why deployment is a separate decision
+## Check the deployment entry point
 
-Local success does not settle identity, access restrictions, public endpoints, retention, cost, or production readiness. In particular, this sample exposes development interfaces and keeps uploads in process memory. Do not treat it as a production service merely because it can be deployed.
+Finish the [capstone's required `08-complete-support.patch` step](../../workshop/13-capstone/) first. It restores the completed deployment AppHost and removes temporary workshop support. Until then, the learner's project-based AppHost stays in its starter state.
 
-The commands below are the repository's deployment path. Exact permissions, model availability, identity assignments, and cleanup must be checked for your subscription and current Azure tooling. No live deployment was performed to build this static workshop.
+In the completed project, `azure.yaml` targets `src/InterviewCoach.AppHost/InterviewCoach.AppHost.csproj`. Configure that project's `appsettings.json` for deployment. See [entry-point details](../../reference/deployment/#check-the-deployment-entry-point).
 
-## How and where
+The learner checkpoint keeps Foundry reuse enabled. Supply the same four `MicrosoftFoundry:Existing` identifiers to the deployment entry point's configuration; its configuration is separate from the root file-based AppHost. Review the existing model's access for the deployed identity. See [existing Foundry resources](../../reference/providers/microsoft-foundry/#reuse-an-existing-account-and-deployment).
 
-### 1. Inspect the deployment entry point
+## Provision an approved development environment
 
-Open `azure.yaml` in your completed project. Its service points to `src/InterviewCoach.AppHost/InterviewCoach.AppHost.csproj` with `host: containerapp`.
+Follow the [deployment commands and account checks](../../reference/deployment/#provision-an-approved-development-environment). Confirm the selected subscription, region, model access, capacity, and cleanup owner before `azd up`.
 
-Review that AppHost's configuration as well as your root local settings. They are separate entry points. Confirm your intended model, mode, tenant, region, capacity, and dedicated resource group before provisioning.
+## Check the deployed application
 
-### 2. Prepare an isolated environment
+Run the capstone's short synthetic interview and inspect its tool calls and saved summary. The [deployment checklist](../../reference/deployment/#check-the-deployed-application) covers service connectivity, identity, and failure diagnosis.
 
-Install the [Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd), then from the completed project root:
+## Remove only the resources you own
 
-```sh
-azd auth login
-azd init
+For a running local AppHost, run this from the folder that started it:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
 ```
 
-Choose a new, clearly named development environment. Inspect `azd env get-values` locally to confirm the environment; its output can contain sensitive configuration, so do not paste it into the workshop or a public issue.
+</TabItem>
+<TabItem label="PowerShell">
 
-Check current [Aspire deployment guidance](https://learn.microsoft.com/dotnet/aspire/deployment/azure/aca-deployment) and [Foundry authorization guidance](https://learn.microsoft.com/azure/ai-foundry/concepts/rbac-azure-ai-foundry). Have the subscription owner confirm required roles and scope rather than granting broad permanent permissions.
-
-### 3. Provision only when you are ready for the cost
-
-```sh
-azd up
+```powershell
+aspire stop --apphost ./apphost.cs
 ```
 
-Review the selected subscription, location, and proposed resource ownership before accepting prompts. Do not run this against a shared production environment.
+</TabItem>
+</Tabs>
 
-## See it work
-
-Inspect deployed resource health and identity-related errors, then perform the same short interview as the local capstone. Confirm that the UI reaches the agent and that both MCP services can reach their dependencies.
-
-Review which endpoints are public and which development interfaces are exposed. Restrict access before allowing anyone else to use the deployment.
-
-## Make it yours
-
-Write a production-readiness list for this specific app: access control, per-user data authorization, upload storage/retention, tool permissions, retries/timeouts, logging of personal data, and cost limits. Separate an instruction change from a control that must exist in code or infrastructure.
-
-## If you get stuck
-
-Do not repeatedly provision new environments to fix one failure. Read the failing resource and operation, then distinguish model quota, role assignment, image startup, service connectivity, and application errors.
-
-## Carry forward: clean up deliberately
-
-For resources owned by the selected `azd` environment, review the removal prompt:
-
-```sh
-azd down
-```
-
-Avoid `--force --purge` as a casual workshop default. Confirm scope and retention first.
-
-Resources provisioned by a previous **local Aspire run** may not belong to this `azd` environment. Compare your resource inventory with what remains in the subscription and remove only resources dedicated to your workshop. `aspire stop` does not remove cloud resources.
+**Cloud resources remain until cleanup.** The example and learner share the Chapter 0 Foundry account and deployment. Keep them until both projects are finished. Review any separate `azd` environment too; never assume its cleanup command owns the shared model. Follow the [cleanup reference](../../reference/deployment/#remove-only-the-resources-you-own) to review each scope and remove only owned resources.

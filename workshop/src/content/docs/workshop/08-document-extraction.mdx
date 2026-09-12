@@ -1,0 +1,97 @@
+---
+title: Read a resume with a tool
+description: Connect MarkItDown and inspect text extracted from a public fictional resume.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+Let's give the coach a PDF to read. We'll connect the MarkItDown MCP server, ask it to extract a published fictional resume, and compare the returned text with the PDF.
+
+Continue in the same `interview-coach-lab` project from the previous chapter. The existing session lifecycle stays in place. This step adds extraction on request and asks permission before saving newly extracted document text.
+
+<ConceptDiagram kind="extraction" />
+
+## Add the parser to the local application
+
+In root `apphost.cs`, add the MarkItDown container and connect it to the agent:
+
+<CodeStep id="documents-container-file-apphost" />
+
+<CodeStep id="documents-service-reference-file-apphost" />
+
+The container exposes HTTP on target port `3001`. The agent receives its endpoint and waits for it, alongside InterviewData. Continue using only the root AppHost.
+
+## Connect the second MCP client
+
+In `src/InterviewCoach.Agent/Program.cs`, add a named HTTP client and a keyed MCP client for MarkItDown:
+
+<CodeStep id="documents-http-client" />
+
+<CodeStep id="documents-keyed-client" />
+
+Keep the existing InterviewData client. Each key identifies a separate server.
+
+In `AgentDelegateFactory.cs`, discover both tool sets:
+
+<CodeStep id="documents-discover-tools" />
+
+Now pass both sets to the coach. The added instructions tell it to extract a URL when asked and report the returned text:
+
+<CodeStep id="extraction-agent-instructions" />
+
+## Read the public sample
+
+Use fictional documents throughout the workshop. MarkItDown fetches URLs from its container, and extracted text reaches your configured model. Treat document contents as untrusted input; review tool permissions before using real data.
+
+From the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Wait for MarkItDown in the dashboard, then open `coach` in DevUI. Send this request with the published URL, which also works when you're reading a local workshop preview:
+
+```text
+Use session ID 55555555-5555-4555-8555-555555555555.
+Extract this fictional resume with the MarkItDown tool:
+https://codemillmatt.github.io/interview-coach-agent-framework/samples/resume-peter-parker.pdf
+Show the name and one work-experience item from the returned text.
+Leave the extracted document text unsaved for this check.
+```
+
+Existing session setup may still run. Use a fresh GUID if repeating the exercise.
+
+Open the parser call in the run details. Check its URL and returned text, then open the same PDF in your browser and find the name and experience item. That's the result we need before adding automatic document intake.
+
+<Hint title="Why the URL must be reachable from the container">
+
+A local file path belongs to your machine. MarkItDown needs an HTTP URL its container can fetch, including any required network access. Use the public sample first; browser-only authentication and localhost preview URLs can prevent retrieval.
+
+The container uses the reference's `latest` image tag. When comparing parser behavior across machines, record the resolved image digest.
+
+</Hint>
+
+<Checkpoint stage="06-document-extraction" />
+
+<LessonProgress lessonId="08-document-extraction" />

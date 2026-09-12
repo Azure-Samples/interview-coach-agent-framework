@@ -1,36 +1,47 @@
 ---
 title: Samples and checkpoints
-description: Fictional practice documents and safe recovery projects for every coding milestone.
+description: Choose a practice document, recover a checkpoint, or look up a contract.
 ---
 import Checkpoint from '../../../components/Checkpoint.astro';
 import { siteLink } from '../../../data/course';
+import labs from '../../../../labs/manifest.json';
 
-## Sample inputs
+<p>Use these files while working through the course. For setup, start with <a href={siteLink('workshop/00-orientation/#check-your-tools')}>Chapter 0's tool checks</a>.</p>
 
-Use fictional documents rather than your own resume while learning about tool calls, logs, and data persistence.
+## Practice documents
+
+Use these fictional PDFs for extraction and interview practice. Their contents can travel through model requests, tool arguments, logs, and saved records.
 
 <ul>
-  <li><a href={siteLink('samples/resume-natasha-romanoff.pdf')}>Sample resume: Natasha Romanoff (PDF)</a></li>
-  <li><a href={siteLink('samples/resume-peter-parker.pdf')}>Sample resume: Peter Parker (PDF)</a></li>
-  <li><a href={siteLink('samples/jd-cloud-solution-architect.pdf')}>Cloud solution architect job description (PDF)</a></li>
+  <li><a href={siteLink('samples/resume-natasha-romanoff.pdf')}>Resume: Natasha Romanoff</a></li>
+  <li><a href={siteLink('samples/resume-peter-parker.pdf')}>Resume: Peter Parker</a></li>
+  <li><a href={siteLink('samples/jd-cloud-solution-architect.pdf')}>Job description: cloud solution architect</a></li>
 </ul>
 
-Copy the full public link into the coach or download the PDF and attach it. The local preview URL may not be reachable from a container; use the published link or upload route when testing MarkItDown.
+<p>Copy the full published URL into the coach. MarkItDown fetches it from its container, so use the published sample address when previewing the workshop locally. For file attachments and retention, see the <a href={siteLink('reference/user-manual/#upload-contract')}>upload contract</a>.</p>
 
-## Recover without losing your work
+## Checkpoint projects
 
-Each archive is a complete project. Extract it into a new folder, copy only your private environment settings where needed, and follow that lesson's observations. The patch shows what changed since the preceding checkpoint.
+<p>Download the starter once in <a href={siteLink('workshop/01-starter/')}>Chapter 1</a>, then keep editing the same <code>interview-coach-lab</code> project through the course. The 13 archives below support comparison and recovery. Extract one into a separate folder and compare the relevant files while preserving your work. Each accompanying patch shows the transition from the previous checkpoint.</p>
 
-Direct .NET package versions are pinned in the archives. Application sources are tied to revision `68fd993f`; the final checkpoint differs only in package pins and its workshop information file. The parser image still follows the reference's `latest` tag: record its digest when troubleshooting a later run.
+<p><strong>The starter is cloud-free; later checkpoints reuse the Chapter 0 model.</strong> An extracted recovery folder has its own user-secrets store. Apply the <a href={siteLink('workshop/02-first-coach/#connect-the-model')}>existing-model settings</a> there before starting it. Model calls are billable, and shared cloud resources remain until <a href={siteLink('resources/deployment/#remove-only-the-resources-you-own')}>cleanup</a>.</p>
+
+<p>Downloads are generated from the immutable <code>{labs.sourceTag}</code> tag. The completed checkpoint matches its declared Foundry-only workshop profile, including package pins, required resource reuse, and separate learner configuration. The download manifest records the exact source revision and file hashes.</p>
 
 <Checkpoint stage="02-starter" />
 <Checkpoint stage="03-first-coach" />
+<Checkpoint stage="03-streaming" />
 <Checkpoint stage="04-tools" />
+<Checkpoint stage="05-mcp-server" />
 <Checkpoint stage="05-mcp-state" />
+<Checkpoint stage="05-persistence" />
+<Checkpoint stage="06-document-extraction" />
 <Checkpoint stage="06-documents" />
+<Checkpoint stage="07-first-handoff" />
+<Checkpoint stage="07-interviewers" />
 <Checkpoint stage="07-handoffs" />
 <Checkpoint stage="08-complete" />
 
-## Beyond the local application
+## Look up a contract or plan an extension
 
-[Deploy to Container Apps](./deployment/) · [Explore hosting and providers](./extensions/) · [Look up a term or symptom](./glossary/)
+<p>Use the <a href={siteLink('resources/glossary/')}>glossary</a> for terms and the <a href={siteLink('reference/')}>reference</a> for exact contracts. After the capstone's supplied hosting finalization, you can try <a href={siteLink('resources/extensions/')}>an extension</a> or <a href={siteLink('resources/deployment/')}>optional deployment</a>.</p>

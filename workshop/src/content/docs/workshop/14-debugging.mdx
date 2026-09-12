@@ -1,0 +1,111 @@
+---
+title: Find and fix a failed step
+description: Trace a failed document fetch, correct the input, and follow an early-finish route.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+Practice a small recovery: give the parser an invalid URL, inspect the failure, then supply working input. We'll finish the same interview early and follow its route to the summariser.
+
+Continue in the same `interview-coach-lab` project from the previous chapter. Keep the completed source unchanged. Start the app with your existing approved configuration:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOff
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOff
+```
+
+</TabItem>
+</Tabs>
+
+## Find the failed document request
+
+Open a fresh `coach` conversation in DevUI so you can inspect the tool results:
+
+```text
+Use session ID 66666666-6666-4666-8666-666666666666.
+Start an interview for this fictional job: "Backend developer."
+Read my resume with MarkItDown:
+https://example.invalid/workshop-resume.pdf
+```
+
+Use a fresh GUID if repeating the exercise. Open the parser call and check the URL and error result. With this deliberately invalid address, the expected failure is the document fetch. The coach should report that it could not read the resume and ask for usable input.
+
+Follow the first failed step when investigating:
+
+| Where it fails | What to inspect |
+| --- | --- |
+| Parser startup | MarkItDown's container status and console logs |
+| MCP connection or discovery | The service reference, named client, and `/mcp` endpoint |
+| Document fetch | The URL passed to the parser and its error result |
+| Saving extracted text | InterviewData's update arguments and repository logs |
+
+## Correct the input and try again
+
+Continue in the same conversation:
+
+```text
+Use this working fictional resume URL instead:
+https://codemillmatt.github.io/interview-coach-agent-framework/samples/resume-peter-parker.pdf
+Return to document intake and use MarkItDown to read this replacement URL.
+Save the extracted text in ResumeText and use "Backend developer" as the
+JobDescriptionText. Check both saved fields before beginning behavioural practice.
+```
+
+Check that the new parser call returns recognizable document text. In Cosmos Data Explorer, find the exercise ID under `interviewdb` / `interviewsessions` and inspect `ResumeText`.
+
+If the public sample is unavailable from your network, paste `"I build C# APIs and maintain integration tests"` as fictional resume text and ask the coach to save it. Pasted text can proceed directly to storage.
+
+## Finish during behavioural practice
+
+Once the behavioural interviewer has asked a question, send:
+
+```text
+I want to stop now. Summarize what we covered, save the summary, and
+complete this interview. Skip the remaining interview phases.
+```
+
+Inspect the transfer events. The expected early-finish route is `behavioural_interviewer` to `triage`, then `triage` to `summariser`. Check the summary update and completion result for the same ID. The saved summary should reflect the short session.
+
+If another route is chosen, compare the active agent's outgoing instructions, its permitted destinations, and the conversation triage received.
+
+<Hint title="Keep the investigation in the current conversation">
+
+A saved interview record can be fetched by ID. The WebUI's visible chat and agent conversation have separate lifecycles; refreshing the WebUI starts a new session. For this exercise, correct the failed input in the conversation that produced it.
+
+Use the completed checkpoint in a separate folder if you need to compare source:
+
+<Checkpoint stage="08-complete" />
+
+</Hint>
+
+Stop the local run when finished:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+<LessonProgress lessonId="14-debugging" />

@@ -1,0 +1,82 @@
+---
+title: Use the resume in the interview
+description: Save the extracted resume and job description, then ask a question grounded in them.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+Use the extracted resume to ask a better interview question. We'll make document intake part of the coach's normal process: collect the materials, save their text, then begin practice with that context.
+
+Continue in the same `interview-coach-lab` project from the previous chapter. Both MCP clients are connected. Only the agent description and instructions change, in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`.
+
+<ConceptDiagram kind="documents" />
+
+## Give the coach the complete interview process
+
+Update the description to cover the coach's full responsibility:
+
+<CodeStep id="documents-agent-description" />
+
+The instruction replacement keeps one session record throughout the conversation. Its intake section accepts links or pasted text, allows either document to be skipped, and saves the collected information before questions begin. The remaining sections cover behavioural practice, technical practice, and a saved summary.
+
+<CodeStep id="documents-interview-instructions" />
+
+This completes `CreateSingleAgent`. Keep it intact when we add specialist agents.
+
+## Ask a question based on the saved materials
+
+From the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Start a new WebUI chat and send these public sample URLs:
+
+```text
+Help me practice for the role in this fictional job description.
+Read and save these documents:
+Resume: https://codemillmatt.github.io/interview-coach-agent-framework/samples/resume-peter-parker.pdf
+Job: https://codemillmatt.github.io/interview-coach-agent-framework/samples/jd-cloud-solution-architect.pdf
+Then ask one behavioural question tied to an experience from the resume.
+Tell me which experience you chose.
+```
+
+Find the session ID in the WebUI logs. In Cosmos Data Explorer, open its record under `interviewdb` / `interviewsessions`. Check that `ResumeText` and `JobDescriptionText` contain recognizable text from both PDFs. Compare the coach's chosen experience with `ResumeText`.
+
+The repository still replaces document fields and appends incoming transcript text. On later updates, preserve the saved fields and send only the new exchange.
+
+Keep using fictional materials and private endpoints. The sample's uploads and record tools lack per-user ownership checks; document content also needs to be treated as untrusted input.
+
+<Hint title="Try an attachment or pasted text later">
+
+Pasted text goes straight into the conversation. For attachments, the supplied WebUI sends the file to the agent's `/upload` endpoint, which accepts supported files up to 10 MiB and returns a URL. MarkItDown must be able to fetch that URL from its container.
+
+Uploaded bytes live in agent-process memory and disappear on restart. Extracted text saved in Cosmos is a separate copy. Use the public URLs above for the first run so you can learn document intake before working through upload networking.
+
+</Hint>
+
+<Checkpoint stage="06-documents" />
+
+<LessonProgress lessonId="09-documents" />

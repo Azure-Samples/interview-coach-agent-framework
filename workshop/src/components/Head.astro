@@ -6,4 +6,5 @@ const head = Astro.locals.starlightRoute.head.map(item =>
 );
 ---
 {head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
-<meta name="theme-color" content="#153c53" />
+<meta name="theme-color" content="#f3f6f6" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#1b252d" media="(prefers-color-scheme: dark)" />

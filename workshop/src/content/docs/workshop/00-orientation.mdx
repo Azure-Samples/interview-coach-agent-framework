@@ -1,68 +1,300 @@
 ---
-title: "00 · Agents, models, and the goal"
-description: Separate a model, an agent, its tools, and a workflow before building one.
+title: Get ready and try the interview coach
+description: Check your tools and Azure access, then try a short interview in a separate example folder.
 ---
-import Architecture from '../../../components/Architecture.astro';
-import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import ShellCommands from '../../../components/ShellCommands.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
+import { siteLink } from '../../../data/course';
+import labs from '../../../../labs/manifest.json';
 
-## What we are doing
+Let's get all the prerequisites installed and run the final version of the interview coach application.
 
-We are building an interview coach, not an automated hiring system. A person can share practice materials, answer questions, and ask for feedback. The final application moves from document intake to behavioural questions, technical questions, and a summary.
+## Check your tools
 
-Before writing code, distinguish the parts that can generate a suggestion from the parts that can actually do something.
+You'll need an editor with C# support, .NET 10, Git, the Aspire CLI, a running container engine, and the Azure CLI. Check them in a terminal:
 
-## Why this is an agent example
+<Tabs syncKey="shell">
+<TabItem label="Bash">
 
-A **model** generates outputs from supplied context. It can propose an answer or a tool call. It does not reach into your database merely because the prompt mentions saving a record.
+```bash
+dotnet --version
+git --version
+aspire --version
+docker info
+az version
+```
 
-An **agent** combines that model with instructions, context, and application-controlled tools. In a tool loop, the model requests a function, application code executes it, and the result is sent back for the next response. The application decides which tools are available and enforces their contracts.
+</TabItem>
+<TabItem label="PowerShell">
 
-A **workflow** coordinates multiple steps or agents. Some transitions can be deterministic code; this application's handoffs are model-driven decisions constrained by a topology you define.
+```powershell
+dotnet --version
+git --version
+aspire --version
+docker info
+az version
+```
 
-An interview is a useful example because the phases are easy to recognize. You can see why a coach needs document text, why a record should survive beyond one response, and why an intake specialist might need different tools from an interviewer.
+</TabItem>
+</Tabs>
 
-### Why Foundry?
+Install missing tools using the official instructions for [.NET](https://dotnet.microsoft.com/download/dotnet/10.0), [Git](https://git-scm.com/downloads), [Aspire](https://aspire.dev/get-started/install-cli/), [Docker](https://docs.docker.com/get-started/get-docker/), and [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli). Keep the repository's pinned package versions. The completed example uses a local Cosmos emulator and a MarkItDown container.
 
-Foundry gives this application access to a deployed model through Azure identity and a managed endpoint. That is useful when you want model access governed with the rest of an Azure application rather than copying a personal API key into code.
+## Sign in to an Azure environment
 
-Agent Framework is the library that defines and runs your agents. Foundry hosts the **model** used here. Aspire starts and connects the application's services. None of those names is interchangeable.
+To complete this workshop you will need to create Microsoft Foundry resources. So your account in your Azure subscription will need permissions to do that. In addition your account will need access to specific regions where the models can be deployed to with appropriate capacity.
 
-## How and where
+You will need confirm permission to provision resources and call the model, make sure there is sufficient model quota, and who will handle cleanup (because you don't want this hanging around after).
 
-Trace this example before looking at the complete source:
+This sounds worse than it is, stick to what we outline before and you _should_ be fine.
 
-1. A user asks, "Can you help me prepare for a technical interview?"
-2. The UI sends the message to the .NET agent service.
-3. The agent sends instructions and context to a model in Foundry.
-4. The model may request a tool such as `get_interview_session`.
-5. Your service invokes the tool; the MCP server reads the database.
-6. The result returns to the model, which produces a reply.
+Signing in authenticates you; resource permissions need their own approval. Follow the steps below to sign in:
 
-<Architecture stage={1} />
+<Tabs syncKey="shell">
+<TabItem label="Bash">
 
-In the completed repository, `src/InterviewCoach.Agent/Program.cs` connects the model and service endpoints. `AgentDelegateFactory.cs` defines the coach's behaviour. You will work in both, but not all at once.
+```bash
+az login
+subscriptionId=$(az account show --query id --output tsv)
+az account show --subscription "$subscriptionId" --query "{subscription:name, subscriptionId:id, tenant:tenantId}" --output table
+```
 
-## See it work
+</TabItem>
+<TabItem label="PowerShell">
 
-Read the six steps again and name the component that executes each one. In particular, a model saying "I saved your session" is **not evidence** that a database write occurred. Later, you will inspect the tool result and stored record.
+```powershell
+az login
+$subscriptionId = az account show --query id --output tsv
+az account show --subscription "$subscriptionId" --query "{subscription:name, subscriptionId:id, tenant:tenantId}" --output table
+```
 
-<KnowledgeCheck id="agent-loop" question="The model requests get_interview_session. Who actually reads the database?" options={[
-  { text: 'The model itself', explanation: 'The model proposes the call. It has no direct database connection in this application.' },
-  { text: 'Application code behind the tool', correct: true, explanation: 'The agent service calls InterviewData MCP, whose repository reads Cosmos DB and returns a result.' },
-  { text: 'The workshop website', explanation: 'This site is a static guide. It never connects to your database or Azure account.' }
-]} />
+</TabItem>
+</Tabs>
 
-## Make it yours
+Check the displayed tenant and subscription before continuing. Keep account details private.
 
-Sketch a travel assistant or a maintenance assistant. Name one task that needs a real tool and one that only needs a reply. Explain whether multiple agents would help yet.
+The `subscriptionId` variable lasts for this terminal session. If the selected subscription isn't the approved one, list your subscriptions and select it below. Replace `YOUR_SUBSCRIPTION_ID` with its ID, then rerun the variable assignment and account-details command above.
 
-## If you get stuck
+<Tabs syncKey="shell">
+<TabItem label="Bash">
 
-Use a smaller mental model: **the model proposes; your application executes; the workflow coordinates**. A tool adds capability, but also permission, validation, failure, and observability responsibilities.
+```bash
+az account list --output table
+az account set --subscription "YOUR_SUBSCRIPTION_ID"
+```
 
-## Carry forward
+</TabItem>
+<TabItem label="PowerShell">
 
-Next, separate what runs locally from what can create cloud resources so your first agent interaction is not obscured by setup problems.
+```powershell
+az account list --output table
+az account set --subscription "YOUR_SUBSCRIPTION_ID"
+```
+
+</TabItem>
+</Tabs>
+
+## Clone the finished app
+
+We've designed this workshop so you can run the code locally but follow the instructions on this website. So lets first test out that all the prerequisties are installed by running the final version of interview coach application.
+
+Clone this finished example once. Keep `interview-coach-example` for trying the app and looking up completed code. In Chapter 1, we'll download the starter once into a separate `interview-coach-lab` folder beside it, then keep editing that same learner project for the rest of the workshop.
+
+1. Choose a parent directory for your workshop folders. Clone the repository into a new `interview-coach-example` folder:
+
+   <Tabs syncKey="shell">
+   <TabItem label="Bash">
+
+   ```bash
+   git clone https://github.com/codemillmatt/interview-coach-agent-framework.git interview-coach-example
+   cd interview-coach-example
+   ```
+
+   </TabItem>
+   <TabItem label="PowerShell">
+
+   ```powershell
+   git clone https://github.com/codemillmatt/interview-coach-agent-framework.git interview-coach-example
+   cd interview-coach-example
+   ```
+
+   </TabItem>
+   </Tabs>
+
+2. Check out the workshop's pinned tag. This selects the example version used to generate our checkpoints (that makes it easy to troubleshoot later if we need to):
+
+   <ShellCommands command={`git checkout --detach ${labs.sourceTag}`} />
+
+3. Azure CLI supplies your sign-in, but Aspire still needs to know where it should provision resources. Replace `YOUR_APPROVED_AZURE_REGION` with a region that supports the configured model. Use an existing approved resource group if you were given one; otherwise replace `YOUR_NAME` with something that makes the new group easy to identify.
+
+   <Tabs syncKey="shell">
+   <TabItem label="Bash">
+
+   ```bash
+   subscriptionId=$(az account show --query id --output tsv)
+   tenantId=$(az account show --query tenantId --output tsv)
+   location="YOUR_APPROVED_AZURE_REGION"
+   resourceGroup="rg-interview-coach-YOUR_NAME"
+
+   aspire secret set "Azure:SubscriptionId" "$subscriptionId" --apphost ./apphost.cs
+   aspire secret set "Azure:TenantId" "$tenantId" --apphost ./apphost.cs
+   aspire secret set "Azure:Location" "$location" --apphost ./apphost.cs
+   aspire secret set "Azure:ResourceGroup" "$resourceGroup" --apphost ./apphost.cs
+   aspire secret set "Azure:CredentialSource" "AzureCli" --apphost ./apphost.cs
+   ```
+
+   </TabItem>
+   <TabItem label="PowerShell">
+
+   ```powershell
+   $subscriptionId = az account show --query id --output tsv
+   $tenantId = az account show --query tenantId --output tsv
+   $location = "YOUR_APPROVED_AZURE_REGION"
+   $resourceGroup = "rg-interview-coach-YOUR_NAME"
+
+   aspire secret set "Azure:SubscriptionId" "$subscriptionId" --apphost ./apphost.cs
+   aspire secret set "Azure:TenantId" "$tenantId" --apphost ./apphost.cs
+   aspire secret set "Azure:Location" "$location" --apphost ./apphost.cs
+   aspire secret set "Azure:ResourceGroup" "$resourceGroup" --apphost ./apphost.cs
+   aspire secret set "Azure:CredentialSource" "AzureCli" --apphost ./apphost.cs
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   These values are stored in the example's local AppHost user secrets, outside the repository. The learner project will have its own configuration and reuse this model. Aspire creates the named resource group if it does not exist and your account has permission. If your organization does not allow resource-group creation, use an existing group supplied by your administrator.
+
+4. Open this folder in your editor.
+
+In the root `apphost.settings.json`, review these existing values, keeping the other settings:
+
+```json
+{
+  "AgentMode": "HandOff",
+  "LlmProvider": "MicrosoftFoundry",
+  "MicrosoftFoundry": {
+    "DeploymentName": "gpt-5-mini",
+    "ModelVersion": "2025-08-07",
+    "ModelFormat": "OpenAI",
+    "SkuName": "GlobalStandard",
+    "SkuCapacity": 100
+  }
+}
+```
+
+Confirm that this model, version, SKU, and capacity are available and approved in your chosen environment. (The best way may be to just try what we have above and see if it works.)
+
+:::caution[Starting the example can create billable Azure resources]
+The next command can provision a Foundry resource and model deployment. Model calls also incur usage charges. Record the resources created for this folder, and review provisioning prompts against your approval. Stopping Aspire leaves cloud resources in place. Remove only resources you own and are authorized to delete.
+:::
+
+We'll build and run the application. From the `interview-coach-example` root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Open Aspire's printed dashboard URL. Once the services are ready, open the `webui` endpoint.
+
+## Try a short interview
+
+```text
+Help me prepare for a cloud solution architect interview. Ask one question
+at a time. I'll provide a fictional resume and job description.
+```
+
+<p>When asked, download <a href={siteLink('samples/resume-peter-parker.pdf')}>Peter Parker resume</a> and <a href={siteLink('samples/jd-cloud-solution-architect.pdf')}>cloud solution architect job description</a> locally and then upload them to the conversation. The parser container needs reachable URLs, the localhost workshop preview may be inaccessible to it, so we'll provide the files.</p>
+
+Give one short, fictional behavioural answer, for example:
+
+```text
+Our practice deployment failed after a configuration change. I compared
+the settings, reverted the change, and added a startup check.
+```
+
+Ask `Move on to technical questions.`, answer one question, then send `Finish the interview now and save a short summary.`
+
+Look for feedback tied to your answers and a final summary. Exact wording will vary. We'll inspect tool calls and saved records in the chapters where we build them.
+
+## Keep the model for your learner project
+
+We'll keep using this Foundry account and its model deployment throughout the workshop. Find its account name and resource group:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+az cognitiveservices account list --query "[?kind=='AIServices'].{Account:name,ResourceGroup:resourceGroup,Location:location}" --output table
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+az cognitiveservices account list --query "[?kind=='AIServices'].{Account:name,ResourceGroup:resourceGroup,Location:location}" --output table
+```
+
+</TabItem>
+</Tabs>
+
+Use the account in the resource group you configured above. Replace the two placeholders to list its deployments:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+az cognitiveservices account deployment list --name "YOUR_ACCOUNT_NAME" --resource-group "YOUR_RESOURCE_GROUP" --query "[].{Deployment:name,Model:properties.model.name,State:properties.provisioningState}" --output table
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+az cognitiveservices account deployment list --name "YOUR_ACCOUNT_NAME" --resource-group "YOUR_RESOURCE_GROUP" --query "[].{Deployment:name,Model:properties.model.name,State:properties.provisioningState}" --output table
+```
+
+</TabItem>
+</Tabs>
+
+Keep the account name, resource group, and **Deployment** value for Chapter 2. The example normally names the Azure deployment `chat`; the **Model** column names the model running inside it. We'll reuse the deployment without changing its model or capacity.
+
+## Stop the example
+
+From the same example root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Keep the folder and the Foundry resources. Our learner app will use its own local configuration to connect to this same deployment. Stop local processes now; wait until both projects are finished before cleaning up shared cloud resources.
 
 <LessonProgress lessonId="00-orientation" />

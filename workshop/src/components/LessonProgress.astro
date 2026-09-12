@@ -1,23 +1,23 @@
 ---
-import { curriculumVersion, lessons, siteLink } from '../data/course';
+import { chapters, curriculumVersion } from '../data/course';
+import { nextChapterLink } from '../scripts/progress-state.mjs';
 interface Props { lessonId: string }
 const { lessonId } = Astro.props;
-const index = lessons.findIndex(lesson => lesson[0] === lessonId);
-if (index < 0) throw new Error(`Unknown lesson ${lessonId}`);
-const next = lessons[index + 1];
+const chapter = chapters.find(chapter => chapter.id === lessonId);
+if (!chapter) throw new Error(`Unknown lesson ${lessonId}`);
+const next = nextChapterLink([], chapters, import.meta.env.BASE_URL, lessonId);
 ---
-<section class="lesson-progress" data-lesson-progress data-id={lessonId} data-version={curriculumVersion} data-base={import.meta.env.BASE_URL} aria-label="Your progress">
+<section class="lesson-progress" data-lesson-progress data-progress-root data-id={lessonId} data-version={curriculumVersion} data-base={import.meta.env.BASE_URL} aria-label="Chapter completion">
   <div>
-    <span class="eyebrow">Your progress · {index + 1} of {lessons.length}</span>
-    <label><input type="checkbox" /> I completed this lesson and its checkpoint.</label>
-    <p class="progress-status" aria-live="polite"></p>
+    <span class="eyebrow">Chapter {chapter.number} · {chapter.group}</span>
+    <label><input type="checkbox" data-progress-toggle={lessonId} /> I completed this chapter and checked the result.</label>
+    <p class="progress-status" data-progress-summary aria-live="polite"></p>
   </div>
-  {next && <a class="action-link" href={siteLink(`workshop/${next[0]}/`)}>Next: {next[1]} <span aria-hidden="true">→</span></a>}
-  <button class="secondary reset-progress" type="button">Reset saved progress</button>
-  <noscript>Progress saving needs JavaScript. All lessons and downloads remain available.</noscript>
+  <a class="action-link" href={next.href} data-progress-next={lessonId}>{next.label}</a>
+  <button class="secondary reset-progress" type="button" data-progress-reset>Clear this version's progress</button>
+  <noscript>Saving progress needs JavaScript. You can still read every chapter and download its files.</noscript>
 </section>
 <script>
   import { connectProgress } from '../scripts/progress';
   connectProgress();
-  document.addEventListener('astro:page-load', connectProgress);
 </script>

@@ -1,0 +1,247 @@
+---
+type Kind = 'overview' | 'starter' | 'tool-loop' | 'mcp-state' | 'documents' | 'handoffs'
+  | 'interview-flow' | 'mcp-connection' | 'extraction' | 'first-handoff' | 'interviewers';
+interface Props { kind: Kind }
+interface Node {
+  title: string;
+  label: string[];
+  detail: string;
+  x: number;
+  y: number;
+  cloud?: boolean;
+  tone?: 'context' | 'specialist';
+}
+interface Edge { from: number; to: number; fallback?: boolean; route?: [number, number][] }
+interface Region { title: string; x: number; y: number; width: number; height: number }
+interface Diagram { title: string; description: string; nodes: Node[]; edges: Edge[]; regions?: Region[]; note?: string }
+
+const diagrams: Record<Kind, Diagram> = {
+  'interview-flow': {
+    title: 'A usual interview',
+    description: 'We will build these five roles a few chapters at a time. Here is the usual path through a short practice interview.',
+    nodes: [
+      { title: 'Triage', label: ['Choose the next role'], detail: 'Starts the conversation and hands intake to the receptionist.', x: 15, y: 20, tone: 'specialist' },
+      { title: 'Receptionist', label: ['Gather interview context'], detail: 'Collects a resume and job description, then hands over to the behavioural interviewer.', x: 265, y: 20, tone: 'context' },
+      { title: 'Behavioural interviewer', label: ['Practice experience questions'], detail: 'Asks about past experience and saves feedback before handing over to the technical interviewer.', x: 515, y: 20, tone: 'specialist' },
+      { title: 'Technical interviewer', label: ['Practice technical questions'], detail: 'Uses the job context to ask technical questions, then hands over to the summariser.', x: 515, y: 190, tone: 'specialist' },
+      { title: 'Summariser', label: ['Save the final feedback'], detail: 'Writes a summary and marks the interview record complete.', x: 265, y: 190, tone: 'context' }
+    ],
+    edges: [{ from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 }, { from: 3, to: 4 }],
+    note: 'Later chapters add the return routes and early-finish choices.'
+  },
+  overview: {
+    title: 'Application architecture',
+    description: 'The UI talks to your .NET service. That service calls the Foundry model and executes tools through local MCP servers.',
+    nodes: [
+      { title: 'Blazor chat UI', label: ['Browser and local WebUI'], detail: 'The browser displays the UI. The local Blazor server holds the component state and sends AG-UI requests to the agent service.', x: 15, y: 20 },
+      { title: '.NET agent service', label: ['Your machine'], detail: 'Runs Agent Framework, supplies instructions, and executes the tools the model requests.', x: 265, y: 20 },
+      { title: 'Foundry model', label: ['Azure'], detail: 'Produces replies and tool-call requests. The agent workflow stays in your application.', x: 515, y: 20, cloud: true },
+      { title: 'InterviewData MCP', label: ['Your machine'], detail: 'Exposes the functions that create, fetch, update, and complete interview records.', x: 265, y: 190, tone: 'context' },
+      { title: 'Cosmos DB emulator', label: ['Your machine'], detail: 'Stores interview records during local development.', x: 15, y: 190, tone: 'context' },
+      { title: 'MarkItDown MCP', label: ['Local container'], detail: 'Fetches a document URL and converts the document to text for the agent.', x: 515, y: 190, tone: 'context' }
+    ],
+    edges: [{ from: 0, to: 1 }, { from: 1, to: 2 }, { from: 1, to: 3 }, { from: 3, to: 4 }, { from: 1, to: 5 }],
+    note: 'Arrows show requests; replies travel back along the same connections. Only the model runs in Azure during this local walkthrough.'
+  },
+  starter: {
+    title: 'What you start with and what you build',
+    description: 'The starter provides the application plumbing. You implement the agent behavior and connect it to those services.',
+    nodes: [
+      { title: 'Supplied interface', label: ['Blazor chat and uploads'], detail: 'The chat components, streaming client, and file upload code are provided. You will connect the agent endpoint they use.', x: 15, y: 20 },
+      { title: 'Supplied services', label: ['Aspire and repository'], detail: 'The projects, service defaults, and interview repository are provided. You will expose and connect their capabilities.', x: 15, y: 190 },
+      { title: 'Your first agent', label: ['Model and instructions'], detail: 'You create the Agent Framework agent, connect a Foundry model, and wire streaming replies into the UI.', x: 265, y: 20 },
+      { title: 'Tools and data', label: ['Functions, MCP, records'], detail: 'You expose a C# function, connect MCP tools, and implement the interview lifecycle.', x: 265, y: 190 },
+      { title: 'Specialist workflow', label: ['Agents and handoffs'], detail: 'You define the specialist agents and the routes they may use to transfer a conversation.', x: 515, y: 105 }
+    ],
+    edges: [{ from: 0, to: 2 }, { from: 1, to: 3 }, { from: 2, to: 4 }, { from: 3, to: 4 }]
+  },
+  'tool-loop': {
+    title: 'What happens when an agent calls a tool',
+    description: 'The model requests a function call; your application runs the function and sends its result back. The model can then answer or request another call.',
+    nodes: [
+      { title: 'Send the request', label: ['Message and tool schema'], detail: 'Your application sends the user message and descriptions of the available tools to the model.', x: 15, y: 20 },
+      { title: 'Choose a tool', label: ['Foundry model'], detail: 'The model returns a tool name and arguments for the application to execute.', x: 265, y: 20, cloud: true },
+      { title: 'Execute the function', label: ['Your C# code'], detail: 'Agent Framework invokes the registered function in your application with those arguments.', x: 515, y: 20 },
+      { title: 'Return the result', label: ['Tool output'], detail: 'The application sends the function result back to the model as tool output.', x: 515, y: 190 },
+      { title: 'Continue the reply', label: ['Foundry model'], detail: 'The model uses the result to answer. If it needs another tool, the cycle repeats.', x: 265, y: 190, cloud: true }
+    ],
+    edges: [{ from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 }, { from: 3, to: 4 }, { from: 4, to: 1, fallback: true }]
+  },
+  'mcp-connection': {
+    title: 'Connect a client to the interview tools',
+    description: 'The MCP client lives in our agent service. It discovers tools from InterviewData and sends tool calls across the HTTP connection.',
+    regions: [
+      { title: 'Agent service · client side', x: 15, y: 10, width: 250, height: 330 },
+      { title: 'InterviewData · server side', x: 475, y: 10, width: 250, height: 330 }
+    ],
+    nodes: [
+      { title: 'Agent Framework', label: ['Registered MCP tools'], detail: 'Receives the tool schemas discovered by the client and invokes a tool when the model requests it.', x: 35, y: 60 },
+      { title: 'MCP client', label: ['Discover and call tools'], detail: 'Connects from the agent service to InterviewData at /mcp over HTTP. It lists the server tools and returns their results to Agent Framework.', x: 35, y: 220 },
+      { title: 'MCP endpoint', label: ['HTTP /mcp'], detail: 'Receives discovery and invocation requests in the InterviewData service.', x: 495, y: 60, tone: 'context' },
+      { title: 'Interview tools', label: ['C# methods and repository'], detail: 'Run in InterviewData, read or change the interview record, and return results through the MCP connection.', x: 495, y: 220, tone: 'context' }
+    ],
+    edges: [{ from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 }],
+    note: 'The boundary between the two services is the HTTP connection. Tool results travel back along the same route.'
+  },
+  'mcp-state': {
+    title: 'Conversation state and interview records',
+    description: 'The UI supplies a SessionId. The agent uses that ID when calling the interview-data tools; the MCP server saves the record in Cosmos DB.',
+    nodes: [
+      { title: 'UI conversation', label: ['Blazor circuit and SessionId'], detail: 'The server-side Blazor component holds the messages and supplies a session ID. Refreshing the browser starts a new circuit and a fresh chat.', x: 15, y: 20 },
+      { title: 'Agent conversation', label: ['Instructions and context'], detail: 'The agent receives the SessionId and uses the interview tools to look up or change the matching record.', x: 265, y: 20 },
+      { title: 'MCP tool call', label: ['ID and record fields'], detail: 'The call crosses an HTTP transport to the InterviewData server. Tool results return through the same connection.', x: 515, y: 20 },
+      { title: 'Interview record', label: ['Cosmos DB'], detail: 'The database stores the resume, job description, transcript, and completion status. We can fetch the saved record using its session ID.', x: 515, y: 190, tone: 'context' }
+    ],
+    edges: [{ from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 }]
+  },
+  extraction: {
+    title: 'Read the text inside a resume',
+    description: 'We ask the coach to extract a sample resume. MarkItDown fetches the URL and returns text we can inspect.',
+    nodes: [
+      { title: 'Sample resume URL', label: ['A reachable document'], detail: 'Give the coach a published fictional resume URL that the MarkItDown container can reach.', x: 15, y: 20 },
+      { title: 'MarkItDown MCP', label: ['Fetch and convert'], detail: 'The coach invokes the connected extraction tool. MarkItDown fetches the document and converts it to text.', x: 265, y: 20, tone: 'context' },
+      { title: 'Extracted text', label: ['Names, skills, experience'], detail: 'The tool returns document text. Check for recognizable details from the fictional resume.', x: 515, y: 20, tone: 'context' },
+      { title: 'Coach reply', label: ['Inspect the tool result'], detail: 'The coach can quote or summarize the returned text. In the next chapter, we will add instructions to save it with the interview.', x: 515, y: 190 }
+    ],
+    edges: [{ from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 }],
+    note: 'Document text is untrusted input. Keep the coach\'s instructions in control of what it does next.'
+  },
+  documents: {
+    title: 'How a document becomes conversation context',
+    description: 'MarkItDown needs a URL it can reach. It converts the document to text, which the agent can use and store with the interview.',
+    nodes: [
+      { title: 'Resume or job brief', label: ['File or document URL'], detail: 'A user can supply a document URL, attach a file, or paste text. Pasted text does not need document extraction.', x: 15, y: 20 },
+      { title: 'Reachable URL', label: ['Supplied upload endpoint'], detail: 'For attachments, the app uploads the file and returns a URL. The MarkItDown container must be able to reach that address.', x: 265, y: 20 },
+      { title: 'MarkItDown MCP', label: ['Document extraction'], detail: 'The MCP tool fetches the URL and converts the document to text for the model.', x: 515, y: 20, tone: 'context' },
+      { title: 'Extracted text', label: ['Untrusted input'], detail: 'The extracted content may contain instructions from the document author. Keep the agent\'s role and tool-use rules in control when processing it.', x: 515, y: 190, tone: 'context' },
+      { title: 'Interview context', label: ['Agent and saved record'], detail: 'The agent can use the resume and job description when asking questions, and save that information through InterviewData tools.', x: 265, y: 190 }
+    ],
+    edges: [{ from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 }, { from: 3, to: 4 }]
+  },
+  'first-handoff': {
+    title: 'Our first two-agent workflow',
+    description: 'Triage starts the conversation and sends document intake to the receptionist. The receptionist returns control to triage when intake is ready.',
+    nodes: [
+      { title: 'Triage', label: ['Route the conversation'], detail: 'Starts the workflow with one handoff destination: the receptionist. It has no domain tools.', x: 140, y: 60, tone: 'specialist' },
+      { title: 'Receptionist', label: ['Documents and records'], detail: 'Uses MarkItDown and InterviewData to gather the resume and job description, then hands control back to triage.', x: 390, y: 60, tone: 'context' }
+    ],
+    edges: [{ from: 0, to: 1 }, { from: 1, to: 0, fallback: true }],
+    note: 'The solid arrow starts intake. The dashed arrow returns to triage. These are the two available routes at this checkpoint.'
+  },
+  interviewers: {
+    title: 'Add behavioural and technical practice',
+    description: 'We now have four agents. Intake leads to behavioural questions, then technical questions. Each specialist can return to triage.',
+    nodes: [
+      { title: 'Triage', label: ['Choose among three roles'], detail: 'Can hand off to the receptionist, behavioural interviewer, or technical interviewer.', x: 265, y: 20, tone: 'specialist' },
+      { title: 'Receptionist', label: ['Documents and records'], detail: 'Collects interview context using MarkItDown and InterviewData. It can hand off to the behavioural interviewer or triage.', x: 15, y: 190, tone: 'context' },
+      { title: 'Behavioural interviewer', label: ['InterviewData tools'], detail: 'Uses the saved context, asks behavioural questions, and saves feedback. It can hand off to the technical interviewer or triage.', x: 265, y: 190, tone: 'specialist' },
+      { title: 'Technical interviewer', label: ['InterviewData tools'], detail: 'Asks technical questions and saves feedback. When this phase ends, it returns to triage so the user can choose another practice phase or finish.', x: 515, y: 190, tone: 'specialist' }
+    ],
+    edges: [
+      { from: 0, to: 1 }, { from: 0, to: 2 }, { from: 0, to: 3 },
+      { from: 1, to: 2 }, { from: 2, to: 3 },
+      { from: 1, to: 0, fallback: true }, { from: 2, to: 0, fallback: true },
+      { from: 3, to: 0, fallback: true, route: [[620, 190], [620, 145], [495, 145], [495, 90], [475, 90]] }
+    ],
+    note: 'All eight available routes are shown. Dashed arrows return to triage. We add the summariser in the next chapter.'
+  },
+  handoffs: {
+    title: 'The specialist handoff routes',
+    description: 'Triage can select any specialist. The usual interview follows the specialist chain; each specialist can also return control to triage.',
+    nodes: [
+      { title: 'Triage', label: ['Routing; no domain tools'], detail: 'Starts the workflow. It can hand off to the receptionist, behavioural interviewer, technical interviewer, or summariser.', x: 265, y: 20, tone: 'specialist' },
+      { title: 'Receptionist', label: ['Documents and records'], detail: 'Collects the resume and job description using MarkItDown and InterviewData. It can hand off to the behavioural interviewer or triage.', x: 15, y: 190, tone: 'context' },
+      { title: 'Behavioural interviewer', label: ['InterviewData tools'], detail: 'Asks behavioural questions and saves feedback. It can hand off to the technical interviewer or triage.', x: 265, y: 190, tone: 'specialist' },
+      { title: 'Technical interviewer', label: ['InterviewData tools'], detail: 'Asks technical questions and saves feedback. It can hand off to the summariser or triage.', x: 515, y: 190, tone: 'specialist' },
+      { title: 'Summariser', label: ['InterviewData tools'], detail: 'Writes the final feedback, completes the interview record, and can hand control back to triage.', x: 515, y: 360, tone: 'context' }
+    ],
+    edges: [
+      { from: 0, to: 1 }, { from: 0, to: 2 }, { from: 0, to: 3 },
+      { from: 0, to: 4, route: [[475, 70], [735, 70], [735, 410], [725, 410]] },
+      { from: 1, to: 2 }, { from: 2, to: 3 }, { from: 3, to: 4 },
+      { from: 1, to: 0, fallback: true }, { from: 2, to: 0, fallback: true },
+      { from: 3, to: 0, fallback: true, route: [[620, 190], [620, 145], [495, 145], [495, 90], [475, 90]] },
+      { from: 4, to: 0, fallback: true, route: [[620, 460], [620, 475], [5, 475], [5, 70], [265, 70]] }
+    ],
+    note: 'All eleven handoff routes are shown. Dashed arrows return to triage. The agents take turns handling the conversation, using the same model deployment.'
+  }
+};
+
+const { kind } = Astro.props;
+const diagram = diagrams[kind];
+if (!diagram) throw new Error(`Unknown teaching diagram: ${kind}`);
+const width = 210;
+const height = 100;
+const graphicHeight = Math.max(
+  ...diagram.nodes.map(node => node.y + height),
+  ...(diagram.regions ?? []).map(region => region.y + region.height),
+  ...diagram.edges.flatMap(edge => edge.route?.map(([, y]) => y) ?? [])
+) + 20;
+function connection(edge: Edge) {
+  if (edge.route) {
+    const points = edge.route;
+    const [x, y] = points[points.length - 1];
+    const [px, py] = points[points.length - 2];
+    const length = Math.hypot(x - px, y - py);
+    const ax = (x - px) / length;
+    const ay = (y - py) / length;
+    return {
+      path: points.map(([a, b], index) => `${index === 0 ? 'M' : 'L'} ${a} ${b}`).join(' '),
+      arrow: `${x},${y} ${x - ax * 10 + ay * 5},${y - ay * 10 - ax * 5} ${x - ax * 10 - ay * 5},${y - ay * 10 + ax * 5}`
+    };
+  }
+  const from = diagram.nodes[edge.from];
+  const to = diagram.nodes[edge.to];
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const scale = Math.min(dx === 0 ? Infinity : width / 2 / Math.abs(dx), dy === 0 ? Infinity : height / 2 / Math.abs(dy));
+  const start = { x: from.x + width / 2 + dx * scale, y: from.y + height / 2 + dy * scale };
+  const end = { x: to.x + width / 2 - dx * scale, y: to.y + height / 2 - dy * scale };
+  const length = Math.hypot(dx, dy);
+  const ux = dx / length;
+  const uy = dy / length;
+  const bend = edge.fallback ? 38 : 0;
+  const control = { x: (start.x + end.x) / 2 - uy * bend, y: (start.y + end.y) / 2 + ux * bend };
+  const angle = Math.atan2(end.y - control.y, end.x - control.x);
+  const ax = Math.cos(angle);
+  const ay = Math.sin(angle);
+  return {
+    path: `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`,
+    arrow: `${end.x},${end.y} ${end.x - ax * 10 + ay * 5},${end.y - ay * 10 - ax * 5} ${end.x - ax * 10 - ay * 5},${end.y - ay * 10 + ax * 5}`
+  };
+}
+---
+<figure class="concept-diagram" data-diagram-kind={kind}>
+  <figcaption>
+    <strong>{diagram.title}</strong>
+    <p>{diagram.description}</p>
+  </figcaption>
+  <svg class="concept-graphic" viewBox={`0 0 740 ${graphicHeight}`} aria-hidden="true" focusable="false">
+    <title>{diagram.title}</title>
+    <desc>{diagram.nodes.map(node => `${node.title}: ${node.detail}`).join(' ')}</desc>
+    {diagram.regions?.map(region => (
+      <g class="diagram-boundary">
+        <rect x={region.x} y={region.y} width={region.width} height={region.height} rx="10" />
+        <text x={region.x + 12} y={region.y + 27}>{region.title}</text>
+      </g>
+    ))}
+    {diagram.edges.map(edge => {
+      const drawing = connection(edge);
+      return <g class:list={['diagram-edge', { 'diagram-fallback': edge.fallback }]} data-from={edge.from} data-to={edge.to}>
+        <path d={drawing.path} />
+        <polygon points={drawing.arrow} />
+      </g>;
+    })}
+    {diagram.nodes.map(node => (
+      <g class:list={['diagram-node', { 'diagram-cloud': node.cloud, 'diagram-context': node.tone === 'context', 'diagram-specialist': node.tone === 'specialist' }]} transform={`translate(${node.x},${node.y})`}>
+        <rect width={width} height={height} rx="8" />
+        <text x="105" y="36" text-anchor="middle" class="diagram-node-title">{node.title}</text>
+        {node.label.map((line, index) => <text x="105" y={65 + index * 19} text-anchor="middle">{line}</text>)}
+      </g>
+    ))}
+  </svg>
+  <ol class="concept-text">
+    {diagram.nodes.map(node => <li><strong>{node.title}.</strong> {node.detail}</li>)}
+  </ol>
+  {diagram.note && <p class="diagram-note">{diagram.note}</p>}
+</figure>
