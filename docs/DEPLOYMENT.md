@@ -1,6 +1,6 @@
 # Deployment and cleanup reference
 
-Container Apps deployment is an optional task after the completed capstone. It hosts the existing .NET services; the agents execute in `InterviewCoach.Agent` and call the configured model provider. Use an approved, access-restricted development environment with fictional interview data.
+Container Apps deployment is an optional task after the workshop. It hosts the existing .NET services; the agents execute in `InterviewCoach.Agent` and call the configured model provider. Use an approved, access-restricted development environment with fictional interview data.
 
 **A local AppHost start can provision billable Foundry resources. Cloud resources remain until cleanup.** Keep a private inventory for the completed-example run, learner app, and any `azd` environment.
 
@@ -8,7 +8,7 @@ Container Apps deployment is an optional task after the completed capstone. It h
 
 The completed project's `azure.yaml` points to `src/InterviewCoach.AppHost/InterviewCoach.AppHost.csproj` with `host: containerapp`. Review that project's `appsettings.json`. Root `apphost.settings.json` configures the separate file-based AppHost.
 
-The repository source already contains the completed graph. In workshop downloads, the root AppHost runs the full interview by the capstone. The project-based AppHost and its settings remain in their starter state throughout the core course.
+The repository source already contains the completed graph. In workshop downloads, the root AppHost runs the full interview by Chapter 12. The project-based AppHost and its settings remain in their starter state throughout the core course.
 
 To deploy a learner project, follow the [optional deployment setup](https://codemillmatt.github.io/interview-coach-agent-framework/resources/deployment/#check-the-deployment-entry-point). Its `deployment-apphost.patch` changes only `src/InterviewCoach.AppHost/AppHost.cs` and that project's `appsettings.json`. It retains `WorkshopHosting.cs`, the MCP discovery probe, and all agent and UI code. Run `git apply --check` before applying it. Preserve local work if the check fails. The patch excludes `WORKSHOP.txt` and secrets.
 
@@ -79,7 +79,7 @@ The selected provider remains your choice of Microsoft Foundry or GitHub Copilot
 
 Inspect resource health and model access, then follow the service path: WebUI -> agent -> both MCP servers, and InterviewData -> Cosmos. The deployment graph provisions managed Cosmos resources; local run mode uses the preview emulator.
 
-Run the capstone's short synthetic interview. Check the tool invocations, handoffs, saved transcript, summary, and completion flag. Record the actual results and any failing operation. A deployment review also includes endpoint exposure, identity, document reachability, and retained data.
+Run the [summary-agent lesson's short synthetic interview](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/12-handoffs/#save-the-final-feedback). Check the tool invocations, handoffs, saved transcript, summary, and completion flag. Record the actual results and any failing operation. A deployment review also includes endpoint exposure, identity, document reachability, and retained data.
 
 For a failure, inspect the named operation and resource logs before retrying. Model quota, identity permissions, and container startup each need their own diagnosis. Reuse the intended environment while investigating so its resource inventory stays clear.
 

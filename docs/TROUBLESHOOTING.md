@@ -36,7 +36,7 @@ For a missing document, inspect extraction before persistence. The parser contai
 
 At `05-mcp-server`, use the supplied MCP discovery probe to list tools. The coach gains its InterviewData client in `05-mcp-state`. At `07-interviewers`, technical practice returns to triage; summary generation arrives in `07-handoffs`. Use the expected behavior for your checkpoint when interpreting logs.
 
-The [final debugging lesson](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/14-debugging/) practices a failed document fetch and an early-finish handoff with the completed application.
+The [debugging lesson](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/13-debugging/) practices a failed document fetch and an early-finish handoff with the completed application.
 
 ## Safe diagnostics
 

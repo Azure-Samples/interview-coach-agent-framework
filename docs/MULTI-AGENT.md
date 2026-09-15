@@ -60,7 +60,7 @@ Tool scope controls which calls an agent can request. Per-user record authorizat
 | `07-interviewers` | Triage, receptionist, behavioural and technical interviewers | Technical interviewer returns to triage for another phase or to finish |
 | `07-handoffs` | All five roles | Summariser saves feedback and completes the record |
 
-The four-agent stage introduces behavioural-to-technical practice using saved context. Summary generation and its routes arrive in `07-handoffs`. The full single-agent baseline remains available throughout these stages. The [debugging lesson](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/14-debugging/) uses the completed graph to examine an early-finish request.
+The four-agent stage introduces behavioural-to-technical practice using saved context. Summary generation and its routes arrive in `07-handoffs`. The full single-agent baseline remains available throughout these stages. The [debugging lesson](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/13-debugging/) uses the completed graph to examine an early-finish request.
 
 ## Hosting adapter
 

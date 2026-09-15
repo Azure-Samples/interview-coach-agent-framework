@@ -19,9 +19,9 @@ The starter supplies the Blazor UI, EF Core repository, service defaults, and so
 | [10. Make your first handoff](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/10-first-handoff/) | Observe triage transfer document intake to the receptionist |
 | [11. Add the interviewers](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/11-interviewers/) | Use saved context for behavioural and technical practice in a four-agent workflow |
 | [12. Finish with a summary agent](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/12-handoffs/) | Complete the five-role graph and save final feedback |
-| [13. Run your completed interview](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/13-capstone/) | Complete an interview with the application you built and inspect its transcript, summary, and completion state |
-| [14. Find and fix a failed step](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/14-debugging/) | Trace a failed document request and examine an early-finish route |
+| [13. Find and fix a failed step](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/13-debugging/) | Trace a failed document request and examine an early-finish route |
+| [14. Review what you built](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/14-summary/) | Review the concepts, their implementation, and the problems they solve |
 
-The course uses 13 executable checkpoint stages. The opening example and final debugging lesson reuse `08-complete`. The capstone checkpoint has the same application source as `07-handoffs` and retains the supplied startup helpers. Completion depends on the working interview and saved result. Checkpoint generation replays every code edit and checks the generated projects.
+The course uses 13 executable checkpoint stages. The opening example and final lessons reuse `08-complete`. The completed checkpoint has the same application source as `07-handoffs` and retains the supplied startup helpers. Checkpoint generation replays every code edit and checks the generated projects.
 
-Use [architecture](ARCHITECTURE.md), [configuration](CONFIGURATION.md), and [session contracts](SESSION-DATA.md) for lookup. Compare `Single` and `HandOff` using the same inputs. [Deployment](DEPLOYMENT.md) and [Copilot](providers/GITHUB-COPILOT.md) are optional tasks after the completed capstone.
+Use [architecture](ARCHITECTURE.md), [configuration](CONFIGURATION.md), and [session contracts](SESSION-DATA.md) for lookup. Compare `Single` and `HandOff` using the same inputs. [Deployment](DEPLOYMENT.md) and [Copilot](providers/GITHUB-COPILOT.md) are optional tasks after the workshop.

@@ -27,8 +27,8 @@ export function validateEditContract(value) {
     }
     for (const step of transition.steps) {
       if (!record(step) || !['id', 'title', 'file', 'before', 'after'].every(key => typeof step[key] === 'string') ||
-          !['replace', 'create', 'delete'].includes(String(step.operation)) ||
-          !['learner', 'supplied'].includes(String(step.ownership))) {
+          typeof step.operation !== 'string' || !['replace', 'create', 'delete'].includes(step.operation) ||
+          typeof step.ownership !== 'string' || !['learner', 'supplied'].includes(step.ownership)) {
         throw new Error(`Invalid edit step in transition ${transition.from} -> ${transition.to}.`);
       }
       const id = String(step.id);

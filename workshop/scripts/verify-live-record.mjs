@@ -38,6 +38,13 @@ async function record(name, args) {
 }
 
 await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'workshop-record-check', version: '1.0' } });
+const initialized = await fetch(endpoint, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream', 'MCP-Protocol-Version': '2025-06-18' },
+  body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+  signal: AbortSignal.timeout(60000),
+});
+assert.equal(initialized.ok, true, `notifications/initialized: HTTP ${initialized.status}`);
 const listed = await rpc('tools/list', {});
 assert.equal(listed.tools.length, 5);
 if (readId) {

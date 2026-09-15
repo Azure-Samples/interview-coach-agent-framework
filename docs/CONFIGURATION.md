@@ -6,7 +6,7 @@ Use this reference for the completed application. Workshop `02-starter` is cloud
 
 The root `apphost.cs` loads `apphost.settings.json` and user secrets. The project-based AppHost uses `src/InterviewCoach.AppHost/appsettings.json` and is the deployment target in `azure.yaml`. Configure each entry point through its own settings.
 
-Core workshop orchestration edits use root `apphost.cs`, including the capstone. The learner's project-based AppHost and settings stay in their starter state unless the learner follows the optional deployment setup. The repository source already contains both completed entry points. See [workshop startup helpers](ARCHITECTURE.md#workshop-startup-helpers).
+Core workshop orchestration edits use root `apphost.cs`, including the final lessons. The learner's project-based AppHost and settings stay in their starter state unless the learner follows the optional deployment setup. The repository source already contains both completed entry points. See [workshop startup helpers](ARCHITECTURE.md#workshop-startup-helpers).
 
 `LlmResourceFactory.GetProviderAndAgentMode` reads configuration, then applies `--provider`/`-p` and `--mode`/`-m` arguments. Missing or invalid provider/mode values are rejected.
 
