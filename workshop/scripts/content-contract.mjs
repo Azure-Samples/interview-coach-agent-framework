@@ -1,12 +1,8 @@
 const kinds = new Set(['tour', 'setup', 'build', 'verification']);
 const rubricHeadings = /^(?:##) (?:What we are doing|Why|How and where|See it work|Make it yours|If you get stuck|Carry forward)\s*$/m;
 
-export function stepReferences(source, steps) {
-  return [...source.matchAll(/<(CodeStep|SuppliedSteps)\b[^>]*\b(?:id|transition)=["']([^"']+)["']/g)]
-    .flatMap(([, kind, id]) => kind === 'CodeStep' ? [id]
-      : steps ? steps.filter(step => step.to === id).map(step => step.id).concat(
-        steps.some(step => step.to === id) ? [] : [`unknown-transition:${id}`])
-        : [`supplied-transition:${id}`]);
+export function stepReferences(source) {
+  return [...source.matchAll(/<CodeStep\b[^>]*\bid=["']([^"']+)["']/g)].map(([, id]) => id);
 }
 
 export function validateCourseContent(course, manifest, pages) {
@@ -100,12 +96,7 @@ export function validateEditCoverage(course, pages, steps) {
   const covered = new Set();
   for (const chapter of course.chapters) {
     const source = pages.get(chapter.id) ?? '';
-    const refs = stepReferences(source, steps);
-    for (const [, to] of source.matchAll(/<SuppliedSteps\b[^>]*\btransition=["']([^"']+)["']/g)) {
-      if (steps.some(step => step.to === to && step.ownership !== 'supplied')) {
-        errors.push(`${chapter.id}: supplied setup "${to}" contains learner-owned edits.`);
-      }
-    }
+    const refs = stepReferences(source);
     const seen = new Set();
     for (const id of refs) {
       const step = known.get(id);

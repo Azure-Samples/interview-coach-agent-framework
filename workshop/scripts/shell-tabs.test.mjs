@@ -81,6 +81,71 @@ test('Chapter 0 stores the complete Aspire Azure context outside the repository'
   assert.doesNotMatch(source, /"Azure":\s*\{\s*"SubscriptionId"/);
 });
 
+test('Chapter 0 explicitly enables resource-group creation before starting the example', () => {
+  const source = readFileSync(new URL('workshop/00-orientation.mdx', content), 'utf8');
+  const settingsBlocks = [...source.matchAll(/```json\n([\s\S]*?)```/g)];
+  const example = settingsBlocks.find(([, code]) => JSON.parse(code).MicrosoftFoundry);
+  assert.ok(example, 'The example must show its AppHost settings.');
+  const settings = JSON.parse(example[1]);
+  assert.equal(settings.Azure.AllowResourceGroupCreation, true);
+  assert.equal(settings.AgentMode, 'HandOff');
+  assert.equal(settings.LlmProvider, 'MicrosoftFoundry');
+  assert.ok(example.index < source.indexOf('aspire start --apphost ./apphost.cs'));
+  assert.match(source, /example's root `apphost\.settings\.json`, add the `Azure` section/);
+  assert.match(source, /interview-coach-lab` starter deliberately keeps this setting `false`/);
+});
+
+test('Chapter 0 collects location and resource group once before the copyable commands in both shells', () => {
+  const source = readFileSync(new URL('workshop/00-orientation.mdx', content), 'utf8');
+  for (const language of ['bash', 'powershell']) {
+    const blocks = [...source.matchAll(new RegExp('```' + language + '\\n([\\s\\S]*?)```', 'g'))].map(([, code]) => code);
+    const setups = blocks.filter(code => code.includes('YOUR_APPROVED_AZURE_REGION'));
+    assert.equal(setups.length, 1, language);
+    const setup = setups[0];
+    assert.equal(setup.trim().split('\n').length, 2, 'Keep manual inputs in their own block.');
+    assert.match(setup, /resourceGroup\s*=\s*"rg-interview-coach-YOUR_NAME"/);
+    const context = blocks.find(code => code.includes('aspire secret set "Azure:Location"'));
+    assert.ok(context, language);
+    assert.ok(blocks.indexOf(setup) < blocks.indexOf(context), language);
+    const prefix = language === 'bash' ? '$' : '$env:';
+    assert.doesNotMatch(context, /YOUR_|^\s*(?:export |\$env:)?(?:location|resourceGroup)\s*=/m);
+    assert.ok(context.includes(`aspire secret set "Azure:Location" "${prefix}location"`), language);
+    assert.ok(context.includes(`aspire secret set "Azure:ResourceGroup" "${prefix}resourceGroup"`), language);
+    for (const name of ['location', 'resourceGroup']) {
+      assert.ok(setup.includes(language === 'bash' ? `export ${name}=` : `$env:${name} =`), language);
+    }
+    const accounts = blocks.find(code => code.includes('az cognitiveservices account list'));
+    assert.ok(accounts?.includes(`--resource-group "${prefix}resourceGroup"`), language);
+    assert.ok(accounts.includes(`location=='${prefix}location'`), language);
+    const deployment = blocks.find(code => code.includes(language === 'bash' ? 'export deploymentName=' : '$env:deploymentName ='));
+    assert.equal(deployment?.trim(), language === 'bash' ? 'export deploymentName="chat"' : '$env:deploymentName = "chat"');
+  }
+  assert.doesNotMatch(source, /YOUR_RESOURCE_GROUP|YOUR_ACCOUNT_NAME/);
+});
+
+test('Chapter 0 Bash commands reuse the chosen location and resource group without cloud access', bashOptions, () => {
+  const source = readFileSync(new URL('workshop/00-orientation.mdx', content), 'utf8');
+  const blocks = [...source.matchAll(/```bash\n([\s\S]*?)```/g)].map(([, code]) => code);
+  const setup = blocks.find(code => code.includes('YOUR_APPROVED_AZURE_REGION'));
+  const context = blocks.find(code => code.includes('aspire secret set "Azure:Location"'));
+  assert.ok(setup && context);
+  const mock = `
+az() {
+  case "$*" in
+    "account show --query id --output tsv") printf '%s\\n' '11111111-2222-3333-4444-555555555555' ;;
+    "account show --query tenantId --output tsv") printf '%s\\n' 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' ;;
+    *) printf 'Unexpected az arguments: %s\\n' "$*" >&2; return 1 ;;
+  esac
+}
+aspire() { printf '%s\\n' "$*"; }
+`;
+  const inputs = setup.replace('YOUR_APPROVED_AZURE_REGION', 'eastus2').replace('rg-interview-coach-YOUR_NAME', 'rg-workshop-example');
+  const result = spawnSync('bash', ['-eu'], { input: mock + inputs + context, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^secret set Azure:Location eastus2 --apphost \.\/apphost\.cs$/m);
+  assert.match(result.stdout, /^secret set Azure:ResourceGroup rg-workshop-example --apphost \.\/apphost\.cs$/m);
+});
+
 test('Chapter 0 Bash commands reuse the ID returned by az account show without cloud access', bashOptions, () => {
   const source = readFileSync(new URL('workshop/00-orientation.mdx', content), 'utf8');
   const blocks = [...source.matchAll(/```bash\n([\s\S]*?)```/g)].map(([, code]) => code);
@@ -109,9 +174,6 @@ test('source-driven commands use the same shell tab component', () => {
   assert.match(component, /<TabItem label="PowerShell">/);
   const orientation = readFileSync(new URL('workshop/00-orientation.mdx', content), 'utf8');
   assert.match(orientation, /<ShellCommands command=\{`git checkout --detach \$\{labs.sourceTag\}`\}/);
-  const supplied = readFileSync(new URL('../src/components/SuppliedSteps.astro', import.meta.url), 'utf8');
-  assert.match(supplied, /<ShellCommands command=\{commands\}/);
-  assert.doesNotMatch(supplied, /<Code\b[^>]*lang="(?:sh|bash)"/);
 });
 
 const rendered = `<starlight-tabs data-sync-key="shell">

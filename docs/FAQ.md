@@ -10,7 +10,7 @@ Below is guidance for anyone learning the architecture or extending the applicat
 
 ## What does the starter supply?
 
-The Blazor UI, EF Core repository, service defaults, and `WorkshopHosting.cs` are supplied. The helper wraps source-derived Foundry model/authentication and DevUI code. You create the `ChatClientAgent` and instructions before activating hosting in the first-agent lesson. Core orchestration edits use root `apphost.cs`; the capstone support patch restores the completed deployment entry point. See [scaffold and finalization](ARCHITECTURE.md#workshop-scaffold-and-finalization).
+The Blazor UI, EF Core repository, service defaults, and `WorkshopHosting.cs` are supplied. The helper wraps source-derived Foundry model/authentication and DevUI code. You create the `ChatClientAgent` and instructions before activating hosting in the first-agent lesson. Core orchestration edits use root `apphost.cs`. The capstone keeps the helper and checks the completed interview. See [workshop startup helpers](ARCHITECTURE.md#workshop-startup-helpers).
 
 ## Is Foundry running the agents?
 

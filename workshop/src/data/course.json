@@ -151,7 +151,7 @@
       "group": "Specialist workflows",
       "title": "Run your completed interview",
       "description": "Complete an interview and check the tool calls, transitions, and saved summary.",
-      "kind": "build",
+      "kind": "verification",
       "from": "07-handoffs",
       "checkpoints": ["08-complete"]
     },

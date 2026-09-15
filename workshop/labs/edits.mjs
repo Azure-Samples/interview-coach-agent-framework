@@ -176,18 +176,23 @@ function transition(previous, target, from, to) {
       'description: "An interview coach for software developers."', 'description: "Runs the complete interview coaching process."');
     section('documents-interview-instructions', 'Add document intake to the complete interview instructions', paths.factory, prompt);
   } else if (to === '07-first-handoff') {
-    section('handoff-hosting-adapter', 'Register the workflow and adapt it to a hosted agent', paths.factory,
+    section('handoff-hosting-adapter', 'Replace the existing AddHandOffWorkflow stub', paths.factory,
       between(anchors.adapter, anchors.provider), 'supplied');
     const targetFactory = text(target, paths.factory);
     const opening = sourceSlice(targetFactory, anchors.workflow, '        // --- Triage Agent ---');
     const stub = sourceSlice(text(current, paths.factory), anchors.workflow, '\n}\n');
-    change('handoff-workflow-tools', 'Create the workflow method and discover its tools', paths.factory, stub,
+    change('handoff-workflow-tools', 'Replace the existing CreateHandOffWorkflow stub', paths.factory, stub,
       opening + endOfWorkflow.slice(0, -3));
-    insert('handoff-triage-agent', 'Define triage with only the available intake route', paths.factory, endOfWorkflow,
+    function appendWorkflow(id, title, start, select) {
+      const workflow = sourceSlice(text(current, paths.factory), anchors.workflow, '\n}\n') + '\n}\n';
+      const context = sourceSlice(workflow, start, endOfWorkflow);
+      change(id, title, paths.factory, context, context + select(targetFactory));
+    }
+    appendWorkflow('handoff-triage-agent', 'Add triage after the tool discovery', anchors.workflow,
       between('        // --- Triage Agent ---', '        // --- Receptionist Agent ---'));
-    insert('handoff-receptionist-agent', 'Define the receptionist with document and repository tools', paths.factory, endOfWorkflow,
+    appendWorkflow('handoff-receptionist-agent', 'Add the receptionist after triage', '        // --- Triage Agent ---',
       between('        // --- Receptionist Agent ---', '        // Connect only the two agents'));
-    insert('handoff-two-agent-graph', 'Connect both existing agents and name the workflow', paths.factory, endOfWorkflow,
+    appendWorkflow('handoff-two-agent-graph', 'Add the graph after the receptionist', '        // --- Receptionist Agent ---',
       between('        // Connect only the two agents', '    }\n\n}\n'));
     settings('handoff-mode');
   } else if (to === '07-interviewers') {
@@ -203,6 +208,8 @@ function transition(previous, target, from, to) {
     change('specialists-interviewer-graph', 'Connect behavioural and technical practice', paths.factory,
       sourceSlice(text(current, paths.factory), '        // Connect only the two agents', endOfWorkflow),
       sourceSlice(text(target, paths.factory), '        // Connect the four available agents.', endOfWorkflow));
+    section('interviewers-session-id', 'Show the session ID above the conversation', paths.chat,
+      between('<ChatHeader ', '<ChatMessageList '));
   } else if (to === '07-handoffs') {
     section('summary-triage-agent', 'Let triage route to the summary', paths.factory,
       between('        // --- Triage Agent ---', '        // --- Receptionist Agent ---'));
@@ -214,14 +221,7 @@ function transition(previous, target, from, to) {
     change('specialists-handoff-graph', 'Connect the completed workflow', paths.factory,
       sourceSlice(text(current, paths.factory), '        // Connect the four available agents.', endOfWorkflow),
       sourceSlice(text(target, paths.factory), '        // Build the handoff workflow', endOfWorkflow));
-  } else if (to === '08-complete') {
-    for (const file of [...new Set([...previous.keys(), ...target.keys()])].sort()) {
-      const before = previous.has(file) ? text(previous, file) : '';
-      const after = target.has(file) ? text(target, file) : '';
-      if (before !== after) change(`finalize-${steps.length + 1}`, `Finish supplied setup: ${file}`, file,
-        before, after, 'supplied', !target.has(file) ? 'delete' : !previous.has(file) ? 'create' : 'replace');
-    }
-  } else {
+  } else if (to !== '08-complete') {
     throw new Error(`No edit contract for ${to}`);
   }
 

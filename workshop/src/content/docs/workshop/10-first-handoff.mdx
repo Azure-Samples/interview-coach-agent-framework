@@ -3,15 +3,18 @@ title: Make your first handoff
 description: Build a two-agent workflow and watch triage transfer intake to the receptionist.
 ---
 import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeSample from '../../../components/CodeSample.astro';
 import CodeStep from '../../../components/CodeStep.astro';
 import Checkpoint from '../../../components/Checkpoint.astro';
 import ConceptDiagram from '../../../components/ConceptDiagram.astro';
 import Hint from '../../../components/Hint.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
 
-We'll split intake into two roles. Triage sends the conversation to the receptionist, which collects and saves the interview materials. You'll see that transfer before adding any interviewers.
+Now we'll split the interview intake process into two agent roles.
 
-Continue in the same `interview-coach-lab` project from the previous chapter. Keep `CreateSingleAgent` intact for later comparison. Work in `src/InterviewCoach.Agent/AgentDelegateFactory.cs` and root `apphost.settings.json`.
+A triage agent sends the conversation to the receptionist agent, which collects and saves the interview materials. You'll see that transfer before adding any interviewers.
+
+Continue in the same `interview-coach-lab` project from the previous chapter. We'll be working in `src/InterviewCoach.Agent/AgentDelegateFactory.cs` and root `apphost.settings.json`.
 
 <ConceptDiagram kind="first-handoff" />
 
@@ -19,9 +22,11 @@ Handoffs can add model calls and cost. Use the short fictional example below wit
 
 ## Connect the workflow to the supplied host
 
-Apply the supplied adapter in `AddHandOffWorkflow`. It lets the existing endpoint host a workflow:
+Find the existing `AddHandOffWorkflow` method near the top of the file, just below `AddAIAgent`. It currently throws `NotSupportedException`. Replace that whole method, including its signature, with the code below. Stop before the following `CreateProviderAgent` method; leave that method in place. Do not add a second `AddHandOffWorkflow`.
 
 <CodeStep id="handoff-hosting-adapter" />
+
+`CreateProviderAgent` is the helper we implemented in Chapter 2. It creates a `ChatClientAgent` with the configured model client. The single coach, triage, and receptionist all call it.
 
 <Hint title="What the hosting adapter does">
 
@@ -29,9 +34,19 @@ Apply the supplied adapter in `AddHandOffWorkflow`. It lets the existing endpoin
 
 </Hint>
 
-## Define the two roles and their routes
+<Hint title="If CreateProviderAgent is missing">
+If the compiler reports that `CreateProviderAgent` does not exist, check for its definition in `AgentDelegateFactory.cs`.
 
-Apply the next four edits as one group before building. The last edit adds the workflow's return statement.
+If the definition is missing, restore this method inside the `AgentDelegateFactory` class, after `AddHandOffWorkflow` and before `CreateSingleAgent`. If it is already there, leave it unchanged.
+
+<CodeSample stage="07-first-handoff" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="    private static AIAgent CreateProviderAgent(" end="    // ===" />
+</Hint>
+
+## Define the two agent roles and their routes
+
+Find the existing `CreateHandOffWorkflow(IServiceProvider sp, string key)` method at the bottom of the file, under `MODE 2: Handoff workflow`. It returns `Workflow` and currently throws `NotSupportedException`. This is a different method from `AddHandOffWorkflow`, which registers the workflow with the host.
+
+Replace the `CreateHandOffWorkflow` stub with the next block. Then apply the three edits that follow inside that same method. Wait until all four edits are in place before building the solution; the last edit adds the return statement.
 
 <CodeStep id="handoff-workflow-tools" />
 
@@ -39,21 +54,23 @@ The workflow discovers the same two MCP tool sets as the single coach.
 
 <CodeStep id="handoff-triage-agent" />
 
-Triage receives routing instructions and knows about the receptionist. Its handoff tools come from the workflow.
+The triage agent receives a routing instructions prompt which will let it know about the receptionist. Its handoff tools come from the workflow.
 
 <CodeStep id="handoff-receptionist-agent" />
 
 The receptionist gets MarkItDown and InterviewData tools. It collects the inputs, saves them, and reports that intake is complete. Its instructions describe the two-agent stage you're building.
 
+Select the complete receptionist definition: from `// --- Receptionist Agent ---` through `tools: [.. markitdownTools, .. interviewDataTools]);`. Replace that block with the code below.
+
 <CodeStep id="handoff-two-agent-graph" />
 
-The graph starts at triage and permits a transfer to the receptionist and a return to triage.
+A graph defines the agents in a workflow and the allowed handoff routes between them. `AgentWorkflowBuilder` builds this graph and sets triage as the starting agent. Here, the routes let triage hand off to the receptionist and let the receptionist return control to triage. These routes limit which agent can take over the conversation.
 
 Select `HandOff` in root `apphost.settings.json`:
 
 <CodeStep id="handoff-mode-file-settings" />
 
-Leave the project-based AppHost settings unchanged.
+Leave the other project-based AppHost settings unchanged.
 
 ## Watch intake change hands
 
@@ -80,17 +97,75 @@ aspire start --apphost ./apphost.cs
 </TabItem>
 </Tabs>
 
-Open `coach` in DevUI for a fresh conversation. Supply an exercise ID here because the WebUI normally supplies the session ID:
+We'll send one message, then check that the receptionist created an interview record and saved both inputs.
+
+### Send the intake message
+
+1. In the Aspire dashboard, select **Resources**. Find the `webui` row and open its link in the **URLs** column. Keep the dashboard tab open.
+2. On the chat page, select **New chat** and send the message below. WebUI supplies the session ID.
 
 ```text
-Use session ID 22222222-2222-4222-8222-222222222222.
 Set up an interview with this fictional resume text: "I build C# web APIs."
 The job description is "Backend developer." Save these inputs.
 ```
 
-Inspect the transfer from `triage` to `receptionist` in the run details, then the receptionist's InterviewData calls. Find the same ID in `interviewdb` / `interviewsessions` and check both saved text fields. Use a fresh GUID when repeating this exercise.
+Wait for the reply. The receptionist should confirm that it saved the inputs. It may say that the interview specialists are not connected yet. That is expected in this chapter.
 
-At this checkpoint, the receptionist finishes by reporting that the interview specialists are still to come. You've built the first handoff and saved its intake result.
+### Find this chat's session ID
+
+1. Return to the Aspire dashboard. Select **Structured** in the left navigation. This opens **Structured logs**.
+2. Set **Resource** to `webui` and **Level** to **(All)**.
+3. In the search box at the top, labeled **Message filter**, enter `Started new chat session with SessionId` and press **Enter**.
+4. Find the row whose **Timestamp** matches when you started this chat. Click the row to open **Log entry details**. In the **Log entry** section, copy the value beside `SessionId`.
+
+This ID connects the chat to its saved interview record. The `Started new chat` entry means WebUI created the chat. It does not mean anything has been saved to the database yet.
+
+### Check the receptionist's database calls
+
+1. Close **Log entry details**. Change **Resource** to `mcp-interview-data`.
+2. Replace the text in **Message filter** with the session ID you copied. Press **Enter**. Keep **Level** at **(All)** so the first lookup is also visible.
+
+The `mcp-interview-data` logs now show entries for this interview. Read them by **Timestamp**:
+
+| Message contains | Meaning |
+| --- | --- |
+| `Interview session with ID` followed by `not found` | The first lookup found no record for the new chat. This warning is expected when an `Added` entry follows it. |
+| `Added interview session` | The service created the interview record. |
+| `Retrieved interview session` | The service read the existing record before changing it. |
+| `Updated interview session` | The service saved changes to that record. |
+
+Triage has no InterviewData tools. The receptionist does. These successful database calls show that intake reached the receptionist. Next, check what it saved.
+
+<Hint title="If the expected entries are missing">
+Check **Resource**, **Level**, and **Message filter** first. Replace the old search text with the ID; do not add the ID to the old text.
+
+If there is an `Added` entry but no `Updated` entry, creation succeeded, but the logs have not confirmed a later save. Inspect the record below. If its input fields are empty, return to the same chat and check the reply for a question or tool error.
+</Hint>
+
+### Read the saved inputs
+
+1. In Aspire, return to **Resources**. On the `cosmos` row, select **Data Explorer** in the **URLs** column.
+2. In the emulator page, select **Explorer**. Expand `interviewdb`, then `interviewsessions`, and select **Items**.
+3. In the filter box beside `SELECT * FROM c`, enter the expression below. Replace `YOUR_SESSION_ID` with your copied ID and keep the single quotes.
+
+```sql
+WHERE c.id = 'YOUR_SESSION_ID'
+```
+
+Select **Apply Filter**, then select the matching ID in the results. Read the JSON document without editing it:
+
+| Field | Expected value |
+| --- | --- |
+| `id` | The session ID you copied from WebUI's log. |
+| `ResumeText` | Contains `I build C# web APIs`. |
+| `JobDescriptionText` | Contains `Backend developer`. |
+| `IsCompleted` | `false`: intake is saved, but the interview is not finished. |
+
+Both text fields must contain the supplied inputs. An empty record or a chat reply saying "saved" is not enough. Select **New chat** if you want to repeat the exercise.
+
+<Hint title="Where DevUI fits">
+The `agent` resource opens DevUI. In handoff mode, `coach` shows a workflow graph. It shows the permitted routes between roles; it does not replay this WebUI conversation. Use WebUI for chat and the checks above to confirm the saved result.
+</Hint>
 
 <Checkpoint stage="07-first-handoff" />
 

@@ -3,6 +3,7 @@ import { resolve, relative, basename } from 'node:path';
 import { validateCourseContent, validateEditCoverage, validateLegacyRedirects } from './content-contract.mjs';
 import { readEditContract, flattenEdits } from '../src/data/edit-contract.mjs';
 import { validateRenderedShellTabs } from './shell-tabs.mjs';
+import { deploymentPaths } from '../labs/recipes.mjs';
 
 const root = resolve(process.env.OUT_DIR ?? 'dist');
 const repo = process.env.GITHUB_REPOSITORY ?? 'codemillmatt/interview-coach-agent-framework';
@@ -19,6 +20,25 @@ errors.push(...validateCourseContent(course, manifest, pages));
 const editContract = readEditContract();
 if (editContract.sourceRevision !== manifest.sourceRevision) errors.push('The edit contract is built from a different reference revision.');
 errors.push(...validateEditCoverage(course, pages, flattenEdits(editContract)));
+for (const transition of editContract.transitions) {
+  const hasPatch = existsSync(resolve(root, 'downloads', `${transition.to}.patch`));
+  if (hasPatch !== (transition.changedFiles.length > 0)) {
+    errors.push(`${transition.to}: publish a change patch only when application source changes.`);
+  }
+  if (existsSync(resolve(root, 'downloads', `${transition.to}-support.patch`))) {
+    errors.push(`${transition.to}: remove the obsolete supplied-support patch.`);
+  }
+}
+const deploymentPatch = resolve(root, 'downloads', manifest.deploymentPatch);
+if (!existsSync(deploymentPatch)) {
+  errors.push('Missing optional deployment AppHost patch.');
+} else {
+  const patch = readFileSync(deploymentPatch, 'utf8');
+  const files = [...patch.matchAll(/^diff --git a\/(.+) b\/\1$/gm)].map(([, file]) => file).sort();
+  if (JSON.stringify(files) !== JSON.stringify([...deploymentPaths].sort())) {
+    errors.push('The optional deployment patch must change only the project-based AppHost and its settings.');
+  }
+}
 const htmlFiles = walk(root).filter(path => path.endsWith('.html'));
 if (!/<a\b[^>]*\bdata-continue\b/.test(readFileSync(resolve(root, 'index.html'), 'utf8'))) {
   errors.push('The landing page must provide the workshop start/continue action.');

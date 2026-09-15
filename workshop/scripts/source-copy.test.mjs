@@ -149,5 +149,4 @@ test('custom source blocks share native Starlight controls without trimming inpu
   assert.match(source('CodeStep'), /<h3[^>]*>[\s\S]*?<\/h3>\s*<div class="code-step-location">/);
   assert.match(source('CodeStep'), /File to edit: <code>\{step.file\}/);
   assert.match(source('CodeStep'), /Function to edit: <code>\{step.location.name\}/);
-  assert.match(source('SuppliedSteps'), /<ShellCommands command=\{commands\}/);
 });

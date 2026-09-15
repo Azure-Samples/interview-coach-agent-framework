@@ -17,6 +17,9 @@ export const stageIds = [
   '07-interviewers', '07-handoffs', '08-complete',
 ];
 
+export const sessionIdDisplay = '<p class="page-width">Session ID: <code>@sessionId</code></p>';
+export const deploymentPaths = [paths.hosts[1], paths.settings[1]];
+
 export function replaceOnce(source, before, after) {
   if (!before || !source.includes(before) || source.indexOf(before) !== source.lastIndexOf(before)) {
     throw new Error(`Expected one source anchor: ${before.slice(0, 100)}`);
@@ -273,6 +276,9 @@ export function makeStage(reference, id) {
   const set = (path, value) => files.set(path, Buffer.from(value));
   const before = stage => index < stageIds.indexOf(stage);
 
+  if (before('07-interviewers')) {
+    set(paths.chat, replaceOnce(get(paths.chat), `\n${sessionIdDisplay}`, ''));
+  }
   if (before('07-first-handoff')) {
     for (const path of paths.settings) {
       set(path, replaceOnce(get(path), '"AgentMode": "HandOff"', '"AgentMode": "Single"'));
@@ -355,31 +361,37 @@ ${id === '07-first-handoff' ? initialHandoff(source) : id === '07-interviewers' 
       set(host, replaceOnce(get(host), '                   .WithLlmReference(config, args)\n', ''));
     }
   }
-  if (before('08-complete')) {
-    if (id === '07-handoffs') {
-      set(paths.factory, replaceSection(get(paths.factory), anchors.handoff, anchors.workflow,
-        '    // ============================================================================\n    // MODE 2: Handoff workflow.\n'));
-    }
-    const referenceProgram = reference.get(paths.program).toString('utf8');
-    let program = get(paths.program);
-    if (id !== '02-starter') {
-      program = replaceSection(program, anchors.model, anchors.agent, `${workshopModelCall}\n\n`);
-      program = replaceOnce(program, sourceSlice(referenceProgram, devServicesStart, 'builder.Services.AddAGUIServer();'), '');
-      program = replaceOnce(program, openAIEndpoints, 'app.MapWorkshopDevUI();\n\n');
-      program = replaceOnce(program, sourceSlice(referenceProgram, devComment, devEnvironment), '');
-    }
-    const imports = [
-      'using System.Collections.Concurrent;',
-      'using InterviewCoach.Agent;',
-      ...(before('03-streaming') ? [] : ['using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;']),
-      ...(before('05-mcp-state') ? [] : ['using ModelContextProtocol.Client;', 'using ModelContextProtocol.Protocol;']),
-    ];
-    program = imports.join('\n') + '\n\n' + program.slice(program.indexOf('var builder = '));
-    set(paths.program, program);
-    set(paths.bootstrap, workshopBootstrap(referenceProgram));
-    set(paths.probe, probe);
-    set(paths.hosts[1], cloudFreeHost(reference.get(paths.hosts[1]).toString('utf8')));
-    set(paths.settings[1], replaceOnce(reference.get(paths.settings[1]).toString('utf8'), '"AgentMode": "HandOff"', '"AgentMode": "Single"'));
+  if (!before('07-handoffs')) {
+    set(paths.factory, replaceSection(get(paths.factory), anchors.handoff, anchors.workflow,
+      '    // ============================================================================\n    // MODE 2: Handoff workflow.\n'));
+  }
+  const referenceProgram = reference.get(paths.program).toString('utf8');
+  let program = get(paths.program);
+  if (id !== '02-starter') {
+    program = replaceSection(program, anchors.model, anchors.agent, `${workshopModelCall}\n\n`);
+    program = replaceOnce(program, sourceSlice(referenceProgram, devServicesStart, 'builder.Services.AddAGUIServer();'), '');
+    program = replaceOnce(program, openAIEndpoints, 'app.MapWorkshopDevUI();\n\n');
+    program = replaceOnce(program, sourceSlice(referenceProgram, devComment, devEnvironment), '');
+  }
+  const imports = [
+    'using System.Collections.Concurrent;',
+    'using InterviewCoach.Agent;',
+    ...(before('03-streaming') ? [] : ['using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;']),
+    ...(before('05-mcp-state') ? [] : ['using ModelContextProtocol.Client;', 'using ModelContextProtocol.Protocol;']),
+  ];
+  program = imports.join('\n') + '\n\n' + program.slice(program.indexOf('var builder = '));
+  set(paths.program, program);
+  set(paths.bootstrap, workshopBootstrap(referenceProgram));
+  set(paths.probe, probe);
+  set(paths.hosts[1], cloudFreeHost(reference.get(paths.hosts[1]).toString('utf8')));
+  set(paths.settings[1], replaceOnce(reference.get(paths.settings[1]).toString('utf8'), '"AgentMode": "HandOff"', '"AgentMode": "Single"'));
+  return files;
+}
+
+export function makeDeploymentProject(reference) {
+  const files = makeStage(reference, '08-complete');
+  for (const path of deploymentPaths) {
+    files.set(path, reference.get(path));
   }
   return files;
 }

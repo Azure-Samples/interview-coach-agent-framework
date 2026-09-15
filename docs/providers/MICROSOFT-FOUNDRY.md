@@ -48,7 +48,7 @@ Confirm these sample values against [model availability](https://learn.microsoft
 
 Aspire passes a `chat` connection string containing `Endpoint` and `Deployment` to the agent service. The Foundry branch uses those values to construct an OpenAI-compatible endpoint and register `client.AsIChatClient()`.
 
-During the workshop, `WorkshopHosting.cs` supplies this source-derived setup so the first-agent lesson can focus on the `ChatClientAgent` constructor and interview instructions. Learners activate the helper after writing the agent. The capstone's declared support patch restores the completed `Program.cs` and removes the helper; see [scaffold finalization](../ARCHITECTURE.md#workshop-scaffold-and-finalization).
+During the workshop, `WorkshopHosting.cs` supplies this source-derived setup so the first-agent lesson can focus on the `ChatClientAgent` constructor and interview instructions. Learners activate the helper after writing the agent and retain it in the completed application. See [workshop startup helpers](../ARCHITECTURE.md#workshop-startup-helpers).
 
 ## Reuse an existing account and deployment
 
@@ -76,6 +76,6 @@ aspire start --apphost ./apphost.cs
 
 The complete application also needs the container engine for Cosmos and MarkItDown. Review any Azure context and provisioning prompts before proceeding.
 
-The project-based AppHost is `src/InterviewCoach.AppHost`; it uses its own `appsettings.json` and is the deployment target in `azure.yaml`. In the learner scaffold it stays in the starter state until capstone finalization. See [optional deployment](../DEPLOYMENT.md) before running `azd`.
+The project-based AppHost is `src/InterviewCoach.AppHost`; it uses its own `appsettings.json` and is the deployment target in `azure.yaml`. In learner projects, prepare that separate AppHost only for [optional deployment](../DEPLOYMENT.md). The core course uses root `apphost.cs` throughout.
 
 Record the resources created by each AppHost. Reuse means the example and learner depend on the same model account; keep it until both are finished. Cloud resources remain after `aspire stop`, and `azd down` covers its selected environment. Review each scope in the [cleanup reference](../DEPLOYMENT.md#remove-only-the-resources-you-own).

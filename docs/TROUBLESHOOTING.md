@@ -15,8 +15,8 @@ Find the earliest failing operation in the Aspire dashboard. Use the resource's 
 | AG-UI parsing failure | `/ag-ui` response status, content type, and stream; for handoffs, the supplied result-serialization adapter |
 | Repeated intake | Triage context, specialist instructions, and actual handoff edges |
 | Chat disappears on refresh | New Blazor circuit/session; fetch the earlier record through InterviewData |
-| Expected resources missing during a lesson | Root `apphost.cs` is the core-course entry point; the project-based host stays in its starter state until capstone finalization |
-| Capstone support patch check fails | The named file's current contents against `07-handoffs`; preserve local edits while resolving the mismatch |
+| Expected resources missing during a lesson | Use root `apphost.cs` throughout the core course; the project-based host is prepared only for optional deployment |
+| Optional deployment patch check fails | Compare the named AppHost file with `08-complete`; preserve local edits while resolving the mismatch |
 
 ## Relevant files
 

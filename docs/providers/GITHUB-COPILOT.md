@@ -100,7 +100,7 @@ aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
 aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode Single
 ```
 
-For the completed project-based AppHost, configure its own settings first. Workshop learners reach this entry point after applying the capstone's support patch:
+For the standalone application's project-based AppHost, configure its own settings first:
 
 ```bash
 # Bash

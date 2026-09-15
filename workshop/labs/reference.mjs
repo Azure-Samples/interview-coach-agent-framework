@@ -1,9 +1,9 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { anchors, paths, replaceOnce, sourceSlice } from './recipes.mjs';
+import { anchors, paths, replaceOnce, sessionIdDisplay, sourceSlice } from './recipes.mjs';
 
-export const referenceProfile = 'foundry-workshop-v1';
+export const referenceProfile = 'foundry-workshop-v2';
 const included = path => /^(src\/|tests\/|samples\/)/.test(path) ||
   /^(Directory\.Build\.(props|targets)|Directory\.Packages\.props|InterviewCoach\.slnx|LICENSE\.md|global\.json|apphost\.cs|apphost\.settings\.json|aspire\.config\.json|azure\.yaml)$/.test(path);
 
@@ -43,6 +43,9 @@ export function createWorkshopReference(reference, packageVersions) {
   };
   const set = (path, text) => files.set(path, Buffer.from(text));
   const withoutLines = (text, pattern) => text.split('\n').filter(line => !pattern.test(line)).join('\n');
+  const chatHeader = '<ChatHeader OnNewChat="@ResetConversationAsync" />';
+  set(paths.chat, replaceOnce(get(paths.chat), chatHeader, `${chatHeader}\n${sessionIdDisplay}`));
+
   let factory = get(paths.factory);
   const providerStart = factory.indexOf(anchors.provider);
   const providerSignature = factory.slice(providerStart, factory.indexOf('    {\n', providerStart) + 6);

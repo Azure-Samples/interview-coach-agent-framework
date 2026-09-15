@@ -43,15 +43,15 @@ In the completed source, both describe the full service topology. Each entry poi
 
 In local run mode, Cosmos uses a preview emulator container. Foundry resources can still be provisioned in Azure during a local run. The final app also starts MarkItDown using the reference's `latest` image tag. Record its image digest when comparing runtime results.
 
-## Workshop scaffold and finalization
+## Workshop startup helpers
 
 The workshop starter supplies the Blazor UI, repository, service defaults, and `WorkshopHosting.cs`. That helper contains Foundry model/authentication and DevUI code derived from the tagged reference's `Program.cs`. It is inactive in the starter, which runs a cloud-free shell. The workshop packages only the Foundry path; the standalone repository retains both providers.
 
 In `03-first-coach`, learners implement the `ChatClientAgent` constructor and coaching instructions before activating the helper and model reference. Streaming, MCP clients, and workflow connections arrive in later lessons. This keeps the first exercise focused on creating an agent while leaving the supplied startup code available to inspect.
 
-Learners edit only root `apphost.cs` for orchestration. The project-based AppHost and its settings remain in the starter state through `07-handoffs`. At the capstone, the required `08-complete-support.patch` restores the exact pinned `Program.cs` and deployment AppHost/configuration, then removes `WorkshopHosting.cs` and the MCP discovery probe. It also restores topology comments in `AgentDelegateFactory.cs`; all agent definitions and prompts stay unchanged. Every change belongs to the supplied edit contract and is included in replay and final-source parity.
+Learners edit only root `apphost.cs` for orchestration. By `07-handoffs`, it runs the complete interview workflow. The capstone uses that same application source. It keeps `WorkshopHosting.cs`, the MCP discovery probe, and the session ID display. Learners check the interview and saved record without changing the file layout.
 
-The patch contains source changes only and excludes `WORKSHOP.txt` and secrets. The capstone displays its file list and requires a successful `git apply --check` before application. Complete that step before using the [optional deployment entry point](DEPLOYMENT.md#check-the-deployment-entry-point).
+The project-based AppHost and its settings remain in their starter state throughout the core course. If learners choose [optional deployment](DEPLOYMENT.md#check-the-deployment-entry-point), a separate patch prepares only those two files. The startup helper and agent code remain in place.
 
 ## State and uploads
 

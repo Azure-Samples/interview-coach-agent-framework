@@ -1,59 +1,26 @@
 ---
 title: Run your completed interview
-description: Finish the supplied hosting setup, run your interview, and check its saved result.
+description: Run a complete interview with the application you built and check its saved result.
 ---
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 import Checkpoint from '../../../components/Checkpoint.astro';
 import Hint from '../../../components/Hint.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
-import SuppliedSteps from '../../../components/SuppliedSteps.astro';
 import { siteLink } from '../../../data/course';
 
-Finish the application in your own working folder, then run a short interview through the WebUI. Your result is one saved record containing the materials, answers, and final feedback.
+Your application now has the complete interview workflow. Run a short interview through the WebUI. Your result is one saved record containing the materials, answers, and final feedback.
 
-Continue in the same `interview-coach-lab` project from the previous chapter. Keep your `Single` agent available for comparison with the handoff workflow.
-
-## Apply the required hosting setup
-
-Stop the previous run from the working project root:
-
-<Tabs syncKey="shell">
-<TabItem label="Bash">
-
-```bash
-aspire stop --apphost ./apphost.cs
-```
-
-</TabItem>
-<TabItem label="PowerShell">
-
-```powershell
-aspire stop --apphost ./apphost.cs
-```
-
-</TabItem>
-</Tabs>
-
-Apply this required source-only support patch before building. Continue running root `apphost.cs` afterward.
-
-<SuppliedSteps transition="08-complete" />
-
-<Hint title="Recover or compare the completed source">
-
-Extract this checkpoint into a separate folder to compare files or recover a missing change. Keep your working project and its configuration.
-
-<Checkpoint stage="08-complete" />
-
-</Hint>
+Continue in the same `interview-coach-lab` project from the previous chapter. No further code changes are needed. Keep `WorkshopHosting.cs` and the MCP discovery probe in place. Keep your `Single` agent available for comparison with the handoff workflow.
 
 ## Run a short interview
 
-Build after applying the patch, then start with your existing approved model configuration:
+From the working project root, stop the previous run, build, and start with your existing approved model configuration:
 
 <Tabs syncKey="shell">
 <TabItem label="Bash">
 
 ```bash
+aspire stop --apphost ./apphost.cs
 dotnet build InterviewCoach.slnx
 aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOff
 ```
@@ -62,6 +29,7 @@ aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOf
 <TabItem label="PowerShell">
 
 ```powershell
+aspire stop --apphost ./apphost.cs
 dotnet build InterviewCoach.slnx
 aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOff
 ```
@@ -82,7 +50,7 @@ Answer the behavioural question with a fictional example, ask to move to technic
 
 ## Keep the result and stop the app
 
-Copy the session ID from the WebUI log `Started new chat session with SessionId`. Open that record in Cosmos Data Explorer under `interviewdb` / `interviewsessions` and check:
+Copy the **Session ID** shown above the conversation. Open that record in Cosmos Data Explorer under `interviewdb` / `interviewsessions` and check:
 
 - `id` matches the WebUI session ID.
 - Both document text fields contain the supplied materials.
@@ -111,5 +79,13 @@ aspire stop --apphost ./apphost.cs
 Compare your resource inventory for the example and learner folders. Stopping Aspire leaves cloud resources in place. Remove only resources you own and no longer need; use the <a href={siteLink('resources/deployment/')}>deployment and cleanup guide</a> to check ownership and scope.
 
 Keep development endpoints private and use fictional data. Public deployment requires an access-control and data-retention review.
+
+<Hint title="Recover or compare the completed source">
+
+This checkpoint contains the same application source as the end of Chapter 12. Extract it into a separate folder to compare files or recover a missing change. Keep your working project and its configuration.
+
+<Checkpoint stage="08-complete" />
+
+</Hint>
 
 <LessonProgress lessonId="13-capstone" />
