@@ -10,6 +10,8 @@ import LessonProgress from '../../../components/LessonProgress.astro';
 
 We'll start our own copy of the workshop app and open its home page. The starter has the Blazor interface and supporting projects ready for us. We'll create the coach in the next chapter.
 
+Starting with a shell gives us somewhere to try each agent change. A working home page also separates local startup problems from later model or tool failures.
+
 Keep the completed example in its own folder. Our new working folder will hold all the changes we make through the course.
 
 ## Open your working folder
@@ -18,9 +20,9 @@ Keep the completed example in its own folder. Our new working folder will hold a
 
 Download `interview-coach-lab-starter.zip` once and extract it into a new folder named `interview-coach-lab`, beside `interview-coach-example`, not inside it. Open `interview-coach-lab` in your editor. You should see `apphost.cs`, `apphost.settings.json`, and `InterviewCoach.slnx` at its root. If the archive created an extra enclosing folder, use the directory containing those files.
 
-Keep working in this same `interview-coach-lab` project from here through Chapter 14. You won't need another clone or starter download. Later checkpoint archives are optional comparison or recovery copies; extract them separately so they don't overwrite your work.
+Keep working in this same `interview-coach-lab` project from here through Chapter 14. You won't need another clone or starter download. Later checkpoint archives are optional comparison or recovery copies. Extract them separately so they don't overwrite your work.
 
-This starter runs entirely locally. Its AppHost starts the `agent` service shell and `webui`; model access, database services, and document parsing remain inactive.
+This starter runs entirely locally. Its AppHost starts the `agent` service shell and `webui`. Model access, database services, and document parsing remain inactive.
 
 <ConceptDiagram kind="starter" />
 
@@ -69,12 +71,14 @@ These are the files we'll use to create the first coach:
 Use the root `apphost.cs` throughout the course. Leave the project-based AppHost unchanged. The optional deployment guide explains how to prepare that separate entry point if you choose to use it.
 
 <Hint title="What is already supplied?">
-The starter includes chat and upload components, the database repository, and service defaults. `WorkshopHosting.cs` contains the model-client, authentication, provider, and DevUI setup we'll activate next. It stays dormant until we call `builder.AddWorkshopHosting()`. The current startup creates no runtime model client.
+The starter includes chat and upload components, the database repository, and service defaults. These support the interview application. A console agent does not need all these projects.
+
+`WorkshopHosting.cs` contains the model-client, authentication, provider, and DevUI setup we'll activate next. It stays dormant until we call `builder.AddWorkshopHosting()`. The current startup creates no runtime model client.
 
 The throwing agent-factory methods mark the code we'll replace. You can leave the supplied helper implementations as they are.
 </Hint>
 
-If startup fails, read the build output or the failing resource's logs. A fresh starter archive is available above if you want to compare files; extract it into another folder to keep your work.
+If startup fails, read the build output or the failing resource's logs. Use the starter archive above to compare files. Extract it into another folder to keep your work.
 
 Once the shell is running, stop it from the same root before the next chapter's edits:
 

@@ -9,25 +9,23 @@ import CourseStart from '../../components/CourseStart.astro';
 import ConceptDiagram from '../../components/ConceptDiagram.astro';
 import { siteLink } from '../../data/course';
 
-Welcome to the Building a multi-agent application with Microsoft Agent Framework (MAF) and Microsoft Foundry.
+Let's build an interview coach that can read a resume, ask useful questions, and save feedback.
 
-In this workshop we're going to build an _interview coach_ application that is composed of 5 agents. We'll use Microsoft Agent Framework to run the interview agents in .NET and Foundry to host their model.
+We'll start with one agent and give it tools. Once it can run an interview, we'll divide the work among five specialist roles.
 
-In the finished app, a triage agent routes us to a receptionist agent, behavioural and technical interviewer agents, and a summarize agent.
+Microsoft Agent Framework runs those agents in our local .NET application. Microsoft Foundry hosts the model they call. You'll learn which decisions belong in instructions, which belong in code, and how to check the result.
 
-We'll use Microsoft Agent Framework to create the interview coach's agents and Foundry to host their model. The finished coach has five roles: triage, receptionist, behavioural interviewer, technical interviewer, and summariser. We'll build a single coach first, give it the tools it needs, then divide the interview into those specialist roles.
-
-This workshop contains both the finished app, and a starter Aspire application that we'll use to build the lessons with. A Blazor chat interface is already included in the Aspire app, so that gives us somewhere to try each agent change as we make it.
+The starter supplies a Blazor chat page and supporting services. That leaves us free to concentrate on agent behavior rather than building another chat interface.
 
 <CourseStart />
 
-## The interview agents structure
+## Follow an interview through the agents
 
-The interview coach agents reads a fictional resume and job description, asks one question at a time, and gives feedback on the answers. At the end, it saves a summary. This diagram shows the usual path through the five roles (or agents). Later in the workshop we'll add routes to change the flow between the agents.
+Triage selects a role. The receptionist collects documents, the interviewers conduct practice, and the summariser saves the final feedback. This diagram shows the usual path. Later, we'll add routes for changed requests and early finishes.
 
 <ConceptDiagram kind="interview-flow" />
 
-The workshop supplies fictional resumes, job description and practice questions/answers so you don't have to make those up as you go.
+Fictional resumes, a job description, and sample answers are supplied. Use those while learning where document text and conversation data travel.
 
 ## Why use more than one agent?
 
@@ -35,11 +33,13 @@ Document intake needs a parser and instructions about collecting information. A 
 
 However, that separation adds work: we have to decide who takes the next turn and carry the interview context between roles. We'll first build a single coach that handles the whole interview, then split the responsibilities.
 
-## The workshop's format
+## Build, explain, then try a change
 
-We'll use the Microsoft Agent Framework and its `ChatClientAgent`. Give it coaching instructions, and stream its replies into the chat page. Then we'll write a C# tool and connect services through Model Context Protocol (MCP) so the coach can save records and read documents. Finally, we'll build the handoffs and investigate a failed tool request.
+Each chapter introduces a decision before showing the edits. We'll create a `ChatClientAgent`, connect the chat page, then add a C# tool. Model Context Protocol (MCP) will connect the coach to record storage and document extraction.
 
-To help speed development, each chapter specifies the files to edit and gives us something specific to try. All while working in the same project. Checkpoint downloads will be available at the end of each chapter if want a fresh starting point or a comparison with your code.
+Along the way, you'll write an instruction, predict a tool result, and compare repeated runs. The goal is to explain why the code works and make a small change without following another complete listing.
+
+Keep editing the same project throughout the course. Each build chapter names the files and gives you a result to check. Checkpoint downloads provide comparison and recovery copies.
 
 ## How the application runs
 
@@ -49,6 +49,6 @@ The diagram below shows the services behind the job candidate's conversation. Th
 
 ## Before you begin
 
-You should be comfortable reading and editing C#. We'll introduce agents, MCP, and Foundry as we use them.
+You should be comfortable reading and editing C# and running a .NET application. Some familiarity with Aspire helps. No previous agent or MCP experience is required.
 
-<p><a href={siteLink('workshop/')}>Your workshop path</a> begins with tools, Azure permissions, and a short example run. The model-backed runs can create billable resources; Chapter 0 covers approval and cleanup before we start them.</p>
+<p><a href={siteLink('workshop/')}>Your workshop path</a> starts with tools, Azure permissions, and a short example run. Model-backed runs can create billable resources. Chapter 0 covers approval and cleanup before we start them.</p>

@@ -4,17 +4,17 @@ description: Connect the workshop concepts to their code and the problems they s
 ---
 import LessonProgress from '../../../components/LessonProgress.astro';
 
-We started with a local application shell. By Chapter 12, our coach could collect documents, conduct an interview, and save feedback through five agent roles. Chapter 13 tested recovery when a document request failed.
+We started with a local application shell. The finished coach collects documents, conducts an interview, and saves feedback through five agent roles.
 
-This chapter connects those changes to the decisions behind them. There is no new code or interview exercise.
+Let's connect those capabilities to decisions you can reuse in another application. There is no new code or interview exercise in this chapter.
 
 ## Connect the services with Aspire
 
-We got all our prerequisites setup in [Chapter 0](../00-orientation/) including running the final interview coach application to verify everything was OK. 
+In [Chapter 0](../00-orientation/), we ran the finished example and identified the Foundry deployment we would reuse.
 
-Then in [Chapter 1](../01-starter/) we started in on the application we were going to build in the workshop. The supplied starter app was very straight-forward. A Blazor user interface, database repository, and service defaults. We concentrated on agent behavior and service connections.
+In [Chapter 1](../01-starter/), we opened a cloud-free starter. Its Blazor interface, database repository, and service defaults let us concentrate on agent behavior.
 
-And we used Aspire!. `apphost.cs` in the solution root describes the resources that run together. We added the model reference, InterviewData, and MarkItDown as the lessons needed them. `WithReference` supplies connection information. `WaitFor` controls startup dependencies.
+Aspire's root `apphost.cs` describes the resources that run together. We added the model reference, InterviewData, and MarkItDown as the lessons needed them. `WithReference` supplies connection information. `WaitFor` controls startup dependencies.
 
 ## Keep the agent separate from the model
 
@@ -23,6 +23,10 @@ In [Chapter 2](../02-first-coach/), we created a `ChatClientAgent` in `AgentDele
 Microsoft Agent Framework runs the agent in our .NET service. Microsoft Foundry hosts the model that produces replies and requests tool calls. The agents do not run in Foundry.
 
 The supplied `WorkshopHosting.cs` creates the model client and configures authentication. We activated that helper after writing the first agent. This separation let us change coaching behavior without rewriting the connection code.
+
+The model name identifies the model behind a deployment. The deployment name selects what the client calls. An endpoint locates the service, while the calling identity needs permission to use it.
+
+`WorkshopHosting.cs`, `CreateProviderAgent`, and the single-argument `AddAIAgent` helper are application code. They are not prerequisites for every Agent Framework application.
 
 We first tried the coach in DevUI. That gave us a way to inspect a reply before connecting the chat page.
 
@@ -36,6 +40,8 @@ The WebUI server uses `AGUIChatClient` to send messages and receive response upd
 `Chat.razor` holds the current messages and sends their full history with each request. It also supplies a `SessionId` and sets `ChatOptions.ConversationId`. The ID identifies the interview, but it does not replace the message history.
 
 That distinction matters after a refresh. A new Blazor circuit creates a new chat. A saved interview record remains a separate source of data.
+
+When calling an agent directly, `AgentSession` can carry conversation state between runs. Choose who owns that history and how it survives a restart. A session identifier alone is not a persistence strategy.
 
 ## Give the model tools that application code executes
 
@@ -56,6 +62,8 @@ In [Chapter 7](../07-persistence/), we changed the instructions to manage one re
 The supplied repository stores records in Cosmos. Its update method replaces six document fields and appends the incoming `Transcript`. An update must preserve the document fields and contain only new transcript text.
 
 These rules follow the repository's actual behavior. Repeating the old transcript duplicates it. Omitting a document field can erase its saved value.
+
+We wrote instructions from those requirements and checked observable results. Instructions guide the model, while code must enforce important data and access rules.
 
 The summary needs two operations: `update_interview_session` saves the new summary text, then `complete_interview_session` marks the record complete. An update alone cannot set `IsCompleted`.
 
@@ -89,6 +97,8 @@ We kept the complete single coach as a comparison. [Chapter 10](../10-first-hand
 
 The five roles share one model deployment and take turns. The model selects a transfer within the graph's eleven permitted routes.
 
+The graph describes available routes. Execution telemetry identifies the agents that actually ran. Successful record operations do not reveal the whole route when several roles share the same tools.
+
 Separate roles let us change one role's instructions and tools without changing every phase. They also add routing decisions and model calls. More agents do not automatically improve the interview.
 
 The supplied hosting adapter exposes the workflow through the same hosted-agent interface as the single coach. Its `CreateFixedAgent` helper handles string tool results for the pinned AG-UI integration.
@@ -102,6 +112,23 @@ The session ID display from Chapter 11 connected that conversation to InterviewD
 We also requested an early finish. The expected route passed through triage to the summariser. We checked the saved summary and `IsCompleted` to see whether the application finished the work.
 
 This is the habit to keep: check the tool result and stored data, especially after a failed response. A tool may write data before the chat reports an error. Retrying without checking can repeat a write.
+
+We also compared repeated runs with one instruction rule removed. The useful result was the comparison, whether the changed prompt failed or still passed. Keep the inputs and expected behavior so you can repeat the evaluation after another change.
+
+## Choose the smallest useful design
+
+Before starting another application, describe its job and one result you could check. Then decide which capabilities it needs:
+
+| Decision | A useful starting point |
+| --- | --- |
+| Can a normal function solve the task? | Use ordinary code for predictable rules and calculations. |
+| Does the task need language or flexible reasoning? | Start with one agent, clear instructions, and a model client. |
+| Does it need authoritative data or an action? | Add a tool with a narrow, validated contract. |
+| Does another service own that capability? | Consider MCP and account for its connection and access controls. |
+| Do responsibilities need different instructions or tools? | Consider separate agents and define their allowed transfers. |
+| How will you know a change helped? | Keep representative cases and compare observable outcomes across runs. |
+
+The optional [build your own agent guide](../../resources/your-own-agent/) starts a small console project. It shows the model connection without the workshop helpers, then asks you to adapt the agent's responsibility and tool.
 
 ## Keep the sample's limits in view
 

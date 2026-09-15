@@ -147,7 +147,7 @@ test('the example clone and starter download are one-time steps in separate fold
   assert.match(starter, /Download `interview-coach-lab-starter\.zip` once/);
   assert.match(starter, /beside `interview-coach-example`, not inside it/);
   assert.match(starter, /same `interview-coach-lab` project[^.\n]*Chapter 14/);
-  assert.match(starter, /checkpoint archives[^.\n]*optional[^.\n]*extract them separately/i);
+  assert.match(starter, /checkpoint archives[^\n]*optional[^\n]*extract them separately/i);
   assert.match(pages.get('02-first-coach'), /What does WorkshopHosting\.cs do/);
   assert.doesNotMatch(pages.get('02-first-coach'), /Copilot/);
 });

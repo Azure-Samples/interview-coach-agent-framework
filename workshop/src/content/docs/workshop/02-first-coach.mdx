@@ -4,14 +4,41 @@ description: Create a ChatClientAgent, activate the supplied hosting, and try yo
 ---
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 import CodeStep from '../../../components/CodeStep.astro';
+import CodeSample from '../../../components/CodeSample.astro';
 import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
 import Hint from '../../../components/Hint.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
 import { siteLink } from '../../../data/course';
 
-We'll create a chat so the coach can ask an interview question and give feedback on our answer. The starter solution already supplies the model-client and authentication setup, so we can focus on the agent itself.
+Let's give the application its first job: ask an interview question, listen to the answer, and offer specific feedback. We'll create one agent and try it before connecting the chat page.
 
 Continue in the same `interview-coach-lab` folder you created in the previous chapter. Make sure the Aspire application has stopped before editing.
+
+## Give the model a job
+
+A model can generate text from the messages it receives. An agent combines access to that model with instructions, conversation context, and optional tools. Our application runs the agent and decides which capabilities to expose.
+
+Think about the interview coach's job. The model supplies language and reasoning. Instructions tell it to ask one question at a time. Context includes the user's answer. Later, tools will let it save that answer.
+
+Microsoft Agent Framework gives these parts a common execution interface. We start an agent run, and the framework coordinates model calls and any registered tool invocations. It returns a response or streams updates to the caller. Our application still owns the UI, access controls, and business rules.
+
+`IChatClient` is the model-facing abstraction underneath this agent. Microsoft.Extensions.AI can also add function invocation to a chat client. Agent Framework adds an agent abstraction, sessions, and workflow integration. We use it because we'll keep the same execution model as the coach gains tools and specialist roles.
+
+<ConceptDiagram kind="agent-run" />
+
+Our first agent has no tools. It can discuss an answer but cannot save an interview record. We'll add that capability explicitly.
+
+<KnowledgeCheck
+  id="agent-responsibility"
+  question="We want the same model to act as a technical interviewer instead of a general coach. What should we change first?"
+  options={[
+    { text: "The agent's instructions.", correct: true, explanation: "Instructions define the job for each run. Different agents can share one model deployment and use different instructions." },
+    { text: "The model's trained weights.", explanation: "This change does not require training. We can describe the new responsibility in the agent's instructions." },
+    { text: "The Blazor component that displays replies.", explanation: "The UI displays the response. Changing the display does not give the agent a different job." }
+  ]}
+/>
 
 ## Create the coach
 
@@ -23,7 +50,9 @@ Open `src/InterviewCoach.Agent/AgentDelegateFactory.cs`. Find `CreateProviderAge
 
 <CodeStep id="coach-single-agent" />
 
-This method calls `CreateProviderAgent`, which we just implemented. Its instructions give the coach a small job: ask one question at a time, listen, and offer specific feedback. We'll add tools and saved records later; this version works with conversation text.
+This method calls `CreateProviderAgent`, which we just implemented. The instructions name the role, describe the interaction, and set a stopping rule. They also prohibit claims about saving data that this agent cannot save.
+
+The name identifies the agent. Its description states its purpose. The instructions guide what it does during a run. Clear, testable actions are more useful here than "be an excellent coach."
 
 ## Activate the supplied hosting
 
@@ -33,20 +62,24 @@ Open `src/InterviewCoach.Agent/Program.cs` and add the hosting call and coach re
 
 `builder.AddWorkshopHosting()` activates the supplied model-client and DevUI services. `builder.AddAIAgent("coach")` registers our agent using the factory and selected mode.
 
+<Hint title="What is DevUI?">
+DevUI is Agent Framework's browser-based development interface. It lets us chat with a registered agent and inspect its responses and tool calls.
+
+We're using it to try the coach and compare instruction changes before connecting the Blazor chat page. The Aspire dashboard shows our services and logs. DevUI focuses on the agent's conversation.
+
+Open the `agent` HTTP endpoint from the dashboard. Append `/devui` if it is not already in the address. Select `coach` to start a conversation. Keep this development interface private and use fictional data.
+</Hint>
+
+That single-argument `AddAIAgent` call is a workshop helper in `AgentDelegateFactory.cs`. For single-agent mode, it calls the framework's registration overload with `CreateSingleAgent`. `CreateProviderAgent` and `AddWorkshopHosting` are application helpers too. You can create an agent without copying those helpers into another project.
+
 Then map the development interface:
 
 <CodeStep id="coach-enable-devui" />
 
 `app.MapWorkshopDevUI()` exposes DevUI and its conversation endpoints. We'll use it to talk to the coach before connecting the Blazor chat page.
 
-<Hint title="What is DevUI?">
-DevUI is a development interface for trying registered agents and inspecting what happens during a run. It lets you select `coach`, start a conversation, and review details such as model responses and tool calls without first connecting the workshop's chat UI.
-
-We use DevUI as a quick way to test our work. It is separate from the learner-facing WebUI and should not be exposed as a public application.
-</Hint>
-
 <Hint title="What does WorkshopHosting.cs do?">
-The supplied helper reads the Aspire `chat` connection string, configures `DefaultAzureCredential`, and registers the Foundry client as `IChatClient`. In development, it skips the managed-identity probe so developer credentials such as Azure CLI sign-in can be used.
+The supplied helper reads the Aspire `chat` connection string, configures `DefaultAzureCredential`, and registers the model client as `IChatClient`. In development, it skips the managed-identity probe so developer credentials such as Azure CLI sign-in can be used.
 
 It also supplies the DevUI service setup. You can read `src/InterviewCoach.Agent/WorkshopHosting.cs` without changing it.
 </Hint>
@@ -54,7 +87,7 @@ It also supplies the DevUI service setup. You can read `src/InterviewCoach.Agent
 ## Connect the model
 
 :::caution[The next run uses billable Azure resources]
-We'll call the model deployment from Chapter 0. These calls incur usage charges. The starter requires an existing account and deployment; missing configuration stops the app instead of creating replacements. The supplied DevUI allows remote access, so keep these development endpoints private and use fictional content.
+We'll call the model deployment from Chapter 0. These calls incur usage charges. The starter requires an existing account and deployment. Missing configuration stops the app instead of creating replacements. The supplied DevUI allows remote access, so keep these development endpoints private and use fictional content.
 :::
 
 In the root `apphost.cs`, add the model reference to the `agent` resource:
@@ -63,9 +96,22 @@ In the root `apphost.cs`, add the model reference to the `agent` resource:
 
 `WithLlmReference(config, args)` resolves our existing Foundry deployment and passes the provider, mode, and `chat` connection string to the agent.
 
+Follow the values we inspected in Chapter 0:
+
+| Value | Where the application uses it |
+| --- | --- |
+| Foundry account | Aspire looks up the existing account and its endpoint. |
+| Deployment name, `chat` | The model client selects this deployment for a request. It is separate from the underlying model name. |
+| Connection string | Aspire passes `Endpoint` and `Deployment` to the agent service. |
+| Signed-in identity | `DefaultAzureCredential` supplies a token. Azure checks that identity's permission to call the model. |
+
+The helper converts the account endpoint into the OpenAI-compatible `/openai/v1/` endpoint. It constructs an OpenAI `ChatClient` and registers `client.AsIChatClient()`. Our `ChatClientAgent` receives that client through dependency injection.
+
+The agents execute locally. Foundry hosts the model they call. Hosting agent code inside Foundry is a different architecture, outside this workshop's core path.
+
 Configure the learner project's own AppHost store once. Use the same terminal as Chapter 0 and run these commands from `interview-coach-lab`. They use the saved `location`, `resourceGroup`, `foundryName`, and `deploymentName` environment variables. There are no values to replace.
 
-<p>If you opened a new terminal, repeat the Azure sign-in check, the location and resource-group setup, and the <a href={siteLink('workshop/00-orientation/#keep-the-model-for-your-learner-project')}>model variable setup in Chapter 0</a> first. Keep the same approved subscription selected.</p>
+<p>If you opened a new terminal, repeat the Azure sign-in check and the location and resource-group setup. Then repeat the <a href={siteLink('workshop/00-orientation/#keep-the-model-for-your-learner-project')}>model variable setup in Chapter 0</a>. Keep the same approved subscription selected.</p>
 
 <Tabs syncKey="shell">
 <TabItem label="Bash">
@@ -164,7 +210,32 @@ Help me prepare for a backend developer interview. Ask one behavioural
 question at a time.
 ```
 
-Answer the question, then ask `What was missing from my answer?` in the same conversation. Look for feedback that refers to what you said. The WebUI still shows its shell page; we'll connect it next.
+Answer the question. Then ask `What was missing from my answer?` in the same conversation. Look for feedback that refers to what you said. The WebUI still shows its shell page. We'll connect it next.
+
+## Write one instruction yourself
+
+Let's change a behavior we can observe. We want feedback to name one strength and one improvement, then wait for another answer.
+
+In `CreateSingleAgent`, replace only the instruction line that starts `Ask one question at a time`. Write your own replacement before opening the example. Keep the other instructions unchanged.
+
+<Hint title="Compare your instruction with this example">
+One possible replacement is:
+
+```text
+Ask one question at a time. After the answer, name one strength and one
+specific improvement. Wait for the user's next message before asking again.
+```
+
+Each sentence names an action. "Give better feedback" would leave the desired behavior unclear. This wording is still guidance to a model, not a guarantee.
+</Hint>
+
+Stop the app, build, and start it with the commands above. Open a new DevUI conversation. Use the same question and answer as your first run. Did the response name both a strength and an improvement?
+
+Compare the behavior rather than the exact words. If it differs from your instruction, inspect the active agent and the instructions you changed.
+
+Before continuing, restore the original instruction block shown below. Stop the app, rebuild, and restart it. Later code steps expect this baseline.
+
+<CodeSample stage="03-first-coach" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="                You are a supportive interview coach" end={'                """'} lang="text" />
 
 <p>If a request is denied, check the agent's HTTP error and the account and permissions from <a href={siteLink('workshop/00-orientation/#sign-in-to-an-azure-environment')}>Chapter 0</a>. If DevUI cannot list `coach`, check the registration and mapping edits. Use this checkpoint for comparison or a fresh starting point:</p>
 

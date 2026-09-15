@@ -67,3 +67,4 @@ const deployment = new Map(Object.keys(deploymentHashes).filter(path => existsSy
 assertHashes(deployment, deploymentHashes, 'Optional deployment project');
 execFileSync('dotnet', ['build', 'InterviewCoach.slnx', '--nologo', '-v:q'], { cwd: deploymentRoot, stdio: 'inherit' });
 console.log('Built optional deployment project with the workshop helpers retained');
+execFileSync('node', [resolve(workshop, 'scripts/validate-first-agent.mjs')], { cwd: workshop, stdio: 'inherit' });

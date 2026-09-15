@@ -1,6 +1,6 @@
 {
-  "version": "4",
-  "previousVersions": ["1", "2", "3"],
+  "version": "5",
+  "previousVersions": ["1", "2", "3", "4"],
   "legacyChapterIds": {
     "02-starter": "01-starter",
     "03-first-coach": "02-first-coach",
@@ -152,7 +152,7 @@
       "number": 13,
       "group": "Specialist workflows",
       "title": "Find and fix a failed step",
-      "description": "Trace a failed document request and follow an early-finish handoff.",
+      "description": "Recover a failed request and compare repeated runs against expected behavior.",
       "kind": "verification",
       "from": "07-handoffs",
       "checkpoints": ["08-complete"]

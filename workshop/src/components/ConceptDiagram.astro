@@ -1,5 +1,5 @@
 ---
-type Kind = 'overview' | 'starter' | 'tool-loop' | 'mcp-state' | 'documents' | 'handoffs'
+type Kind = 'overview' | 'starter' | 'agent-run' | 'ag-ui' | 'tool-loop' | 'mcp-state' | 'documents' | 'handoffs'
   | 'interview-flow' | 'mcp-connection' | 'extraction' | 'first-handoff' | 'interviewers';
 interface Props { kind: Kind }
 interface Node {
@@ -54,6 +54,36 @@ const diagrams: Record<Kind, Diagram> = {
       { title: 'Specialist workflow', label: ['Agents and handoffs'], detail: 'You define the specialist agents and the routes they may use to transfer a conversation.', x: 515, y: 105 }
     ],
     edges: [{ from: 0, to: 2 }, { from: 1, to: 3 }, { from: 2, to: 4 }, { from: 3, to: 4 }]
+  },
+  'agent-run': {
+    title: 'One agent run',
+    description: 'The runtime sends instructions and conversation context to the model. This first coach has no tools, so the result is a text reply.',
+    nodes: [
+      { title: 'Your application', label: ['Message and context'], detail: 'Starts a run with the user message and any conversation context available to the agent.', x: 15, y: 20 },
+      { title: 'Agent Framework', label: ['Instructions and model client'], detail: 'Combines the configured instructions and context, calls the model through its client, and returns the response.', x: 265, y: 20 },
+      { title: 'Foundry model', label: ['Generate a response'], detail: 'Uses the supplied instructions and context to produce a reply. It does not execute the application code.', x: 515, y: 20, cloud: true },
+      { title: 'Agent response', label: ['Back to the application'], detail: 'The runtime returns the response to the caller. Later, we will register tools and follow additional calls within a run.', x: 265, y: 190 }
+    ],
+    edges: [{ from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 }],
+    note: 'The same model deployment can serve agents with different instructions and tools.'
+  },
+  'ag-ui': {
+    title: 'From a chat message to a streamed reply',
+    description: 'Follow the message to the model, then follow the response back. The browser and the AG-UI client use separate connections.',
+    regions: [
+      { title: 'AG-UI between the servers', x: 250, y: 10, width: 485, height: 170 }
+    ],
+    nodes: [
+      { title: 'Browser', label: ['Blazor chat page'], detail: 'Sends input through its Blazor connection to the WebUI server. Displays text as that server updates the page.', x: 15, y: 65 },
+      { title: 'WebUI server', label: ['AGUIChatClient'], detail: 'Sends the conversation to the agent service using AG-UI. Reads streamed events and updates the browser through Blazor.', x: 265, y: 65 },
+      { title: 'Agent service', label: ['Agent Framework', 'HTTP /ag-ui'], detail: 'Runs the coach, calls the model, and streams AG-UI events back to the WebUI server. Model credentials stay here.', x: 515, y: 65 },
+      { title: 'Foundry model', label: ['Azure model endpoint'], detail: 'Receives model requests from the agent service and returns generated responses. This model connection uses the model client, not AG-UI.', x: 515, y: 245, cloud: true }
+    ],
+    edges: [
+      { from: 0, to: 1 }, { from: 1, to: 2 }, { from: 2, to: 3 },
+      { from: 3, to: 2, fallback: true }, { from: 2, to: 1, fallback: true }, { from: 1, to: 0, fallback: true }
+    ],
+    note: 'Solid arrows show requests. Dashed arrows show responses and streamed updates. AG-UI runs only between the WebUI and agent services in this application.'
   },
   'tool-loop': {
     title: 'What happens when an agent calls a tool',
@@ -120,13 +150,13 @@ const diagrams: Record<Kind, Diagram> = {
   },
   'first-handoff': {
     title: 'Our first two-agent workflow',
-    description: 'Triage starts the conversation and sends document intake to the receptionist. The receptionist returns control to triage when intake is ready.',
+    description: 'Triage sends document intake to the receptionist. The receptionist saves the inputs and ends its turn. It can return to triage for an unexpected request.',
     nodes: [
       { title: 'Triage', label: ['Route the conversation'], detail: 'Starts the workflow with one handoff destination: the receptionist. It has no domain tools.', x: 140, y: 60, tone: 'specialist' },
-      { title: 'Receptionist', label: ['Documents and records'], detail: 'Uses MarkItDown and InterviewData to gather the resume and job description, then hands control back to triage.', x: 390, y: 60, tone: 'context' }
+      { title: 'Receptionist', label: ['Documents and records'], detail: 'Uses MarkItDown and InterviewData to gather the inputs. It reports completed intake without starting another phase.', x: 390, y: 60, tone: 'context' }
     ],
     edges: [{ from: 0, to: 1 }, { from: 1, to: 0, fallback: true }],
-    note: 'The solid arrow starts intake. The dashed arrow returns to triage. These are the two available routes at this checkpoint.'
+    note: 'The solid arrow starts intake. The dashed arrow permits a return for an unexpected request. An available route does not require a handoff.'
   },
   interviewers: {
     title: 'Add behavioural and technical practice',
@@ -135,7 +165,7 @@ const diagrams: Record<Kind, Diagram> = {
       { title: 'Triage', label: ['Choose among three roles'], detail: 'Can hand off to the receptionist, behavioural interviewer, or technical interviewer.', x: 265, y: 20, tone: 'specialist' },
       { title: 'Receptionist', label: ['Documents and records'], detail: 'Collects interview context using MarkItDown and InterviewData. It can hand off to the behavioural interviewer or triage.', x: 15, y: 190, tone: 'context' },
       { title: 'Behavioural interviewer', label: ['InterviewData tools'], detail: 'Uses the saved context, asks behavioural questions, and saves feedback. It can hand off to the technical interviewer or triage.', x: 265, y: 190, tone: 'specialist' },
-      { title: 'Technical interviewer', label: ['InterviewData tools'], detail: 'Asks technical questions and saves feedback. When this phase ends, it returns to triage so the user can choose another practice phase or finish.', x: 515, y: 190, tone: 'specialist' }
+      { title: 'Technical interviewer', label: ['InterviewData tools'], detail: 'Asks technical questions and saves feedback. When the user finishes, it acknowledges the end without a handoff. An unexpected request can return to triage.', x: 515, y: 190, tone: 'specialist' }
     ],
     edges: [
       { from: 0, to: 1 }, { from: 0, to: 2 }, { from: 0, to: 3 },

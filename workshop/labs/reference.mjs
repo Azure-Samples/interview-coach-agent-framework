@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { anchors, paths, replaceOnce, sessionIdDisplay, sourceSlice } from './recipes.mjs';
 
-export const referenceProfile = 'foundry-workshop-v2';
+export const referenceProfile = 'foundry-workshop-v3';
 const included = path => /^(src\/|tests\/|samples\/)/.test(path) ||
   /^(Directory\.Build\.(props|targets)|Directory\.Packages\.props|InterviewCoach\.slnx|LICENSE\.md|global\.json|apphost\.cs|apphost\.settings\.json|aspire\.config\.json|azure\.yaml)$/.test(path);
 
@@ -56,6 +56,22 @@ export function createWorkshopReference(reference, packageVersions) {
     `${providerSignature}${constructor}    }\n\n`);
   factory = withoutLines(factory, /using GitHub\.Copilot/);
   factory = replaceOnce(factory, '    MicrosoftFoundry,\n    GitHubCopilot', '    MicrosoftFoundry');
+  factory = replaceOnce(factory, sourceSlice(factory, singleHeader, anchors.single),
+    `${singleHeader} Single Agent\n    // One agent handles the conversation with its configured instructions and tools.\n    // ============================================================================\n`);
+  for (const [start, end, explanation] of [
+    ['        // --- Triage Agent ---', '        var triageAgent = ',
+      '        // Routes using the latest request and completed phases. Has no application tools.\n'],
+    ['        // --- Receptionist Agent ---', '        var receptionistAgent = ',
+      '        // Collects and saves documents before transferring to behavioural practice.\n'],
+    ['        // --- Behavioural Interviewer Agent ---', '        var behaviouralAgent = ',
+      '        // Saves behavioural feedback before transferring to technical practice.\n'],
+    ['        // --- Technical Interviewer Agent ---', '        var technicalAgent = ',
+      '        // Saves technical feedback before transferring to the summariser.\n'],
+    ['        // Build the handoff workflow', '#pragma warning disable MAAIW001',
+      '        // Normal phase changes follow the specialist chain.\n        // Each specialist can return to triage for a changed request.\n'],
+  ]) {
+    factory = replaceOnce(factory, sourceSlice(factory, start, end), `${start}\n${explanation}`);
+  }
   set(paths.factory, factory);
 
   let program = get(paths.program);

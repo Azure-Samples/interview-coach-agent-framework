@@ -9,9 +9,11 @@ import ConceptDiagram from '../../../components/ConceptDiagram.astro';
 import Hint from '../../../components/Hint.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
 
-Use the extracted resume to ask a better interview question. We'll make document intake part of the coach's normal process: collect the materials, save their text, then begin practice with that context.
+The parser returns resume text. Let's make that text useful: the coach will save it and ask a question tied to an experience in the resume.
 
-Continue in the same `interview-coach-lab` project from the previous chapter. Both MCP clients are connected. Only the agent description and instructions change, in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`.
+This connects two capabilities we checked separately. Extraction supplies the text. The session lifecycle preserves it so later questions can use the same context.
+
+Both MCP clients are connected in `interview-coach-lab`. Only the agent description and instructions change, in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`.
 
 <ConceptDiagram kind="documents" />
 
@@ -21,11 +23,21 @@ Update the description to cover the coach's full responsibility:
 
 <CodeStep id="documents-agent-description" />
 
-The instruction replacement keeps one session record throughout the conversation. Its intake section accepts links or pasted text, allows either document to be skipped, and saves the collected information before questions begin. The remaining sections cover behavioural practice, technical practice, and a saved summary.
+Read the new instructions as a process with entry conditions. Intake must produce usable text or an explicit choice to skip a document. A URL alone does not satisfy that condition.
+
+The remaining sections cover behavioural practice, technical practice, and a saved summary. They retain the session and update rules from Chapter 7.
 
 <CodeStep id="documents-interview-instructions" />
 
 This completes `CreateSingleAgent`. Keep it intact when we add specialist agents.
+
+## Use documents as context
+
+Here we supply extracted text in the context available to the agent. We do not train a new model. Fine-tuning changes a model through training and is a separate task.
+
+For a larger document collection, an application might retrieve relevant passages for each request. That approach is often called retrieval-augmented generation, or RAG. Our small interview sample uses the collected documents directly and does not build a search index.
+
+Document text can also contain instructions written by its author. Treat those as untrusted content. Prompts describe the intended boundary, while tool permissions and application validation must enforce access.
 
 ## Ask a question based on the saved materials
 
@@ -67,7 +79,7 @@ Find the session ID in the WebUI logs. In Cosmos Data Explorer, open its record 
 
 The repository still replaces document fields and appends incoming transcript text. On later updates, preserve the saved fields and send only the new exchange.
 
-Keep using fictional materials and private endpoints. The sample's uploads and record tools lack per-user ownership checks; document content also needs to be treated as untrusted input.
+Keep using fictional materials and private endpoints. The sample's uploads and record tools lack per-user ownership checks. Treat document content as untrusted input.
 
 <Hint title="Try an attachment or pasted text later">
 

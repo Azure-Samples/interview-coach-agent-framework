@@ -24,8 +24,8 @@ function fixture(initial = {}) {
 }
 
 test('the UI consumes all fifteen chapters with explicit zero-based numbers and groups', () => {
-  assert.equal(course.version, '4');
-  assert.deepEqual(course.previousVersions, ['1', '2', '3']);
+  assert.equal(course.version, '5');
+  assert.deepEqual(course.previousVersions, ['1', '2', '3', '4']);
   assert.equal(chapters.length, 15);
   assert.deepEqual(chapters.map(chapter => chapter.number), Array.from({ length: 15 }, (_, index) => index));
   assert.deepEqual([...new Set(chapters.map(chapter => chapter.group))], [
@@ -129,6 +129,19 @@ test('a completed version-3 course stays saved without completing the new summar
     assert.deepEqual(store.read().ids, []);
     assert.equal(records.get(previousKey), raw);
   }
+});
+
+test('version-4 completion remains saved without completing the new learning activities', () => {
+  const previousKey = progressKey(base, '4');
+  const raw = JSON.stringify(ids);
+  const { store, records } = fixture({ [previousKey]: raw });
+  assert.deepEqual(store.read().ids, []);
+  assert.match(store.read().warning, /earlier progress is still saved/);
+  store.toggle('02-first-coach', true);
+  assert.deepEqual(store.read().ids, ['02-first-coach']);
+  assert.equal(records.get(previousKey), raw);
+  store.reset();
+  assert.equal(records.get(previousKey), raw);
 });
 
 test('migration rejects invalid mixed records and inherited or unknown aliases without overwriting storage', () => {

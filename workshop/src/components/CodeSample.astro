@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, relative, isAbsolute } from 'node:path';
 import SourceCode from './SourceCode.astro';
 import manifest from '../../labs/manifest.json';
-interface Props { stage: string; path: string; start?: string; end?: string; lang?: 'csharp' | 'json' | 'bash' | 'xml' }
+interface Props { stage: string; path: string; start?: string; end?: string; lang?: 'csharp' | 'json' | 'bash' | 'xml' | 'text' }
 const { stage, path, start, end, lang = 'csharp' } = Astro.props;
 if (!manifest.stages.some(item => item.id === stage)) throw new Error(`Invalid source stage ${stage}`);
 const root = resolve('.generated/checkpoints', stage);

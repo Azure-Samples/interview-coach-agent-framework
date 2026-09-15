@@ -5,30 +5,41 @@ description: Check your tools, try an interview, then build the coach one workin
 import WorkshopPath from '../../../components/WorkshopPath.astro';
 import { siteLink } from '../../../data/course';
 
-We'll be using .NET with the Microsoft Agent Framework, Microsoft Foundry, Docker, and more throughout this workshop.
+We'll build the interview coach in small, runnable steps. Each chapter explains the next capability and the reason for adding it before we edit the code.
 
-Chapter 0 checks the prerequisites and lets us try the finished app to make sure everything is installed correctly. In Chapter 1, we'll open a separate starter and keep editing it for the rest of the course. Each build chapter ends with a working version and a short check.
-Chapter 13 practices recovery from a failed document request. Chapter 14 reviews what we built, how the code works, and why we made those choices.
-<br/>
-If you want to jump right in: <a class="action-link" href={siteLink('workshop/00-orientation/')}>Start Chapter 0: Get ready and try the interview coach</a>
+Chapter 0 checks the tools and model access by running the finished app. Chapter 1 starts our own copy. We'll keep that working folder through the remaining lessons.
 
-## How to be successful
+Chapter 13 practices failure recovery and compares repeated runs. Chapter 14 connects the finished application to the decisions we made.
 
-The starter supplies the Blazor chat interface, Aspire helpers, and database repository. We'll write the agent instructions, tool connections, and handoff rules. Every build and Aspire command will be able to be run from your working folder's root.
+<p><a class="action-link" href={siteLink('workshop/00-orientation/')}>Start Chapter 0: Get ready and try the interview coach</a></p>
 
-Each code step specifies a file to edit and shows exactly what to add, replace, or remove. Apply the steps in order and finish the whole edit group before building the application. Some edits depend on the next one to compile. We've included expandable notes for explanations on topics tangential to this course, so you can read more when a detail interests you.
+## Work in one project
+
+The starter supplies the Blazor chat interface, Aspire helpers, and database repository. We'll write the agent instructions, tool connections, and handoff rules. Run the course's build and Aspire commands from your working folder's root.
+
+Each code step names the file and shows what to add, replace, or remove. Apply the steps in order. Finish the whole edit group before building because some intermediate edits do not compile alone.
+
+Required explanations appear beside the work. Expandable notes cover optional internals or a problem you may encounter.
 
 After building the app, try the chapter's input and look for its expected result. Early on, that's a reply to your question. Later, we'll look for a tool invocation, a saved record, or a handoff.
 
+## Make a prediction before running
+
+Some lessons ask you to write an instruction or choose an expected result before revealing the explanation. Try the question first. Getting it wrong can expose a useful distinction, such as a saved record versus a visible chat message.
+
+Temporary experiments include restoration instructions. Return to the chapter's baseline before continuing so the next code replacement still matches.
+
 ## Keep your place
 
-Mark a chapter complete after trying its check. Completion marks appear in the sidebar and chapter list, and the landing page's continue action takes you to your next unfinished chapter. Your progress is remembered in this browser.
+Mark a chapter complete after its run check and learning activities. Read Chapter 14's synthesis before marking the summary complete. Quiz answers are not stored or used to block progress.
+
+Completion marks appear in the sidebar and chapter list. The landing page continues at your next unfinished chapter. This browser remembers your progress. Earlier curriculum records remain saved separately because this revision adds new practice.
 
 ## Get a fresh starting point
 
-We've provided a final working sample at the end of each chapter. Extract one into a new folder and keep your existing work alongside it. Before starting a cloud-backed checkpoint, check which Azure resources that folder may create; separate folders can have separate provisioning contexts.
+Each build chapter links to a working checkpoint. Extract one into a new folder and keep your existing work alongside it. The starter is cloud-free. Later checkpoints need their own configuration to reuse the approved model.
 
-<p><a href={siteLink('resources/')}>Samples and checkpoints</a> are available throughout the build. Use the <a href={siteLink('reference/')}>reference documentation</a> for a fuller explanation of configuration or runtime behaviour. Deployment and other providers are optional; we'll use the local application with Foundry in the core course.</p>
+<p><a href={siteLink('resources/')}>Samples and checkpoints</a> are available throughout the build. Use the <a href={siteLink('reference/')}>reference documentation</a> for configuration and runtime details. Deployment is optional. The core course runs the local application with Foundry.</p>
 
 ## Course organization
 

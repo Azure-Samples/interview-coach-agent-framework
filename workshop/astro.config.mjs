@@ -45,6 +45,7 @@ export default defineConfig({
         })),
         { label: 'Resources', items: [
           { label: 'Samples and checkpoints', slug: 'resources' },
+          { label: 'Build your own agent', slug: 'resources/your-own-agent' },
           { label: 'Deploy the application', slug: 'resources/deployment' },
           { label: 'Hosting and extensions', slug: 'resources/extensions' },
           { label: 'Glossary and troubleshooting', slug: 'resources/glossary' }

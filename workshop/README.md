@@ -28,7 +28,13 @@ Core chapters live in `src/content/docs/workshop/`. `src/data/course.json` owns 
 
 Learners clone the finished app once into `interview-coach-example` in Chapter 0, then download `interview-coach-lab-starter.zip` once into a sibling `interview-coach-lab` folder in Chapter 1 (`01-starter`). They keep editing that same learner project through the course. The course splits MCP server exposure (`05-mcp-server`) from client connection (`06-mcp-state`), and extraction (`08-document-extraction`) from document use (`09-documents`). The specialist sequence is `10-first-handoff`, `11-interviewers`, then `12-handoffs`. Chapter 13 (`13-debugging`) practices failure recovery with the completed workflow. Chapter 14 (`14-summary`) reviews the concepts, their implementation, and why they matter. Both use `08-complete`, which has the same application source as `07-handoffs`.
 
-Use headings about the work. Explain the change and why it belongs there, show the file and exact replacement point, then give a concrete run check. Keep the ordinary lesson focused on a few meaningful edits and its next working result. Use `Hint` for optional explanations. Keep billing, data handling, and cleanup warnings visible before the relevant action.
+Introduce the work ahead, explain why it matters, then teach the implementation. This is a sequence for the explanation, not a set of repeated headings. Name headings after the actual work. Explain required concepts before the first edit. Use `Hint` for optional internals and recovery details.
+
+Write as an instructor speaking beside the learner. Use humanizer for natural explanations and transitions. Apply ASD-STE100's clarity rules to procedures, exercise conditions, and safety instructions. Keep actors explicit, use one instruction per sentence, and preserve uncertainty about model behavior. This is plain-language guidance, not a claim of certified STE compliance.
+
+Use "we" for shared reasoning and "you" for learner actions. Keep technical names consistent. Do not vary a clear command merely to avoid repetition. Keep billing, data handling, and cleanup warnings visible before the relevant action.
+
+Short practice activities ask learners to predict a result or write an instruction before reading a worked answer. Temporary experiments must name the baseline and explain how to restore it before the next checkpoint. They do not add undocumented `CodeStep` transitions. Knowledge checks teach a distinction through their answer explanations. They do not store scores or gate chapter completion.
 
 `CodeStep` renders a named edit from the generated contract. Each heading is followed by `File to edit` and `Function to edit`, derived from the source; file-level edits say so explicitly. Each required step must appear once, in replay order, in its owning lesson. Explain important API calls beside focused fragments. Preserve exact replacement anchors; avoid full finished-file dumps per lesson. `CodeSample` is for reading supplied code. Checkpoint downloads support comparison and recovery.
 
@@ -41,6 +47,8 @@ Use `ConceptDiagram` where a process boundary needs a picture. The server-only M
 The website stores its own chapter progress. Application conversations and interview records have separate owners. Changes to chapter meaning need an explicit curriculum-version decision.
 
 Version 4 replaces the capstone exercise with a workshop summary and moves debugging to Chapter 13. These are changed completion criteria, not just renamed routes. `previousVersions` retains versions 1, 2, and 3. Earlier completion records remain untouched. Version 4 starts its own record and explains the change to returning learners, so a completed old course does not automatically complete the new summary.
+
+Version 5 adds instruction-writing practice, comprehension checks, and repeated-run evaluation within the existing chapters. These activities change completion expectations. Versions 1 through 4 remain saved separately, and their completion records do not complete version 5. Chapter 14 remains a summary. The independent-project resource is optional and has no chapter completion control.
 
 `legacyChapterIds` maps old routes directly to current routes. Both previous debugging URLs lead to Chapter 13. The removed capstone URLs lead to the workshop summary. Progress can normalize aliases within the current version, but it never imports an earlier version's completion record. Invalid records stay untouched until the learner explicitly toggles or resets progress. If normalization cannot be saved, the page keeps the completion marks and reports the storage failure.
 
@@ -84,6 +92,8 @@ Reference pages hold state mechanics, authentication, update semantics, hosting,
 
 Profile `foundry-workshop-v2` also adds a session ID display to the source-derived `Chat.razor`. This is a declared workshop-only change; the tagged source and standalone application stay unchanged. The recipes omit the display before `07-interviewers`. Chapter 11 teaches its addition through `interviewers-session-id`, and later stages retain it. The display reads the existing `sessionId` field without changing messages, model calls, or record creation.
 
+Profile `foundry-workshop-v3` retains those changes and replaces maintenance-history comments with present-tense design explanations. Intermediate-stage comments describe only the capabilities available at that stage. This comment projection must preserve executable statements and agent instructions. Tests compare the single-agent and workflow bodies with the tagged source after removing standalone comment lines.
+
 `labs/recipes.mjs` derives stages from that packaged reference; `labs/edits.mjs` defines their source-backed transition steps. The generated contract records each step's file, operation, before/after code, and learner or supplied ownership.
 
 Replay validation applies every documented edit in order and compares the resulting files with the target checkpoint. Require complete changed-file coverage, unique anchors, exact ordering, and explicit supplied steps. Keep those checks alongside checkpoint compilation.
@@ -98,6 +108,14 @@ The generator rejects source drift. Commit source fixes first, then create a new
 
 Archives exclude build outputs, local secrets, and unrelated files. Recovery instructions must extract into a separate folder without discarding existing work, then configure that folder's existing-model identifiers. Missing reuse configuration must fail before any model provisioning. Keep the example's shared model until every dependent project is finished.
 
+## Teach an independent project
+
+`resources/your-own-agent` shows a small console application outside the workshop solution. Its source lives under `labs/` and is rendered directly on the page. Keep the displayed source and compiled example identical. Use the package versions in `labs/manifest.json`, and include the example in lab validation.
+
+The example uses an existing Foundry deployment. Validate its compilation and missing-configuration behavior without a model request. A successful build does not establish that authentication, model access, or agent behavior works in a participant's environment.
+
+Chapter 13's evaluation activity uses fixed fictional inputs, fresh chats, and observable results. Prompt variations can still pass. Do not require a particular failure or claim that a small comparison proves reliability. Keep live walkthrough results separate from static checks.
+
 ## Publish the site
 
 `.github/workflows/static.yml` builds pull requests without deploying, then publishes main/manual builds through its Pages deployment job. Only `dist/` is published. Existing root-level PDF URLs remain alongside `/samples/`.
@@ -109,3 +127,5 @@ BASE_PATH=/ SITE_URL=https://example.com npm run build
 ```
 
 Inspect the rendered opening and lessons at desktop and mobile sizes. Confirm code remains readable, diagrams have text equivalents, and the application explanation appears before a long chapter index. Automated content checks cannot decide whether the teaching is clear.
+
+With a local preview running, open the first-agent lesson in Playwright CLI. Run `scripts/teaching-flow.browser.js` through `playwright-cli run-code --filename=...`. It checks representative desktop/mobile pages, all six knowledge checks, keyboard feedback, exact example copying, and answers without JavaScript. It makes no model requests.
