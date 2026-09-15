@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- An in-repository interactive Agent Framework and Foundry workshop with downloadable build-along checkpoints, local learning progress, and GitHub Pages publishing.
+
+### Documentation
+
+- Reorganized guided tutorials into the workshop and rewrote architecture, usage, configuration, session contracts, and troubleshooting as reference documentation.
+
 ## [3.0.0] - 2026-08-31
 
 ### Added

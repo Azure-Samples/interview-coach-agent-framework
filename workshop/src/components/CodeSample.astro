@@ -1,0 +1,28 @@
+---
+import { readFileSync } from 'node:fs';
+import { resolve, relative, isAbsolute } from 'node:path';
+import SourceCode from './SourceCode.astro';
+import manifest from '../../labs/manifest.json';
+interface Props { stage: string; path: string; start?: string; end?: string; lang?: 'csharp' | 'json' | 'bash' | 'xml' | 'text' }
+const { stage, path, start, end, lang = 'csharp' } = Astro.props;
+if (!manifest.stages.some(item => item.id === stage)) throw new Error(`Invalid source stage ${stage}`);
+const root = resolve('.generated/checkpoints', stage);
+const file = resolve(root, path);
+const rel = relative(root, file);
+if (rel.startsWith('..') || isAbsolute(rel)) throw new Error(`Invalid sample path ${path}`);
+const source = readFileSync(file, 'utf8');
+let code = source;
+if (start) {
+  const index = source.indexOf(start);
+  if (index < 0) throw new Error(`Missing start anchor ${start} in ${path}`);
+  code = source.slice(source.lastIndexOf('\n', index) + 1);
+}
+if (end) {
+  const index = code.indexOf(end);
+  if (index < 0) throw new Error(`Missing end anchor ${end} in ${path}`);
+  code = code.slice(0, code.lastIndexOf('\n', index) + 1);
+}
+---
+<div class="source-sample">
+  <SourceCode code={code} lang={lang} title={path} />
+</div>

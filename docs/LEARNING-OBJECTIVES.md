@@ -1,81 +1,27 @@
 # Learning objectives
 
-What this sample actually teaches, and where to find each pattern in the code.
+The [workshop](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/) teaches Microsoft Agent Framework and Foundry in 15 lessons, numbered 0 through 14. You run an example, open a separate starter, and keep building in that working folder.
 
-## What this sample covers
+The starter supplies the Blazor UI, EF Core repository, service defaults, and source-derived `WorkshopHosting.cs`. The hosting helper stays inactive in the cloud-free shell. The first-agent exercise focuses on writing the `ChatClientAgent` constructor and instructions, then activating the supplied model/authentication and DevUI plumbing. Core orchestration edits use root `apphost.cs`.
 
-### 1. Building agents with Microsoft Agent Framework
+| Lesson | What you practice and observe |
+| --- | --- |
+| [0. Get ready and try the interview coach](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/00-orientation/) | Check tools and resource ownership, then try a short interview in the completed example |
+| [1. Start your workshop app](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/01-starter/) | Run the cloud-free application shell in your own working folder |
+| [2. Ask your first agent a question](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/02-first-coach/) | Construct a `ChatClientAgent`, set its instructions, activate model access, and get a reply |
+| [3. Put the coach in the chat UI](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/03-streaming/) | Connect AG-UI and observe a streamed response |
+| [4. Give the coach a C# tool](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/04-tools/) | Describe and register a function, then inspect an invocation |
+| [5. Expose interview tools with MCP](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/05-mcp-server/) | Run InterviewData and discover the tools exposed by its server |
+| [6. Connect the coach to those tools](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/06-mcp-state/) | Connect the MCP client and create and fetch a synthetic record on request |
+| [7. Save interview progress](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/07-persistence/) | Follow a session lifecycle, preserve document fields, append new transcript text, and inspect the record |
+| [8. Read a resume with a tool](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/08-document-extraction/) | Connect MarkItDown and inspect extracted sample text |
+| [9. Use the resume in the interview](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/09-documents/) | Save document context and ask a relevant question in the complete single-agent baseline |
+| [10. Make your first handoff](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/10-first-handoff/) | Observe triage transfer document intake to the receptionist |
+| [11. Add the interviewers](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/11-interviewers/) | Use saved context for behavioural and technical practice in a four-agent workflow |
+| [12. Finish with a summary agent](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/12-handoffs/) | Complete the five-role graph and save final feedback |
+| [13. Find and fix a failed step](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/13-debugging/) | Trace a failed document request and examine an early-finish route |
+| [14. Review what you built](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/14-summary/) | Review the concepts, their implementation, and the problems they solve |
 
-How to set up an AI agent with structured instructions, tool calling, session state, and error handling.
+The course uses 13 executable checkpoint stages. The opening example and final lessons reuse `08-complete`. The completed checkpoint has the same application source as `07-handoffs` and retains the supplied startup helpers. Checkpoint generation replays every code edit and checks the generated projects.
 
-The agent definition lives in [AgentDelegateFactory.cs](../src/InterviewCoach.Agent/AgentDelegateFactory.cs) — instructions, tool registration, and multi-agent mode selection are all there.
-
-### 2. Model Context Protocol (MCP)
-
-MCP lets you break tool implementations out of the agent into separate servers. Tools become reusable, language-agnostic, and independently deployable.
-
-Two examples in this repo:
-
-- [MarkItDown MCP](https://github.com/microsoft/markitdown/tree/main/packages/markitdown-mcp) — external Python server for document parsing
-- [InterviewData MCP](../src/InterviewCoach.Mcp.InterviewData/) — custom .NET server for session management
-
-### 3. Service orchestration with Aspire
-
-Coordinating multiple services (agent, UI, MCP servers, database) with dependency ordering, service discovery, and config management. Local dev that looks like production.
-
-See [AppHost.cs](../src/InterviewCoach.AppHost/AppHost.cs) for the service topology.
-
-### 4. Multi-provider LLM support
-
-One codebase, two LLM backends. Pick Microsoft Foundry or GitHub Copilot in configuration without changing the interview workflow.
-
-The abstraction is in [LlmResourceFactory.cs](../src/InterviewCoach.AppHost.Core/LlmResourceFactory.cs).
-
-### 5. Stateful conversations
-
-Sessions persist to Azure Cosmos DB. Resume text, job descriptions, and transcripts survive across turns. Users can pause and pick up later.
-
-See [InterviewSessionRepository.cs](../src/InterviewCoach.Mcp.InterviewData/InterviewSessionRepository.cs).
-
-### 6. Instruction engineering
-
-Writing agent prompts that actually work: defining the role, setting boundaries, specifying step-by-step process, describing tool usage, and setting tone.
-
-The interview coach instructions show progressive disclosure (behavioral then technical), user control (stop anytime), and structured output (summaries).
-
-## Why these patterns are worth learning
-
-**You can add tools without modifying the agent.** MCP servers mean you can bolt on new capabilities (email, calendar, whatever) independently. Teams can work on tools and agents in parallel.
-
-**You can swap providers without rewriting the interview flow.** Foundry uses `IChatClient`; GitHub Copilot uses the Agent Framework Copilot adapter.
-
-**You get observability for free.** Aspire gives you service discovery, health checks, distributed tracing, and structured logging out of the box. Deploying to Azure Container Apps with `azd` is one command.
-
-**Each piece does one thing.** The agent handles conversation logic. MCP servers handle tools. The UI handles rendering. Aspire handles wiring. This makes it easier to test, replace, and extend individual parts.
-
-## What you'll walk away with
-
-After working through this sample:
-
-- Microsoft Agent Framework — building and deploying agents
-- MCP — creating and consuming MCP servers
-- Aspire — orchestrating multi-service apps
-- Instruction design — writing prompts that produce consistent behavior
-- Tool/function calling — giving agents abilities beyond text generation
-- State management — persisting context across conversation turns
-- Azure deployment — shipping with `azd`
-- Provider abstraction — avoiding LLM vendor lock-in
-
-## Suggested order
-
-1. Run the sample and go through a full interview
-2. Read the [architecture overview](ARCHITECTURE.md)
-3. Look at the agent instructions in `AgentDelegateFactory.cs`
-4. Work through the [tutorials](TUTORIALS.md)
-5. Start adapting the patterns for your own use case
-
-## Next steps
-
-- [Architecture overview](ARCHITECTURE.md)
-- [Tutorials](TUTORIALS.md)
-- [FAQ](FAQ.md)
+Use [architecture](ARCHITECTURE.md), [configuration](CONFIGURATION.md), and [session contracts](SESSION-DATA.md) for lookup. Compare `Single` and `HandOff` using the same inputs. [Deployment](DEPLOYMENT.md) and [Copilot](providers/GITHUB-COPILOT.md) are optional tasks after the workshop.

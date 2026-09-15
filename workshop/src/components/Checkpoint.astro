@@ -1,0 +1,19 @@
+---
+import manifest from '../../labs/manifest.json';
+import contract from '../../.generated/edit-contract.json';
+import { siteLink } from '../data/course';
+interface Props { stage: string }
+const { stage } = Astro.props;
+const entry = manifest.stages.find(item => item.id === stage);
+if (!entry) throw new Error(`Unknown checkpoint: ${stage}`);
+const transition = contract.transitions.find(item => item.to === stage);
+if (stage !== '02-starter' && !transition) throw new Error(`Missing checkpoint transition: ${stage}`);
+---
+<aside class="checkpoint">
+  <div><span class="eyebrow">Checkpoint files</span><strong>{entry.title}</strong><p>{entry.description}</p></div>
+  <div class="checkpoint-actions">
+    <a href={siteLink(`downloads/${'archive' in entry ? entry.archive : `${stage}.zip`}`)} download>{stage === '02-starter' ? 'Download interview-coach-lab-starter.zip' : 'Download project archive'}</a>
+    {transition && transition.changedFiles.length > 0 && <a href={siteLink(`downloads/${stage}.patch`)} download>Download change patch</a>}
+  </div>
+  <small>{stage === '02-starter' ? 'Download once, then keep editing the same interview-coach-lab project throughout the workshop.' : 'Optional recovery or comparison copy: extract separately and keep your working project.'} Reference: <code>{manifest.sourceTag ?? manifest.sourceRevision.slice(0, 8)}</code>.</small>
+</aside>

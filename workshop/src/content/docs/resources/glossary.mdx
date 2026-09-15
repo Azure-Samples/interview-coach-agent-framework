@@ -1,0 +1,48 @@
+---
+title: Glossary and troubleshooting
+description: Find a term or choose the next place to inspect a failed request.
+---
+Use these definitions while reading the code. Follow the reference links for implementation details.
+
+## Terms in the code
+
+| Term | In this application |
+| --- | --- |
+| Model | The Foundry-deployed model that proposes text and tool calls |
+| Model deployment | A named model instance the client calls, such as the workshop's `chat` deployment |
+| Agent | Instructions, model access, context, and tools run by Agent Framework |
+| Instructions | Rules that guide the agent's behavior during a run; application code must enforce important constraints |
+| Tool | Application code exposed through a typed, described contract |
+| Tool schema | Metadata describing a tool's name and inputs; the model does not receive its C# implementation |
+| Tool call | A model-requested invocation with arguments; inspect the result to know whether it succeeded |
+| MCP | The protocol used to discover and call tools across services |
+| AG-UI | The protocol between the WebUI server's `AGUIChatClient` and the agent's `/ag-ui` endpoint |
+| Blazor circuit | The server-side UI connection and component state associated with a browser connection |
+| Handoff | A transfer of control between specialists along permitted edges |
+| Workflow | The topology and orchestration of agent execution |
+| Conversation context | Messages and state available to an agent run |
+| AgentSession | Framework conversation state passed between agent runs; persistence depends on the agent and storage design |
+| Interview record | The persisted business data in Cosmos: inputs, transcript, completion |
+| Aspire | Local/service orchestration, resource references, health, and telemetry plumbing |
+| Foundry | The Azure model backend used in the core path |
+| Evaluation | Comparing observed agent behavior with expected behavior across representative inputs and repeated runs |
+| WorkshopHosting | Supplied model/authentication and DevUI helper activated in the first-agent lesson |
+
+## Find the failed boundary
+
+| Symptom | First evidence to inspect |
+| --- | --- |
+| Nothing starts | CLI/SDK output and AppHost startup |
+| Cosmos or parser is unhealthy | Container runtime and the specific resource logs |
+| Model authentication failure | Identity, tenant, token scope, and resource permissions |
+| No tool calls | Agent tool registration and discovered tool list |
+| "Saved" but no record | InterviewData result and database contents |
+| Duplicate transcript | New text passed to the append operation |
+| UI stream parsing error | Correct `/ag-ui` endpoint and version-specific serialization adapter |
+| Refresh starts a new chat | Blazor circuit and session lifecycle |
+
+The [troubleshooting reference](../../reference/troubleshooting/) covers the full failure list. For a record or refresh question, use [state ownership](../../reference/session-data/#state-ownership) and [update semantics](../../reference/session-data/#update-semantics). For routing, use the [handoff graph](../../reference/multi-agent/#handoff-mode).
+
+Foundry can also host agent code through its managed agent runtime. That is a separate architecture from this workshop's local .NET agents calling a Foundry model. See [hosting and extensions](../extensions/) before changing the runtime.
+
+Share the checkpoint, failing operation, and redacted error. Keep credentials, document contents, and transcripts private.

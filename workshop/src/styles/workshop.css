@@ -1,0 +1,128 @@
+:root {
+  --sl-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --sl-color-accent-low: #1c3543;
+  --sl-color-accent: #82bbd3;
+  --sl-color-accent-high: #c6e3ef;
+  --sl-content-width: 52rem;
+  --workshop-panel: #1b252d;
+  --workshop-border: #4e606c;
+  --workshop-muted: #becbd3;
+  --workshop-brand: #a5d1e4;
+  --workshop-success: #a5d4b7;
+  --workshop-success-low: #20382c;
+  --workshop-secondary: #e0c18e;
+  --workshop-secondary-low: #372f22;
+}
+:root[data-theme='light'] {
+  --sl-color-accent-low: #e6eff3;
+  --sl-color-accent: #286481;
+  --sl-color-accent-high: #193f53;
+  --workshop-panel: #f3f6f6;
+  --workshop-border: #a9bbc4;
+  --workshop-muted: #455965;
+  --workshop-brand: #245b75;
+  --workshop-success: #2e6346;
+  --workshop-success-low: #e7f1e9;
+  --workshop-secondary: #795323;
+  --workshop-secondary-low: #f7efdf;
+}
+html { scroll-padding-top: 6rem; }
+body { letter-spacing: -.008em; }
+.sl-markdown-content { line-height: 1.8; }
+.sl-markdown-content h2 { margin-top: 2.8rem; letter-spacing: -.035em; }
+.sl-markdown-content h3 { letter-spacing: -.018em; }
+.sl-markdown-content :is(a, button, input, summary):focus-visible { outline: 3px solid var(--sl-color-accent); outline-offset: 4px; }
+.workshop-sidebar :is(a, summary):focus-visible { outline: 3px solid var(--sl-color-accent); outline-offset: 2px; }
+.eyebrow { display: block; font-size: .72rem; letter-spacing: .12em; font-weight: 750; text-transform: uppercase; color: var(--workshop-brand); }
+.primary-link { display: inline-flex; gap: 2rem; padding: .8rem 1.1rem; background: var(--sl-color-accent-high); color: var(--sl-color-accent-low) !important; font-weight: 700; border-radius: .35rem; text-decoration: none; margin: 1rem 0; }
+.course-start { margin: 1.2rem 0 2rem; }
+.course-progress { font-size: .85rem; color: var(--workshop-muted); margin: .25rem 0; }
+.course-progress:empty { display: none; }
+.sidebar-progress { margin: 0 0 1rem; padding: .75rem; border: 1px solid var(--workshop-border); border-radius: .35rem; color: var(--workshop-muted); background: var(--workshop-panel); font-size: .8rem; line-height: 1.5; }
+.sidebar-progress:empty { display: none; }
+[data-progress-id] .workshop-completion { display: none; }
+[data-progress-id][data-completed='true'] .workshop-completion { display: inline-flex; align-items: center; gap: .3rem; margin-inline-start: .35rem; padding: .05rem .4rem; border: 1px solid var(--workshop-success); border-radius: .25rem; background: var(--workshop-success-low); color: var(--workshop-success); font-size: .7rem; font-weight: 650; line-height: 1.5; white-space: nowrap; vertical-align: middle; }
+.workshop-completion::before { content: '\2713'; }
+.course-path-group { margin-block: 2rem; }
+.course-path-group h3 { padding-bottom: .5rem; border-bottom: 2px solid var(--workshop-border); color: var(--workshop-brand); font-size: 1rem; }
+.course-path { list-style: none; padding: 0; }
+.course-path li { margin: 0 !important; }
+.course-path a { display: grid; grid-template-columns: 2.5rem 1fr auto; gap: 1rem; align-items: start; padding: 1.25rem .5rem; border-bottom: 1px solid var(--workshop-border); color: var(--sl-color-white); text-decoration: none; }
+.course-path a:hover { background: var(--workshop-panel); }
+.course-path a[data-completed='true'] .path-number { color: var(--workshop-success); }
+.path-number { color: var(--workshop-brand); font: 700 .9rem ui-monospace, monospace; padding-top: .2rem; }
+.course-path strong { font-size: 1.05rem; }
+.course-path p { margin: .25rem 0 0; font-size: .94rem; color: var(--workshop-muted); line-height: 1.6; }
+.path-arrow { font-size: 1.4rem; }
+.architecture { border: 1px solid var(--workshop-border); padding: 1.3rem; border-radius: .45rem; background: var(--workshop-panel); }
+.architecture figcaption { font-size: .9rem; color: var(--workshop-muted); }
+.architecture figcaption strong { color: var(--sl-color-white); font-size: 1rem; }
+.architecture figcaption p { margin: .35rem 0 0; }
+.architecture-nodes { display: grid; grid-template-columns: 1fr 1fr; gap: .7rem; margin-top: 1rem; }
+.architecture details { margin: 0; padding: .7rem; border: 1px solid var(--workshop-border); border-radius: .25rem; }
+.architecture summary { cursor: pointer; font-weight: 700; line-height: 1.5; }
+.architecture summary span { font: .7rem ui-monospace, monospace; color: var(--workshop-brand); margin-right: .6rem; }
+.architecture details p { font-size: .85rem; line-height: 1.6; }
+.architecture-flow { font-size: .8rem; color: var(--workshop-muted); }
+.workshop-hint { border: 1px solid var(--workshop-border); background: var(--workshop-panel); padding: .8rem 1rem; margin: 1.2rem 0; }
+.workshop-hint summary { cursor: pointer; font-weight: 650; }
+.workshop-hint > div { margin-top: .8rem; }
+.knowledge-check { padding: 1.3rem; border: 1px solid var(--workshop-border); border-radius: .45rem; margin: 2rem 0; }
+.knowledge-check fieldset { padding: 0; border: 0; }
+.knowledge-check legend { font-size: 1.05rem; font-weight: 700; padding: 0; }
+.knowledge-check label { display: flex; align-items: baseline; gap: .65rem; border: 1px solid var(--workshop-border); padding: .7rem; border-radius: .25rem; cursor: pointer; margin-top: .6rem; }
+button { font: inherit; cursor: pointer; }
+.knowledge-check button, .lesson-progress button { background: var(--sl-color-accent-high); color: var(--sl-color-accent-low); border: 1px solid transparent; padding: .45rem .75rem; border-radius: .25rem; margin-top: 1rem; font-weight: 650; font-size: .9rem; }
+button.secondary { background: transparent; color: var(--sl-color-white); border-color: var(--workshop-border); margin-left: .5rem; }
+.check-feedback:empty { display: none; }
+.check-feedback { padding-top: .7rem; border-top: 1px solid var(--workshop-border); }
+.checkpoint { border: 1px solid var(--workshop-border); padding: 1.2rem; background: var(--workshop-panel); margin: 1.5rem 0; border-radius: .25rem; }
+.checkpoint strong { display: block; font-size: 1.1rem; margin-top: .3rem; }
+.checkpoint p { font-size: .9rem; margin: .35rem 0; }
+.checkpoint-actions { display: flex; flex-wrap: wrap; gap: 1rem; margin: .8rem 0; font-weight: 650; }
+.checkpoint small { color: var(--workshop-muted); }
+.lesson-progress { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--workshop-border); }
+.lesson-progress label { display: flex; align-items: baseline; gap: .6rem; margin-top: .7rem; }
+.lesson-progress input, .knowledge-check input { accent-color: var(--sl-color-accent); width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+.progress-status { font-size: .85rem; color: var(--workshop-muted); }
+.lesson-progress .reset-progress { display: block; margin: 1.25rem 0 0; }
+.action-link { display: block; font-weight: 650; }
+.source-sample, workshop-source-code { display: block; min-width: 0; }
+.copy-status { margin: 0; font-size: .8rem; }
+.copy-status:not(:empty) { padding: .4rem 0; }
+.copy-fallback { box-sizing: border-box; width: 100%; padding: 1rem; border: 1px solid var(--workshop-border); font: .85rem/1.6 ui-monospace, monospace; color: var(--sl-color-white); background: var(--sl-color-bg); }
+.copy-fallback[hidden] { display: none; }
+.sl-markdown-content table { font-size: .9rem; }
+.concept-diagram { margin: 2rem 0; padding: 1.25rem; border: 1px solid var(--workshop-border); border-radius: .5rem; background: var(--workshop-panel); }
+.concept-diagram figcaption > strong { font-size: 1rem; color: var(--sl-color-white); }
+.concept-diagram figcaption p { font-size: .9rem; line-height: 1.65; margin: .4rem 0 1rem; color: var(--workshop-muted); }
+.concept-graphic { display: block; width: 100%; height: auto; }
+.diagram-node rect { fill: var(--sl-color-bg); stroke: var(--workshop-border); stroke-width: 1.5; }
+.diagram-node text { fill: var(--workshop-muted); font-family: var(--sl-font); font-size: 14px; }
+.diagram-node text.diagram-node-title { fill: var(--sl-color-white); font-size: 15px; font-weight: 650; }
+.diagram-context rect { fill: var(--workshop-success-low); stroke: var(--workshop-success); }
+.diagram-specialist rect { fill: var(--workshop-secondary-low); stroke: var(--workshop-secondary); }
+.diagram-cloud rect { stroke: var(--workshop-brand); stroke-width: 2; stroke-dasharray: 5 3; }
+.diagram-boundary rect { fill: none; stroke: var(--workshop-border); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.diagram-boundary text { fill: var(--workshop-muted); font: 600 14px var(--sl-font); }
+.diagram-edge path { fill: none; stroke: var(--workshop-brand); stroke-width: 2; }
+.diagram-edge polygon { fill: var(--workshop-brand); }
+.diagram-fallback path { stroke-dasharray: 5 4; stroke: var(--workshop-muted); }
+.diagram-fallback polygon { fill: var(--workshop-muted); }
+.concept-text { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); }
+.diagram-note { font-size: .85rem; line-height: 1.65; color: var(--workshop-muted); margin: .6rem 0 0; }
+.code-step { margin: 2rem 0; }
+.code-step-location { font-size: .9rem; overflow-wrap: anywhere; }
+.code-step-location p { margin: .25rem 0; }
+.code-step pre { max-height: none; }
+.code-step details { margin-top: .75rem; }
+.code-step details summary { cursor: pointer; font-size: .9rem; }
+@media (max-width: 42rem) {
+  .architecture-nodes { grid-template-columns: 1fr; }
+  .course-path a { grid-template-columns: 1.6rem 1fr auto; gap: .6rem; }
+  .concept-graphic { display: none; }
+  .concept-text { position: static; width: auto; height: auto; margin: .8rem 0 0; padding-left: 1.3rem; overflow: visible; clip-path: none; font-size: .9rem; line-height: 1.65; }
+  .concept-text li + li { margin-top: .8rem; }
+  .diagram-note { margin-top: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }

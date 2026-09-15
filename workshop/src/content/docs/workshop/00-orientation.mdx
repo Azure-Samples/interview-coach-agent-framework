@@ -1,0 +1,403 @@
+---
+title: Get ready and try the interview coach
+description: Check your tools and Azure access, then try a short interview in a separate example folder.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import ShellCommands from '../../../components/ShellCommands.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+import { siteLink } from '../../../data/course';
+import labs from '../../../../labs/manifest.json';
+
+Before writing an agent, let's see the interview we want to build. We'll run the finished example once to check the tools and model access. Then we'll keep it for comparison and start our own project.
+
+The agents run locally in a .NET service. Foundry supplies their model in Azure. Docker runs the local record store and document parser. We need both the local tools and permission to call the cloud model.
+
+## Check your tools
+
+You'll need an editor with C# support, .NET 10, Git, the Aspire CLI, a running container engine, and the Azure CLI. Check them in a terminal:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+dotnet --version
+git --version
+aspire --version
+docker info
+az version
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+dotnet --version
+git --version
+aspire --version
+docker info
+az version
+```
+
+</TabItem>
+</Tabs>
+
+Install missing tools using the official instructions for [.NET](https://dotnet.microsoft.com/download/dotnet/10.0), [Git](https://git-scm.com/downloads), [Aspire](https://aspire.dev/get-started/install-cli/), [Docker](https://docs.docker.com/get-started/get-docker/), and [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli). Keep the repository's pinned package versions. The completed example uses a local Cosmos emulator and a MarkItDown container.
+
+## Sign in to an Azure environment
+
+The completed example can create a Foundry resource and model deployment. Confirm that your Azure identity can provision them in an approved subscription and region.
+
+Before starting the example, agree on these details with the resource owner:
+
+1. The subscription, region, and resource group you may use.
+2. Permission to provision the resources and separate permission to call the model.
+3. Available quota for the selected model, version, and capacity.
+4. Who will remove the resources when both workshop projects are finished.
+
+If any item is unresolved, complete the local tool checks first. Wait for approval before the model-backed run.
+
+Signing in authenticates you. Resource permissions need their own approval. Follow the steps below to sign in:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+az login
+subscriptionId=$(az account show --query id --output tsv)
+az account show --subscription "$subscriptionId" --query "{subscription:name, subscriptionId:id, tenant:tenantId}" --output table
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+az login
+$subscriptionId = az account show --query id --output tsv
+az account show --subscription "$subscriptionId" --query "{subscription:name, subscriptionId:id, tenant:tenantId}" --output table
+```
+
+</TabItem>
+</Tabs>
+
+Check the displayed tenant and subscription before continuing. Keep account details private.
+
+The `subscriptionId` variable lasts for this terminal session. If the selected subscription isn't the approved one, list your subscriptions and select it below. Replace `YOUR_SUBSCRIPTION_ID` with its ID, then rerun the variable assignment and account-details command above.
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+az account list --output table
+az account set --subscription "YOUR_SUBSCRIPTION_ID"
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+az account list --output table
+az account set --subscription "YOUR_SUBSCRIPTION_ID"
+```
+
+</TabItem>
+</Tabs>
+
+## Clone the finished app
+
+The website contains the lessons. The application runs from your machine. A separate example folder lets you inspect finished code without overwriting your own work later.
+
+Clone this finished example once. Keep `interview-coach-example` for trying the app and reading completed code. In Chapter 1, we'll download the starter once into a separate `interview-coach-lab` folder beside it. That will be our working project for the rest of the course.
+
+1. Choose a parent directory for your workshop folders. Clone the repository into a new `interview-coach-example` folder:
+
+   <Tabs syncKey="shell">
+   <TabItem label="Bash">
+
+   ```bash
+   git clone https://github.com/codemillmatt/interview-coach-agent-framework.git interview-coach-example
+   cd interview-coach-example
+   ```
+
+   </TabItem>
+   <TabItem label="PowerShell">
+
+   ```powershell
+   git clone https://github.com/codemillmatt/interview-coach-agent-framework.git interview-coach-example
+   cd interview-coach-example
+   ```
+
+   </TabItem>
+   </Tabs>
+
+2. Check out the workshop's pinned tag. This selects the example version used to generate our checkpoints (that makes it easy to troubleshoot later if we need to):
+
+   <ShellCommands command={`git checkout --detach ${labs.sourceTag}`} />
+
+3. Set your Azure location and resource group once as environment variables. Replace `YOUR_APPROVED_AZURE_REGION` with a region that supports the configured model. Use your assigned resource group if you have one. Otherwise, replace `YOUR_NAME` with a label that identifies your new group.
+
+   <Tabs syncKey="shell">
+   <TabItem label="Bash">
+
+   ```bash
+   export location="YOUR_APPROVED_AZURE_REGION"
+   export resourceGroup="rg-interview-coach-YOUR_NAME"
+   ```
+
+   </TabItem>
+   <TabItem label="PowerShell">
+
+   ```powershell
+   $env:location = "YOUR_APPROVED_AZURE_REGION"
+   $env:resourceGroup = "rg-interview-coach-YOUR_NAME"
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   Keep this terminal open through Chapter 2. The commands reuse these values, so you can copy them unchanged. A new terminal needs this variable setup again.
+
+4. Save the Azure context for Aspire. Azure CLI supplies your sign-in. These commands tell Aspire where it should provision resources.
+
+   <Tabs syncKey="shell">
+   <TabItem label="Bash">
+
+   ```bash
+   subscriptionId=$(az account show --query id --output tsv)
+   tenantId=$(az account show --query tenantId --output tsv)
+
+   aspire secret set "Azure:SubscriptionId" "$subscriptionId" --apphost ./apphost.cs
+   aspire secret set "Azure:TenantId" "$tenantId" --apphost ./apphost.cs
+   aspire secret set "Azure:Location" "$location" --apphost ./apphost.cs
+   aspire secret set "Azure:ResourceGroup" "$resourceGroup" --apphost ./apphost.cs
+   aspire secret set "Azure:CredentialSource" "AzureCli" --apphost ./apphost.cs
+   ```
+
+   </TabItem>
+   <TabItem label="PowerShell">
+
+   ```powershell
+   $subscriptionId = az account show --query id --output tsv
+   $tenantId = az account show --query tenantId --output tsv
+
+   aspire secret set "Azure:SubscriptionId" "$subscriptionId" --apphost ./apphost.cs
+   aspire secret set "Azure:TenantId" "$tenantId" --apphost ./apphost.cs
+   aspire secret set "Azure:Location" "$env:location" --apphost ./apphost.cs
+   aspire secret set "Azure:ResourceGroup" "$env:resourceGroup" --apphost ./apphost.cs
+   aspire secret set "Azure:CredentialSource" "AzureCli" --apphost ./apphost.cs
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   These values are stored in the example's local AppHost user secrets, outside the repository. The learner project will have its own configuration and reuse this model. The next step enables Aspire to create the named resource group if it does not exist and your account has permission. If your organization does not allow resource-group creation, use an existing group supplied by your administrator.
+
+5. Open this folder in your editor.
+
+In the example's root `apphost.settings.json`, add the `Azure` section below (or update it if it already exists) and review the model settings. Keep the file's other settings:
+
+```json
+{
+  "AgentMode": "HandOff",
+  "LlmProvider": "MicrosoftFoundry",
+  "Azure": {
+    "AllowResourceGroupCreation": true
+  },
+  "MicrosoftFoundry": {
+    "DeploymentName": "gpt-5-mini",
+    "ModelVersion": "2025-08-07",
+    "ModelFormat": "OpenAI",
+    "SkuName": "GlobalStandard",
+    "SkuCapacity": 100
+  }
+}
+```
+
+Set `Azure:AllowResourceGroupCreation` to `true` for this initial example when creating a new resource group. With it set to `false`, provisioning fails if the named group does not exist. If you must use an existing approved group, keep it `false` and confirm that group exists. The later `interview-coach-lab` starter deliberately keeps this setting `false` because it reuses the example's resources.
+
+In these provisioning settings, `DeploymentName` selects the model, `gpt-5-mini`. The sample's Aspire helper names the resulting Azure deployment `chat`. That deployment name is what the learner project will use when calling the model.
+
+The SKU specifies a deployment option, and capacity determines the requested allocation. Keep the pinned model version. Confirm availability and approval with your resource owner before starting. The [Foundry configuration reference](../../reference/providers/microsoft-foundry/) links to the model and quota documentation.
+
+:::caution[Starting the example can create billable Azure resources]
+The next command can provision a Foundry resource and model deployment. Model calls also incur usage charges. Record the resources created for this folder, and review provisioning prompts against your approval. Stopping Aspire leaves cloud resources in place. Remove only resources you own and are authorized to delete.
+:::
+
+We'll build and run the application. From the `interview-coach-example` root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Open Aspire's printed dashboard URL. Once the services are ready, open the `webui` endpoint.
+
+## Try a short interview
+
+```text
+Help me prepare for a cloud solution architect interview. Ask one question
+at a time. I'll provide a fictional resume and job description.
+```
+
+<p>When asked, download <a href={siteLink('samples/resume-peter-parker.pdf')}>Peter Parker resume</a> and <a href={siteLink('samples/jd-cloud-solution-architect.pdf')}>cloud solution architect job description</a> locally and then upload them to the conversation. The parser container needs reachable URLs, the localhost workshop preview may be inaccessible to it, so we'll provide the files.</p>
+
+Give one short, fictional behavioural answer, for example:
+
+```text
+Our practice deployment failed after a configuration change. I compared
+the settings, reverted the change, and added a startup check.
+```
+
+Ask `Move on to technical questions.`, answer one question, then send `Finish the interview now and save a short summary.`
+
+Look for feedback tied to your answers and a final summary. Exact wording will vary. We'll inspect tool calls and saved records in the chapters where we build them.
+
+## Keep the model for your learner project
+
+The learner app will reuse this Foundry account and deployment. Run the following lookup in your setup terminal. It saves matching account names from your approved resource group and location in `foundryName`.
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+foundryName=$(az cognitiveservices account list --subscription "$subscriptionId" --resource-group "$resourceGroup" --query "[?kind=='AIServices' && location=='$location'].name" --output tsv) &&
+export foundryName
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+$env:foundryName = az cognitiveservices account list --subscription "$subscriptionId" --resource-group "$env:resourceGroup" --query "[?kind=='AIServices' && location=='$env:location'].name" --output tsv
+```
+
+</TabItem>
+</Tabs>
+
+The example uses a deployment named `chat`. Save that name for Chapter 2:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+export deploymentName="chat"
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+$env:deploymentName = "chat"
+```
+
+</TabItem>
+</Tabs>
+
+This sets a variable. It does not create or change a deployment.
+
+### Inspect the deployment you will reuse
+
+The next commands read resource details. They do not create resources or send a model request.
+
+First, display the selected account name. It must identify one account from the example run. If it is empty or contains several names, stop. Use the example's provisioning output to identify its account before proceeding.
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+printf '%s\n' "$foundryName"
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+Write-Output $env:foundryName
+```
+
+</TabItem>
+</Tabs>
+
+If you need to select a specific account, replace `YOUR_EXAMPLE_FOUNDRY_ACCOUNT` with that account's name:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+export foundryName="YOUR_EXAMPLE_FOUNDRY_ACCOUNT"
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+$env:foundryName = "YOUR_EXAMPLE_FOUNDRY_ACCOUNT"
+```
+
+</TabItem>
+</Tabs>
+
+Now inspect `chat` and the account endpoint:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+az cognitiveservices account deployment show --subscription "$subscriptionId" --resource-group "$resourceGroup" --name "$foundryName" --deployment-name "$deploymentName" --query "{deployment:name,model:properties.model.name,version:properties.model.version,sku:sku.name,capacity:sku.capacity}" --output table
+az cognitiveservices account show --subscription "$subscriptionId" --resource-group "$resourceGroup" --name "$foundryName" --query properties.endpoint --output tsv
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+az cognitiveservices account deployment show --subscription "$subscriptionId" --resource-group "$env:resourceGroup" --name "$env:foundryName" --deployment-name "$env:deploymentName" --query "{deployment:name,model:properties.model.name,version:properties.model.version,sku:sku.name,capacity:sku.capacity}" --output table
+az cognitiveservices account show --subscription "$subscriptionId" --resource-group "$env:resourceGroup" --name "$env:foundryName" --query properties.endpoint --output tsv
+```
+
+</TabItem>
+</Tabs>
+
+Find the deployment name and model name in the output. They answer different questions: which deployment will we call, and which model runs behind it?
+
+The endpoint locates the account. An access token identifies the caller. Neither the endpoint nor the deployment name grants permission. Chapter 2 follows these settings into the model client.
+
+Chapter 2 uses `location`, `resourceGroup`, `foundryName`, and `deploymentName` from this terminal. You will not need to type these values again. If you open a new terminal, repeat the Azure sign-in check and the commands that set these four variables.
+
+## Stop the example
+
+From the same example root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Keep the folder and the Foundry resources. Our learner app will use its own local configuration to connect to this same deployment. Stop local processes now. Wait until both projects are finished before removing shared cloud resources.
+
+<LessonProgress lessonId="00-orientation" />

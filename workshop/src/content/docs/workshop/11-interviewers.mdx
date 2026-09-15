@@ -1,0 +1,126 @@
+---
+title: Add the interviewers
+description: Add behavioural and technical agents that use the saved interview context.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+Intake has its own agent. Now we'll add behavioural and technical interviewers, each with instructions for a different kind of practice.
+
+Both need the saved interview context. Keeping their responsibilities separate lets us adjust the questions and feedback for one phase without changing document intake.
+
+In `interview-coach-lab`, we'll edit `src/InterviewCoach.Agent/AgentDelegateFactory.cs` and the WebUI's `Chat.razor` page. Keep the single coach and existing hosting setup for comparison.
+
+<ConceptDiagram kind="interviewers" />
+
+## Give intake a next destination
+
+Update triage so it can choose among the receptionist and both interviewers:
+
+<CodeStep id="specialists-triage-agent" />
+
+Then change the receptionist's final intake step to transfer directly to the behavioural interviewer:
+
+<CodeStep id="specialists-receptionist-agent" />
+
+The receptionist still owns document collection. The new destination lets practice start as soon as those inputs are saved.
+
+## Add the two interview roles
+
+Both interviewers fetch the record and append questions, answers, and feedback. Before reading the code, name one behavior they should share and one that should differ.
+
+The storage rules should match. The question style and feedback criteria should differ. Compare those decisions with the definitions below.
+
+<CodeStep id="specialists-behavioural-agent" />
+
+The behavioural interviewer asks about experience and uses STAR: Situation, Task, Action, Result. Its next phase is `technical_interviewer`.
+
+<CodeStep id="specialists-technical-agent" />
+
+The technical interviewer asks practical questions grounded in the saved materials. It gives feedback and ends the turn. Unexpected requests can return to `triage`. (We'll add summary generation in the next lesson.)
+
+Both interviewers receive the complete InterviewData tool set. The receptionist already saved the document text they need, so they do not receive MarkItDown.
+
+These are role-level tool choices, not per-user authorization. An interviewer's instructions assign it a job, but the registered InterviewData set still includes creation and completion operations. A production design may expose a narrower tool set.
+
+
+<CodeStep id="specialists-interviewer-graph" />
+
+The normal path is receptionist to behavioural interviewer to technical interviewer. Direct edges let each role request the next phase without another routing decision.
+
+Each specialist also has a return route to triage for an unexpected request. At this stage, finishing technical practice ends the turn without a handoff. The summariser arrives next.
+
+## Show the session ID in the chat page
+
+A reply can omit the session ID. We need a reliable way to find the matching logs and interview record. The chat page already creates this ID, so we will display it directly above the conversation.
+
+Open `src/InterviewCoach.WebUI/Components/Pages/Chat/Chat.razor`. Find the `<ChatHeader ... />` tag near the top. Replace it with the block below. Keep the existing `<ChatMessageList ...>` block after it.
+
+<CodeStep id="interviewers-session-id" />
+
+`@sessionId` displays the existing value that the page sends to the agents. **New chat** creates a new ID and updates the display. This works without an agent reply or a prompt change.
+
+The ID appears before a record is saved. Use the tool results and database to confirm that the record exists and contains your inputs.
+
+## Move from behavioural to technical practice
+
+From the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+In the Aspire dashboard, open `webui`. Look for **Session ID** above the conversation before you send a message. Select **New chat** and check that the displayed ID changes. Use this new ID for the rest of the exercise.
+
+DevUI shows the workflow graph. Use WebUI for this conversation. Send:
+
+```text
+My fictional resume says I maintain C# APIs and integration tests.
+The job is backend developer on a reliability team.
+Save these inputs and start with one behavioural question.
+```
+
+Answer with a fictional example of catching an API regression before release. Then ask:
+
+```text
+Let's move to technical practice. Ask a question related to my API work.
+```
+
+The technical question should relate to the API work in the saved inputs. Check that the displayed session ID stays the same as you move between interviewers. In DevUI's graph, locate the permitted transfer from `behavioural_interviewer` to `technical_interviewer`. The graph shows the available route, not the live conversation.
+
+Copy the **Session ID** shown above the conversation. Check the `mcp-interview-data` logs for record lookups and updates with that ID. In Cosmos Data Explorer, check that the record contains the new behavioural exchange and retains both input fields. The update contract still requires preserving document fields and sending only new transcript text. Select **New chat** for another attempt.
+
+<Hint title="How the roles share context">
+
+The saved record carries the resume, job description, and transcript. Each interviewer fetches that context through the InterviewData MCP server. Triage uses the conversation to select a phase and has no application tools.
+
+`WithHandoffs` declares the destinations each active agent can choose. The four agents take turns. Each transfer follows one permitted edge.
+
+Triage infers the current phase from the conversation. The graph does not store a durable phase-completion record or enforce a fixed sequence. A process with mandatory transitions may need explicit state and code-enforced workflow rules.
+
+</Hint>
+
+<Checkpoint stage="07-interviewers" />
+
+<LessonProgress lessonId="11-interviewers" />

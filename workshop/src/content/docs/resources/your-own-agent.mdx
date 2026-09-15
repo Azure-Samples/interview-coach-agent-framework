@@ -1,0 +1,160 @@
+---
+title: Build your own agent
+description: Start a small console project, connect an existing Foundry deployment, and adapt one agent and tool.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import Hint from '../../../components/Hint.astro';
+import ShellCommands from '../../../components/ShellCommands.astro';
+import SourceCode from '../../../components/SourceCode.astro';
+import firstAgent from '../../../../labs/first-agent.cs?raw';
+import labs from '../../../../labs/manifest.json';
+
+The interview coach supplied several projects so we could concentrate on agent behavior. Let's remove that scaffolding and build something smaller: a console agent that explains a fictional team's release checks.
+
+This optional exercise uses one model client, one agent, and one read-only tool. There is no Blazor app, Aspire host, MCP server, or database. Those are useful application choices, but we do not need them for this job.
+
+## Start outside the workshop solution
+
+Choose a parent directory beside your workshop folders. Create a new console project:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+dotnet new console --name MyFirstAgent --framework net10.0
+cd MyFirstAgent
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+dotnet new console --name MyFirstAgent --framework net10.0
+cd MyFirstAgent
+```
+
+</TabItem>
+</Tabs>
+
+Add the same pinned agent integration and identity packages used by the workshop:
+
+<ShellCommands command={`dotnet add package Microsoft.Agents.AI.OpenAI --version ${labs.packageVersions['Microsoft.Agents.AI.OpenAI']}\ndotnet add package Azure.Identity --version ${labs.packageVersions['Azure.Identity']}`} />
+
+The agent integration supplies the agent and OpenAI client dependencies. `Azure.Identity` supplies the credential we will use for local development. Keep these versions while following this example.
+
+## Reuse a model you can already call
+
+Keep the Foundry deployment from Chapter 0. This program reads its connection values from environment variables rather than an Aspire connection string.
+
+Use the OpenAI-compatible endpoint for your Foundry account, ending in `/openai/v1/`. For the workshop account, replace `YOUR_FOUNDRY_ACCOUNT` below with the account name you inspected in Chapter 0.
+
+The deployment is named `chat` in the workshop. If you use a different existing deployment, set its actual name instead of its underlying model name.
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+az login
+az account show --query "{subscription:name, tenant:tenantId}" --output table
+export FOUNDRY_OPENAI_ENDPOINT="https://YOUR_FOUNDRY_ACCOUNT.openai.azure.com/openai/v1/"
+export FOUNDRY_DEPLOYMENT="chat"
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+az login
+az account show --query "{subscription:name, tenant:tenantId}" --output table
+$env:FOUNDRY_OPENAI_ENDPOINT = "https://YOUR_FOUNDRY_ACCOUNT.openai.azure.com/openai/v1/"
+$env:FOUNDRY_DEPLOYMENT = "chat"
+```
+
+</TabItem>
+</Tabs>
+
+Check that the selected identity and tenant have access to this deployment. Signing in does not grant permission. These variables contain connection identifiers, not an API key.
+
+:::caution[This example calls your existing model]
+Running the program sends two user messages and may cause additional model calls for tools. Calls incur charges. Use your approved endpoint and fictional content. No command here provisions a model.
+:::
+
+## Connect the client, agent, and tool
+
+Replace `Program.cs` with the source below. Before running it, find the model client, the role instructions, and the function registered as a tool.
+
+<div id="independent-agent-source">
+  <SourceCode code={firstAgent} lang="csharp" title="Program.cs" />
+</div>
+
+`AzureCliCredential` uses your local CLI sign-in. The token policy supplies authentication to the model client. The narrow `OPENAI001` pragma acknowledges the experimental authentication-policy constructor in the pinned client dependency.
+
+`ChatClientAgent` receives `IChatClient`, the instructions, and the function tool. The function returns fixed fictional guidance. The model explains that result and asks a question.
+
+We create one `AgentSession` and pass it to both runs. The second run can use the earlier conversation. In this example, the session lives in this process. Restarting the program creates a new one.
+
+No `AddAIAgent` registration is needed because the console calls the agent directly. In the workshop, hosting registration lets DevUI and AG-UI find the agent.
+
+## Check the result before extending it
+
+From `MyFirstAgent`, build and run:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+dotnet build
+dotnet run
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+dotnet build
+dotnet run
+```
+
+</TabItem>
+</Tabs>
+
+Set a breakpoint inside `GetReleaseCheck` to inspect the first call. The `area` should be `api`, and the returned text should mention a failed downstream request. The second response should refer to that same check.
+
+Judge those observable details rather than exact wording. If the model omits the tool, inspect the registered description and the request. If authentication fails, check the identity's access and the endpoint before changing instructions.
+
+The program reports missing or invalid connection values before creating the model client. Copying this file alone does not configure model access.
+
+## Give it a responsibility you choose
+
+Now make a small design decision yourself. Choose a read-only task, such as explaining build checks or selecting a study topic.
+
+1. Write the agent's responsibility and one expected result before editing.
+2. Replace its name and instructions for that responsibility.
+3. Write a small function that returns fictional data for a typed input.
+4. Register the function with a description that says when to use it.
+5. Change the two test messages.
+6. Inspect the arguments and result, then repeat the request.
+
+Keep the function free of network calls and writes for this exercise. Reject unsupported input explicitly. You can introduce another service once the local contract works.
+
+<Hint title="Compare your design with a read-only example">
+A study coach could accept `csharp` or `http` as a topic. Its tool would return one fictional practice objective for that topic. Unsupported topics would produce an explicit error.
+
+The instructions would ask the agent to fetch the objective and turn it into one question. A useful check would verify the tool's topic and that the question addresses the returned objective.
+
+Notice the split: code owns the available objectives and input validation. Instructions guide how the agent uses the result.
+</Hint>
+
+## Map this back to the interview coach
+
+| In this console | In the workshop |
+| --- | --- |
+| Endpoint, deployment, and credential | Aspire connection values and `WorkshopHosting.cs` |
+| `new ChatClientAgent(...)` | `CreateProviderAgent` |
+| Direct `RunAsync` calls | Hosted calls through DevUI or AG-UI |
+| One `AgentSession` | Application-owned history sent through the WebUI's AG-UI client |
+| Local function tool | Chapter 4's practice function, before MCP |
+
+Add storage when the application needs durable records. Add MCP when another service owns a capability. Add another agent when a separate responsibility needs its own instructions or tools.
+
+Keep the shared Foundry deployment until every dependent project is finished. Follow the [cleanup guide](../deployment/#remove-only-the-resources-you-own) when you no longer need it.

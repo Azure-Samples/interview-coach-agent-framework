@@ -1,0 +1,51 @@
+---
+title: Samples and checkpoints
+description: Choose a practice document, recover a checkpoint, or look up a contract.
+---
+import Checkpoint from '../../../components/Checkpoint.astro';
+import { siteLink } from '../../../data/course';
+import labs from '../../../../labs/manifest.json';
+
+<p>Use these files while working through the course. For setup, start with <a href={siteLink('workshop/00-orientation/#check-your-tools')}>Chapter 0's tool checks</a>.</p>
+
+## Practice documents
+
+Use these fictional PDFs for extraction and interview practice. Their contents can travel through model requests, tool arguments, logs, and saved records.
+
+<ul>
+  <li><a href={siteLink('samples/resume-natasha-romanoff.pdf')}>Resume: Natasha Romanoff</a></li>
+  <li><a href={siteLink('samples/resume-peter-parker.pdf')}>Resume: Peter Parker</a></li>
+  <li><a href={siteLink('samples/jd-cloud-solution-architect.pdf')}>Job description: cloud solution architect</a></li>
+</ul>
+
+<p>Copy the full published URL into the coach. MarkItDown fetches it from its container, so use the published sample address when previewing the workshop locally. For file attachments and retention, see the <a href={siteLink('reference/user-manual/#upload-contract')}>upload contract</a>.</p>
+
+## Checkpoint projects
+
+<p>Download the starter once in <a href={siteLink('workshop/01-starter/')}>Chapter 1</a>, then keep editing the same <code>interview-coach-lab</code> project through the course. The 13 archives below support comparison and recovery. Extract one into a separate folder and compare the relevant files while preserving your work. Checkpoints with code changes have a patch that shows the transition. The debugging lesson and workshop summary use the completed source from Chapter 12.</p>
+
+Archive names such as `05-persistence.zip` are stable identifiers, not current chapter numbers. Use the card's title and the lesson link to choose a checkpoint. The filenames stay unchanged so older references still work.
+
+<p><strong>The starter is cloud-free; later checkpoints reuse the Chapter 0 model.</strong> An extracted recovery folder has its own user-secrets store. Apply the <a href={siteLink('workshop/02-first-coach/#connect-the-model')}>existing-model settings</a> there before starting it. Model calls are billable, and shared cloud resources remain until <a href={siteLink('resources/deployment/#remove-only-the-resources-you-own')}>cleanup</a>.</p>
+
+<p>Downloads are generated from the immutable <code>{labs.sourceTag}</code> tag. They include package pins, required resource reuse, and separate learner configuration. The completed checkpoint keeps the workshop startup helper, MCP discovery probe, and session ID display. It provides the full interview workflow while keeping the file layout used in the lessons. The download manifest records the source revision and generated file hashes.</p>
+
+<Checkpoint stage="02-starter" />
+<Checkpoint stage="03-first-coach" />
+<Checkpoint stage="03-streaming" />
+<Checkpoint stage="04-tools" />
+<Checkpoint stage="05-mcp-server" />
+<Checkpoint stage="05-mcp-state" />
+<Checkpoint stage="05-persistence" />
+<Checkpoint stage="06-document-extraction" />
+<Checkpoint stage="06-documents" />
+<Checkpoint stage="07-first-handoff" />
+<Checkpoint stage="07-interviewers" />
+<Checkpoint stage="07-handoffs" />
+<Checkpoint stage="08-complete" />
+
+## Look up a contract or plan an extension
+
+The optional [build your own agent guide](./your-own-agent/) starts a console project without the workshop helpers. It uses the same model deployment and asks you to design a small agent and tool.
+
+<p>Use the <a href={siteLink('resources/glossary/')}>glossary</a> for terms and the <a href={siteLink('reference/')}>reference</a> for exact contracts. After the workshop, you can try <a href={siteLink('resources/extensions/')}>an extension</a> or <a href={siteLink('resources/deployment/')}>optional deployment</a>.</p>

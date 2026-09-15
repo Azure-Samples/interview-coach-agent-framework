@@ -1,377 +1,43 @@
-# User manual
+# Application usage reference
 
-A walkthrough of a complete interview session, from start to summary.
+This page describes the completed app's inputs and outputs. These instructions apply whether you're running the repository as a standalone reference or following the workshop.
 
-## Prerequisites
+**If you're learning the application:** For first-run tools, Azure permissions, and resource ownership, start with [Chapter 0](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/00-orientation/#check-your-tools).
 
-The application must be running. Start it with:
+**To run the application:** From the completed project's root, follow the [main README's setup instructions](../README.md#run-the-repository). The default AppHost can provision a billable Foundry deployment. Open the printed dashboard URL and use the `webui` endpoint when its dependencies are ready.
 
-```bash
-aspire start --apphost ./apphost.cs
-```
+## Interview inputs
 
-Once all services show ✅ **Running** in the Aspire Dashboard, click the **webui** endpoint to open the Interview Coach chat interface.
+The coach can collect a resume and a job description as pasted text, reachable URLs, or files attached through the UI. You can also explicitly skip a document.
 
-> **Tip:** The Aspire Dashboard URL appears in your terminal (typically `https://localhost:17xxx`). The WebUI endpoint is listed under the **webui** resource.
+Use the fictional PDFs in [samples](../samples/) while experimenting. For URL input, choose a document that MarkItDown can fetch from its container. Authenticated profiles, redirects, and unsupported formats can cause extraction failures. Attach local files through the UI's upload path.
 
----
+## Intended flow
 
-## Quick overview
+The coach sets up an interview record, gathers optional materials, asks behavioural and technical questions, and produces a summary. You can request a different phase or ask to stop. Model-directed behaviour can vary; inspect tool results and persisted state when diagnosing a failure.
 
-The coach walks you through a mock interview:
+In handoff mode, Triage selects a phase. Receptionist gathers inputs, Behavioural and Technical Interviewers conduct their respective phases, and Summariser records the final summary and completion.
 
-```
-1. Greet the coach → Session is created
-2. Share your resume (link or text) → Coach parses it
-3. Share the job description (link or text) → Coach parses it
-4. Behavioral interview questions → You answer, get feedback
-5. Technical interview questions → You answer, get feedback
-6. Request summary → Coach generates a comprehensive review
-```
+## Upload contract
 
-You can skip steps, stop at any time, or go back and forth between sections.
+The agent exposes `POST /upload` for multipart form data with a `file` field. The WebUI server's `FileUploadService` sends that request with the attached file stream. The current limit is 10 MiB. Accepted extensions are `.pdf`, `.docx`, `.doc`, `.txt`, `.md`, and `.html`.
 
----
+The returned URL is served from `GET /uploads/{fileId}/{fileName}`. Bytes are held in a process-wide dictionary for the agent's lifetime. Restarting the process loses them; starting a new chat leaves them in that dictionary. Upload access and per-session deletion need additional implementation, as do aggregate memory and retention controls. Use fictional documents in a restricted environment.
 
-## Step-by-step walkthrough
+The WebUI appends the returned URL to the user's message. MarkItDown fetches it from its container. Confirm extraction by inspecting the returned text, then confirm storage through the InterviewData result. File acceptance, text extraction, and record storage are separate operations.
 
-### Step 1: Start a conversation
+Use a full published sample URL for the extraction lesson. A localhost address from a workshop preview refers to a different network context inside the parser container. The [deployment reference](DEPLOYMENT.md#review-access-and-data-handling) covers upload access and data handling for optional hosting.
 
-Open the WebUI and type a greeting to begin. The coach will create an interview session and provide you with a **Session ID**.
+## Session behaviour
 
-**Example:**
+A new chat creates a new session ID for the business record used by tools.
 
-```
-You:   Hi! I'd like to practice for an interview.
-Coach: Welcome! I've created a new interview session for you.
-       Your Session ID is: a1b2c3d4-...
-       Would you like to share your resume to get started?
-```
+The current UI keeps messages and its session ID in a server-side Blazor component/circuit. Refreshing starts a new circuit and session. Earlier Cosmos records can be fetched through tools; restoring the UI and agent conversation would require a recovery feature. The workshop website saves its own chapter progress in browser storage. See [session data](SESSION-DATA.md#state-ownership).
 
-> **Note:** Save your Session ID if you want to resume this session later.
+## Output
 
----
+The intended summary gives practice feedback about the answers and suggests areas to improve. Use it to plan further interview practice. Hiring decisions and readiness assessment require their own evaluation process.
 
-### Step 2: Share your resume
+Check the record in the Cosmos emulator's Data Explorer: database `interviewdb`, container `interviewsessions`, with the session GUID in JSON `id`. Summary text is appended to `Transcript`; completion is a separate `IsCompleted` flag. Confirm both in the tool results and stored record.
 
-Provide your resume in one of four ways:
-
-| Method         | What to do                                                |
-|----------------|-----------------------------------------------------------|
-| **URL link**   | `Here's my resume: https://www.linkedin.com/in/johndoe/`  |
-| **File link**  | `My resume is at https://example.com/resume.pdf`          |
-| **Paste text** | Paste the full text of your resume directly into the chat |
-| **Skip**       | `I'd like to proceed without a resume`                    |
-
-**Example using a LinkedIn profile:**
-
-```
-You:   Hi, my CV is here: https://www.linkedin.com/in/elbruno/
-Coach: Thanks! Let me parse your profile...
-       I can see you have experience in AI, Innovation, and Microsoft technologies.
-       Would you like to provide a job description as well?
-```
-
-**Example pasting resume text directly:**
-
-```
-Here's my resume:
-
-       JORDAN MITCHELL
-       Senior Software Engineer | Seattle, WA
-       jordan.mitchell@email.com | github.com/jmitchell
-
-       SUMMARY
-       Experienced software engineer with 8+ years of expertise in cloud-native
-       application development, distributed systems, and machine learning
-       integration. Proven track record of leading cross-functional teams to
-       deliver scalable solutions on Azure and AWS. Passionate about developer
-       tools, open-source contributions, and building AI-powered products.
-
-       EXPERIENCE
-       Senior Software Engineer — Contoso Ltd, Seattle, WA (2021–Present)
-       - Architected and deployed a microservices platform serving 2M+ daily
-         active users using .NET 8, Kubernetes, and Azure Service Bus.
-       - Led a team of 6 engineers to migrate a monolithic application to an
-         event-driven architecture, reducing latency by 40%.
-       - Designed and integrated an ML-based recommendation engine using
-         Microsoft Foundry and Semantic Kernel, increasing user engagement by 25%.
-
-       Software Engineer — Fabrikam Inc, Redmond, WA (2018–2021)
-       - Developed RESTful APIs and real-time data pipelines using C#, Python,
-         and Apache Kafka for a financial analytics platform.
-       - Implemented CI/CD pipelines with GitHub Actions and Azure DevOps,
-         cutting release cycles from 2 weeks to 2 days.
-       - Contributed to internal developer CLI tools adopted by 300+ engineers.
-
-       Junior Developer — Northwind Traders, Portland, OR (2016–2018)
-       - Built full-stack web applications using ASP.NET Core and React.
-       - Maintained SQL Server databases and optimized query performance,
-         reducing report generation time by 60%.
-
-       EDUCATION
-       B.S. Computer Science — University of Washington, 2016
-
-       SKILLS
-       Languages: C#, Python, TypeScript, Go
-       Cloud: Azure (Certified Solutions Architect), AWS
-       Frameworks: .NET, ASP.NET Core, React, Semantic Kernel
-       Tools: Docker, Kubernetes, Terraform, GitHub Actions
-```
-
-The coach uses the **MarkItDown MCP server** to convert documents (PDF, DOCX, web pages) into readable text. Supported formats include PDF, Word documents, web URLs, and LinkedIn profile pages.
-
-> **Tip:** The `samples/` folder includes sample resumes and job descriptions you can reference:
->
-> - `samples/resume-natasha-romanoff.pdf`
-> - `samples/resume-peter-parker.pdf`
-> - `samples/jd-cloud-solution-architect.pdf`
-
----
-
-### Step 3: Share the job description
-
-Next, provide the job description for the role you're preparing for. The same input methods apply (URL, file link, text, or skip).
-
-**Example using a URL:**
-
-```
-You:   The job description is here: https://example.com/jobs/cloud-architect
-Coach: Got it! I've parsed the job description. The role is looking for
-       experience in cloud architecture, Azure services, and team leadership.
-       I'll tailor the interview questions to this role.
-       Ready to start the behavioral interview?
-```
-
-**Example pasting a job description directly:**
-
-```
-Here's the job description:
-
-       SENIOR CLOUD SOLUTIONS ARCHITECT
-       Contoso Ltd — Seattle, WA (Hybrid)
-
-       ABOUT THE ROLE
-       We are looking for a Senior Cloud Solutions Architect to join our
-       Platform Engineering team. You will design and implement cloud-native
-       solutions on Microsoft Azure, drive technical strategy for our
-       enterprise customers, and mentor a team of 4 engineers. This is a
-       high-impact role at the intersection of architecture, AI integration,
-       and developer experience.
-
-       RESPONSIBILITIES
-       - Design scalable, resilient cloud architectures using Azure services
-         (AKS, Azure Functions, Cosmos DB, Service Bus, Microsoft Foundry).
-       - Lead technical discovery sessions with enterprise clients to translate
-         business requirements into cloud-native solutions.
-       - Build proof-of-concept applications and reference architectures that
-         showcase best practices for microservices and event-driven design.
-       - Mentor and grow a team of cloud engineers, conducting code reviews
-         and establishing engineering standards.
-       - Collaborate with Product and DevRel teams to shape the developer
-         platform roadmap and publish technical content.
-
-       QUALIFICATIONS
-       - 7+ years of software engineering experience, with 3+ years focused
-         on cloud architecture (Azure preferred, AWS acceptable).
-       - Strong proficiency in C#/.NET, Python, or Go for backend services.
-       - Hands-on experience with Kubernetes, Terraform, and CI/CD pipelines.
-       - Familiarity with AI/ML integration patterns (Microsoft Foundry, Semantic
-         Kernel, or similar frameworks).
-       - Excellent communication skills — able to present to both technical
-         and executive audiences.
-       - Microsoft Azure certifications (Solutions Architect Expert or
-         equivalent) preferred.
-
-       COMPENSATION
-       $165,000 – $210,000 base + annual bonus + equity
-```
-
-If you skip both the resume and job description, the coach will ask general interview questions.
-
----
-
-### Step 4: Behavioral interview
-
-The coach begins with behavioral questions tailored to your resume and job description. Questions follow the **STAR method** (Situation, Task, Action, Result).
-
-**Example:**
-
-```
-Coach: Let's start with a behavioral question.
-       Tell me about a time you led a technical project through a challenging deadline.
-       Try to structure your answer using the STAR method.
-
-You:   In my previous role, we had a project to migrate our infrastructure to Azure.
-       The deadline was tight because of a contract renewal. I organized the team into
-       workstreams, set up daily standups, and we delivered two days early.
-
-Coach: Great answer! Here's my feedback:
-       ✅ Situation: Clear context about the migration project
-       ✅ Task: Well-defined goal with deadline pressure
-       ✅ Action: Good leadership actions (workstreams, standups)
-       💡 Improvement: Add specific metrics — how many services migrated?
-          What was the team size? Quantifiable results strengthen your answer.
-
-       Would you like another behavioral question, or move to technical questions?
-```
-
-Typically the coach asks **3-5 behavioral questions**. After each answer, you receive:
-
-- Constructive feedback on your response
-- Analysis of your STAR structure
-- Suggestions for improvement
-
----
-
-### Step 5: Technical interview
-
-When you're ready, the coach switches to technical questions based on the skills in your resume and job description.
-
-**Example:**
-
-```
-You:   Let's move to technical questions.
-
-Coach: Sure! Here's a technical question:
-       You need to design a microservices architecture for a high-traffic
-       e-commerce platform on Azure. Walk me through your approach,
-       including service communication, data management, and scaling.
-
-You:   I'd use Azure Container Apps for the services, with Azure Service Bus
-       for async messaging between them. Each service would have its own
-       database — SQL for orders, Cosmos DB for the product catalog...
-
-Coach: Solid approach! Here's my analysis:
-       ✅ Good choice of Azure Container Apps for managed containers
-       ✅ Event-driven with Service Bus — good for decoupling
-       ✅ Polyglot persistence is appropriate
-       💡 Consider: How would you handle distributed transactions?
-          What's your caching strategy for the product catalog?
-
-       Want to continue with more technical questions?
-```
-
----
-
-### Step 6: End the interview and get a summary
-
-When you're done, ask the coach to wrap up. The coach generates a comprehensive summary.
-
-**Example:**
-
-```
-You:   I'd like to stop and get a summary.
-
-Coach: Here's your interview summary:
-
-       📋 Interview Summary
-       ═══════════════════════════════════════
-       
-       Overview:
-       You completed a mock interview session with 3 behavioral
-       and 2 technical questions for a Cloud Solution Architect role.
-
-       Key Highlights:
-       • Strong leadership examples with clear STAR structure
-       • Solid technical knowledge of Azure services
-       • Good communication and structured thinking
-
-       Areas for Improvement:
-       • Add more quantifiable metrics to behavioral answers
-       • Dive deeper into distributed systems trade-offs
-       • Prepare more examples of cross-team collaboration
-
-       Recommendations:
-       1. Practice explaining complex architectures in under 2 minutes
-       2. Prepare 3-4 STAR stories with specific metrics ready
-       3. Review CAP theorem and consistency patterns for system design
-
-       Overall Readiness: 🟢 Good — ready for interviews with some
-       targeted preparation in the areas noted above.
-
-       Good luck with your interview! 🎉
-```
-
----
-
-## Multi-agent mode
-
-By default the app runs the multi-agent handoff workflow (`AgentMode: HandOff`). Set `AgentMode` to `Single` to use one agent instead:
-
-```json
-{
-  "AgentMode": "Single"
-}
-```
-
-Agent mode and LLM provider are independent. Both `Single` and `HandOff` work with Microsoft Foundry and GitHub Copilot.
-
-In multi-agent mode, five specialized agents collaborate:
-
-| Agent                      | What It Does                                                 |
-|----------------------------|--------------------------------------------------------------|
-| **Triage**                 | Routes your messages to the right specialist                 |
-| **Receptionist**           | Sets up your session, parses your resume and job description |
-| **Behavioral Interviewer** | Asks behavioral questions using the STAR method              |
-| **Technical Interviewer**  | Asks role-specific technical questions                       |
-| **Summariser**             | Generates your final interview summary                       |
-
-Handoffs happen automatically — you just chat normally and the system routes to the right specialist.
-
-See [MULTI-AGENT.md](MULTI-AGENT.md) for details.
-
-## Tips
-
-1. **Provide both resume and JD** — more context means more relevant questions.
-2. **Answer in detail** — longer answers get better feedback.
-3. **Use the STAR method** — Situation, Task, Action, Result.
-4. **Ask for clarification** — the coach can rephrase.
-5. **Run multiple sessions** — each one is saved. Try different job descriptions.
-6. **Stop anytime** — say "stop" to get your summary early.
-
-## Common scenarios
-
-### Resume from LinkedIn
-
-```
-You: Hi my resume is here: https://www.linkedin.com/in/johndoe/
-```
-
-The coach uses MarkItDown to extract your profile information and tailors questions to your experience.
-
-### Resume from a hosted PDF
-
-```
-You: My resume is at https://mysite.com/resume.pdf
-```
-
-### Skip resume, just provide a job description
-
-```
-You: I don't have a resume handy, but here's the job: https://careers.example.com/job/12345
-```
-
-### Practice with samples
-
-Use the included samples:
-
-```
-You: Can you use the sample resume for Peter Parker?
-```
-
-> Note: The sample files in `samples/` are PDFs. You would need to provide them as accessible URLs or paste their content.
-
-### Resume later
-
-```
-You: I need to go. Can I resume later?
-Coach: Of course! Your Session ID is a1b2c3d4-...
-       Just mention this ID when you come back and we'll pick up where you left off.
-```
-
-## Next steps
-
-- [Architecture overview](ARCHITECTURE.md)
-- [Tutorials](TUTORIALS.md)
-- [FAQ](FAQ.md)
+Use fictional data and review logs before sharing them. They can contain session IDs, tool arguments, and document or transcript content.

@@ -1,0 +1,134 @@
+---
+title: Save interview progress
+description: Keep the interview inputs, answers, and summary together in one retrievable record.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import CodeSample from '../../../components/CodeSample.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import Hint from '../../../components/Hint.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+The coach can save a record when we explicitly request it. Now we'll make saving part of its normal interview process.
+
+A conversation can contain many tool calls. They need to refer to one record and preserve what earlier calls saved. We'll turn those requirements into instructions, then follow the record through an interview.
+
+The existing tools will do the storage work. In `interview-coach-lab`, this lesson changes one instruction block in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`.
+
+## Give the coach a session lifecycle
+
+The WebUI supplies a `SessionId` with each new chat. The repository has specific behavior we need to account for:
+
+| Repository behavior | Instruction we need | Evidence to check |
+| --- | --- | --- |
+| An update cannot create a missing record. | Look up the application's ID. Create that exact ID only if the lookup returns no record. | A successful add result before the first update. |
+| Updates replace the six resume/job fields. | Fetch the current record and preserve those fields. | Saved document fields still contain the earlier inputs. |
+| Updates append incoming transcript text. | Send only the new exchange. | Earlier transcript text appears once. |
+| Completion uses its own operation. | Save the summary, then call completion. | The returned record has `IsCompleted: true`. |
+
+Before opening the full instructions, write one sentence that would prevent a duplicate transcript. Specify what the coach should send in `Transcript`. "Save the conversation correctly" leaves that decision unresolved.
+
+Now compare your sentence with the replacement below. Notice how each rule names an operation or a field that we can inspect:
+
+<CodeStep id="persistence-session-lifecycle" />
+
+Instruction order expresses dependencies: find or create the record before changing it, and save the summary before completing it. Tool results determine whether those operations succeeded.
+
+These instructions guide model behavior. They do not make writes transactional or prevent duplicate calls. A production repository should enforce important invariants in code, including safe handling of repeated requests.
+
+<KnowledgeCheck
+  id="transcript-append"
+  question="The record already contains the first interview exchange. What should the next update send in Transcript?"
+  options={[
+    { text: "The entire conversation, just like the AG-UI request.", explanation: "AG-UI needs conversation context, but this repository appends incoming transcript text. Sending the old exchange again would duplicate it." },
+    { text: "Only the new exchange to append.", correct: true, explanation: "The repository already owns the earlier transcript. Preserve the document fields and send only the new question, answer, or feedback." },
+    { text: "An empty transcript and IsCompleted set to true.", explanation: "That would omit the new exchange. Completion also requires complete_interview_session rather than an update flag." }
+  ]}
+/>
+
+## Follow one saved record
+
+From the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Start a new WebUI chat and send:
+
+```text
+Help me practice. My fictional resume text is "I build C# web APIs and
+maintain integration tests." The job description is "Backend developer
+working on reliable HTTP services." Ask one question at a time.
+```
+
+The coach's first reply should begin with `Session ID:` followed by the WebUI's ID. You can verify it in the WebUI resource log under `Started new chat session with SessionId`.
+
+In the Aspire dashboard, open **Traces** and select the agent request for that response, or open the `mcp-interview-data` resource's logs. A new chat should call `get_interview_session` and receive no record, then call `add_interview_session` with the same ID. The record exists only after the add call succeeds. Answer the question with a fictional example, such as adding integration tests to catch an API regression before release.
+
+In Cosmos Data Explorer, open `interviewdb` / `interviewsessions` and find that ID:
+
+| Field | Expected saved value |
+| --- | --- |
+| `id` | The WebUI's session ID |
+| `ResumeText` | Your C# API and integration-test experience |
+| `JobDescriptionText` | The backend-developer description |
+| `Transcript` | The new question, answer, and feedback |
+
+**Preserve the document fields and append only new transcript text.** Each update replaces the links, text, and skip flags with the incoming values. Sending the previous transcript again duplicates it. Leaving document fields empty can erase them. Compare the saved record after your answer with its earlier values.
+
+Now send:
+
+```text
+Finish now. Save a summary of my answers in the interview record and mark
+this session complete.
+```
+
+Refresh the record in Data Explorer. Look for the summary in `Transcript` and `IsCompleted: true`. Saving the summary uses `update_interview_session`. Completion requires `complete_interview_session`, because changing `IsCompleted` in an update request has no effect.
+
+If the coach keeps asking questions, say `End this interview now and mark the saved interview complete.` Check the returned record before accepting a completion claim.
+
+## Read the record again
+
+In DevUI, replace the placeholder with that same ID:
+
+```text
+Call get_interview_session for ID <the completed interview ID>.
+Show the saved summary and completion flag. Do not create or modify a record.
+```
+
+Open the lookup result and compare its summary with the saved record. You can now retrieve the interview's result by ID.
+
+<Hint title="Where the state lives">
+
+The Blazor circuit owns visible messages and the session ID. It sends the full chat history with each AG-UI request so the coach can refer to earlier answers. InterviewData stores interview fields in Cosmos.
+
+A WebUI refresh starts a new circuit and session. The sample has no saved-chat load feature. Keep the record ID for later tool lookups. Emulator data retention also depends on the container's storage lifecycle.
+
+The supplied repository implements the replace-and-append behavior:
+
+<CodeSample stage="05-persistence" path="src/InterviewCoach.Mcp.InterviewData/InterviewSessionRepository.cs" start="    public async Task&lt;InterviewSession?&gt; UpdateInterviewSessionAsync" end="    public async Task&lt;InterviewSession?&gt; CompleteInterviewSessionAsync" />
+
+</Hint>
+
+<Checkpoint stage="05-persistence" />
+
+<LessonProgress lessonId="07-persistence" />

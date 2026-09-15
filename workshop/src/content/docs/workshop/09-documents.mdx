@@ -1,0 +1,94 @@
+---
+title: Use the resume in the interview
+description: Save the extracted resume and job description, then ask a question grounded in them.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+The parser returns resume text. Let's make that text useful: the coach will save it and ask a question tied to an experience in the resume.
+
+This connects two capabilities we checked separately. Extraction supplies the text. The session lifecycle preserves it so later questions can use the same context.
+
+Both MCP clients are connected in `interview-coach-lab`. Only the agent description and instructions change, in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`.
+
+<ConceptDiagram kind="documents" />
+
+## Give the coach the complete interview process
+
+Update the description to cover the coach's full responsibility:
+
+<CodeStep id="documents-agent-description" />
+
+Read the new instructions as a process with entry conditions. Intake must produce usable text or an explicit choice to skip a document. A URL alone does not satisfy that condition.
+
+The remaining sections cover behavioural practice, technical practice, and a saved summary. They retain the session and update rules from Chapter 7.
+
+<CodeStep id="documents-interview-instructions" />
+
+This completes `CreateSingleAgent`. Keep it intact when we add specialist agents.
+
+## Use documents as context
+
+Here we supply extracted text in the context available to the agent. We do not train a new model. Fine-tuning changes a model through training and is a separate task.
+
+For a larger document collection, an application might retrieve relevant passages for each request. That approach is often called retrieval-augmented generation, or RAG. Our small interview sample uses the collected documents directly and does not build a search index.
+
+Document text can also contain instructions written by its author. Treat those as untrusted content. Prompts describe the intended boundary, while tool permissions and application validation must enforce access.
+
+## Ask a question based on the saved materials
+
+From the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Start a new WebUI chat and send these public sample URLs:
+
+```text
+Help me practice for the role in this fictional job description.
+Read and save these documents:
+Resume: https://codemillmatt.github.io/interview-coach-agent-framework/samples/resume-peter-parker.pdf
+Job: https://codemillmatt.github.io/interview-coach-agent-framework/samples/jd-cloud-solution-architect.pdf
+Then ask one behavioural question tied to an experience from the resume.
+Tell me which experience you chose.
+```
+
+Find the session ID in the WebUI logs. In Cosmos Data Explorer, open its record under `interviewdb` / `interviewsessions`. Check that `ResumeText` and `JobDescriptionText` contain recognizable text from both PDFs. Compare the coach's chosen experience with `ResumeText`.
+
+The repository still replaces document fields and appends incoming transcript text. On later updates, preserve the saved fields and send only the new exchange.
+
+Keep using fictional materials and private endpoints. The sample's uploads and record tools lack per-user ownership checks. Treat document content as untrusted input.
+
+<Hint title="Try an attachment or pasted text later">
+
+Pasted text goes straight into the conversation. For attachments, the supplied WebUI sends the file to the agent's `/upload` endpoint, which accepts supported files up to 10 MiB and returns a URL. MarkItDown must be able to fetch that URL from its container.
+
+Uploaded bytes live in agent-process memory and disappear on restart. Extracted text saved in Cosmos is a separate copy. Use the public URLs above for the first run so you can learn document intake before working through upload networking.
+
+</Hint>
+
+<Checkpoint stage="06-documents" />
+
+<LessonProgress lessonId="09-documents" />

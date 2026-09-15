@@ -1,0 +1,116 @@
+---
+title: Finish with a summary agent
+description: Add the summariser, complete the handoff graph, and save the final feedback.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+The interviewers can ask questions and save feedback. Now we'll give the interview a saved ending.
+
+The summariser reads the transcript, appends final feedback, and completes the record. Giving that responsibility its own instructions makes the ending easier to inspect and change.
+
+All edits are in `src/InterviewCoach.Agent/AgentDelegateFactory.cs` in `interview-coach-lab`. The receptionist and behavioural interviewer keep their existing definitions.
+
+## Add the summary destination
+
+Update triage to include the summariser and consider completed phases when routing. Notice the priority of the latest request: an early finish should take precedence over an old message about starting intake.
+
+<CodeStep id="summary-triage-agent" />
+
+Change the technical interviewer's final step to hand off directly to the summary:
+
+<CodeStep id="summary-technical-agent" />
+
+Now define the summariser. It receives InterviewData tools so it can read the transcript, append its summary, and call completion. These are separate operations, and the instructions must preserve that order:
+
+<CodeStep id="specialists-summariser-agent" />
+
+Finish the edit group by replacing the four-agent builder with the full graph:
+
+<CodeStep id="specialists-handoff-graph" />
+
+## Read the completed graph
+
+The usual interview follows the specialist chain. Triage can also select any specialist, and each specialist can return to triage for a changed request.
+
+<ConceptDiagram kind="handoffs" />
+
+Why keep these eleven edges? Direct phase transitions avoid asking triage to choose again after every specialist. Return routes still let the user change direction. The graph supports both ordinary progress and an early finish.
+
+A hub-only graph would add a triage decision between phases. A chain without return routes would restrict changed requests. Neither design is universally wrong. Choose routes for the interactions the application needs.
+
+The graph permits transfers without forcing a fixed sequence. If the next operation must always be the same, ordinary code or a sequential workflow may be simpler.
+
+<KnowledgeCheck
+  id="summary-completion"
+  question="The summariser saved its feedback with update_interview_session. What must happen before it claims the interview is complete?"
+  options={[
+    { text: "It must call complete_interview_session and inspect the returned record.", correct: true, explanation: "The update saves transcript text. Completion is a separate repository operation. Its result must show IsCompleted: true." },
+    { text: "It must set IsCompleted in another update request.", explanation: "The repository ignores that field during an update. The completion tool marks the record complete." },
+    { text: "It only needs to tell the user that the interview is complete.", explanation: "A reply does not establish that a write succeeded. Check the completion result and the saved record." }
+  ]}
+/>
+
+## Save the final feedback
+
+From the working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+In the Aspire dashboard, open `webui` and select **New chat**. The page displays **Session ID** above the conversation. Keep the display you added in Chapter 11. DevUI shows the workflow graph. Use WebUI for this conversation. Send:
+
+```text
+My fictional resume says I build C# APIs and review integration tests.
+The job is backend developer. Save those inputs.
+Let's do one behavioural question and one technical question.
+```
+
+Answer the behavioural question, request technical practice, and answer that question. Then ask the coach to finish and save a summary.
+
+In DevUI's graph, locate the permitted transfer from `technical_interviewer` to `summariser`. To check the saved result, copy the **Session ID** shown above the conversation. In the `mcp-interview-data` logs, find the lookup, update, and `Completed interview session` entries for that ID.
+
+Find the same ID in Cosmos Data Explorer. `Transcript` should include feedback about your answers and the final summary. `IsCompleted` should be `true`. The summary update must preserve document fields and append only new text. Select **New chat** for another run.
+
+The saved record proves the data operations. It does not identify every agent that ran, because several roles share InterviewData tools. Use agent execution telemetry when you need that evidence. DevUI's static graph shows what is allowed, not what happened in this conversation.
+
+<Hint title="All eleven permitted handoffs">
+
+| Active agent | Allowed destinations |
+| --- | --- |
+| `triage` | `receptionist`, `behavioural_interviewer`, `technical_interviewer`, `summariser` |
+| `receptionist` | `behavioural_interviewer`, `triage` |
+| `behavioural_interviewer` | `technical_interviewer`, `triage` |
+| `technical_interviewer` | `summariser`, `triage` |
+| `summariser` | `triage` |
+
+The graph permits these transfers. The active agent chooses one using its instructions and conversation context. We'll exercise an early-finish route in the debugging lesson.
+
+</Hint>
+
+<Checkpoint stage="07-handoffs" />
+
+<LessonProgress lessonId="12-handoffs" />

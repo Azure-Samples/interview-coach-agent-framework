@@ -1,135 +1,70 @@
-# Architecture overview
+# Architecture reference
 
-How the Interview Coach is put together and why.
+This page maps the completed application's processes and request path. Use it as a reference whether you're running the finished application or learning to build it. To implement the agent connections yourself, the [workshop](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/) guides you through each step. Chapter 0 combines tool setup with a run of the finished example.
 
-## System architecture
+## Runtime responsibilities
 
-![Architecture Diagram](../assets/architecture.png)
+| Component | Implementation | Responsibility |
+| --- | --- | --- |
+| WebUI server | `src/InterviewCoach.WebUI` | Runs server-interactive Blazor components, calls the agent through AG-UI, and renders updates to the browser |
+| Agent service | `src/InterviewCoach.Agent` | Constructs agents, connects a model provider, invokes tools, exposes `/ag-ui` |
+| InterviewData MCP | `src/InterviewCoach.Mcp.InterviewData` | Session tools backed by the supplied EF Core Cosmos repository |
+| MarkItDown MCP | `mcp/markitdown` container | Converts reachable document URLs into text |
+| Aspire | `apphost.cs` and `src/InterviewCoach.AppHost` | Starts resources, supplies references/configuration, and orders dependencies |
+| Service defaults | `src/InterviewCoach.ServiceDefaults` | Shared health, service discovery, HTTP, and telemetry setup |
 
-[Aspire](https://aspire.dev) orchestrates the services: agent, web UI, MCP servers, and an Azure Cosmos DB database. Each runs as a separate process with service discovery wiring them together.
+The Foundry branch in `Program.cs` creates an OpenAI-compatible `ChatClient` and registers `client.AsIChatClient()`. `CreateProviderAgent` resolves that model client and constructs a `ChatClientAgent` with a name, instructions, and tools. The model runs in Foundry; the agents execute in this application's .NET process.
 
-A few decisions shaped the design:
+The alternative Copilot path uses the Agent Framework Copilot adapter. Provider selection and agent mode are independent. See [configuration](CONFIGURATION.md) and [agent modes](MULTI-AGENT.md).
 
-1. **MCP for tools** — Tools (document parsing, session storage) live in their own MCP servers. They can be reused across projects and developed independently.
-2. **Provider abstraction** — The LLM backend is swappable at runtime: Microsoft Foundry or GitHub Copilot.
-3. **Aspire orchestration** — Service discovery, health checks, and telemetry come free from .NET Aspire.
-4. **Stateful sessions** — Interview sessions persist to Azure Cosmos DB so users can pause and resume.
+## Request and tool flow
 
-## Component Deep Dive
+1. The browser sends input to its server-side Blazor component. The WebUI server's `AGUIChatClient` sends messages to the agent's `/ag-ui` endpoint.
+2. Agent Framework runs the selected agent or handoff workflow.
+3. The model can request a tool call. Agent Framework invokes a discovered tool through the appropriate keyed MCP client.
+4. InterviewData accesses Cosmos, or MarkItDown converts a document.
+5. Tool results return to the agent; its response streams back to the WebUI server, which updates the browser through Blazor.
 
-### 1. InterviewCoach.Agent (AI agent service)
+The WebUI registers `AddInteractiveServerComponents` and uses `InteractiveServerRenderMode(prerender: false)`. Its C# chat component runs in a server-side circuit. MCP connects agent-side tools; AG-UI connects the WebUI server to the agent service. See [state ownership](SESSION-DATA.md#state-ownership) for message accounting and refresh behavior.
 
-The agent runs the interview. It decides what to ask, when to call tools, and how to respond.
+## Handoff topology
 
-Built on ASP.NET Core and Microsoft Agent Framework. It uses the OpenAI .NET client for Microsoft Foundry and the Agent Framework adapter for the GitHub Copilot SDK. The web UI connects through AG-UI, while MCP clients provide tools.
+Triage starts the workflow and chooses a specialist using conversation context. Its tools handle transfers. Receptionist has the application MCP tools for session setup and document intake.
 
-- Runs as a single agent or as 5 specialists in handoff mode (configurable)
-- Has step-by-step interview instructions (scoped per-agent in handoff mode)
-- Calls MarkItDown (document parsing) and InterviewData (session storage) through MCP
-- Creates `ChatClientAgent` instances for Foundry and Copilot-backed `AIAgent` instances for GitHub Copilot
+The usual interview path is Triage -> Receptionist -> Behavioural Interviewer -> Technical Interviewer -> Summariser. Each specialist can return to Triage for an out-of-order request; Summariser returns to Triage after completing the summary. The introductory workshop diagram shows this usual path. The [agent-mode reference](MULTI-AGENT.md#handoff-mode) lists all eleven permitted edges and the exact tool assignments.
 
-### 2. InterviewCoach.WebUI (user interface)
+The five roles share the selected model deployment and transfer control between phases. Handoffs are model-directed within the configured graph, so check the actual route during a run.
 
-A Blazor web app where users chat with the agent. Styled with Tailwind CSS, renders markdown with Marked.js, and sanitizes input with DOMPurify. Communicates with the agent over the AG-UI protocol.
+## Local and deployed entry points
 
-**Communication Flow**:
+The quick start uses the root [file-based AppHost](../apphost.cs). It loads `apphost.settings.json`. The [project-based AppHost](../src/InterviewCoach.AppHost/AppHost.cs) is the target named by `azure.yaml` for Container Apps deployment and uses its project configuration.
 
-```mermaid
-flowchart LR
-    A[User Input] --> B[Blazor Component]
-    B --> C["Agent API (/ag-ui via AGUIChatClient)"]
-    C --> D[LLM]
-    D --> E[Agent]
-    E --> F[Response]
-    F --> G[Blazor UI]
-```
+In the completed source, both describe the full service topology. Each entry point loads its own configuration; review the settings for the one you run. The project-based host also explicitly forwards `AZURE_TENANT_ID`. See [configuration](CONFIGURATION.md#entry-points-and-precedence).
 
-### 3. InterviewCoach.Mcp.MarkItDown (document parsing)
+In local run mode, Cosmos uses a preview emulator container. Foundry resources can still be provisioned in Azure during a local run. The final app also starts MarkItDown using the reference's `latest` image tag. Record its image digest when comparing runtime results.
 
-Converts PDFs, DOCX files, and other documents to markdown so the agent can read them. This is [Microsoft's MarkItDown](https://github.com/microsoft/markitdown) running as an MCP server in a Docker container.
+## Workshop startup helpers
 
-It's external (Python-based) because it's reusable across projects and maintained independently. It also shows how to integrate a third-party MCP server.
+The workshop starter supplies the Blazor UI, repository, service defaults, and `WorkshopHosting.cs`. That helper contains Foundry model/authentication and DevUI code derived from the tagged reference's `Program.cs`. It is inactive in the starter, which runs a cloud-free shell. The workshop packages only the Foundry path; the standalone repository retains both providers.
 
-**Integration Pattern**:
+In `03-first-coach`, learners implement the `ChatClientAgent` constructor and coaching instructions before activating the helper and model reference. Streaming, MCP clients, and workflow connections arrive in later lessons. This keeps the first exercise focused on creating an agent while leaving the supplied startup code available to inspect.
 
-```mermaid
-flowchart LR
-    A[Agent] --> B[Streamable HTTP]
-    B --> C[MarkItDown MCP Server]
-    C --> D[Document Processing]
-    D --> E[Markdown Response]
-```
+Learners edit only root `apphost.cs` for orchestration. By `07-handoffs`, it runs the complete interview workflow. The capstone uses that same application source. It keeps `WorkshopHosting.cs`, the MCP discovery probe, and the session ID display. Learners check the interview and saved record without changing the file layout.
 
-### 4. InterviewCoach.Mcp.InterviewData (session storage)
+The project-based AppHost and its settings remain in their starter state throughout the core course. If learners choose [optional deployment](DEPLOYMENT.md#check-the-deployment-entry-point), a separate patch prepares only those two files. The startup helper and agent code remain in place.
 
-A custom .NET MCP server that stores interview sessions in Azure Cosmos DB via Entity Framework Core. Built with the `ModelContextProtocol.Server` SDK.
+## State and uploads
 
-**Integration Pattern**:
+Cosmos stores interview records, including document fields, transcript text, and completion state. The server-side Blazor component holds its message list and session ID in circuit memory. A browser refresh creates a new circuit and session. Earlier records can be fetched through InterviewData; UI conversation recovery would require additional implementation. See [session and data contracts](SESSION-DATA.md).
 
-```mermaid
-flowchart LR
-    A[Agent] --> B[Streamable HTTP]
-    B --> C[InterviewData MCP Server]
-    C --> D[Data Processing]
-    D --> E[Response]
-```
+Uploaded bytes are stored in the agent process's memory. The UI puts the returned URL into the chat, and MarkItDown must fetch it from its own container. Inspect the extraction result before using it as interview context. The [upload contract](USER-MANUAL.md#upload-contract) covers limits and retention.
 
-### 5. InterviewCoach.AppHost (Aspire orchestration)
+## Sample boundaries
 
-The Aspire app model. Defines which services exist, how they depend on each other, and what config they get.
+Use this learning sample in an access-restricted environment with fictional inputs. Development interfaces are mapped in the agent service, tools operate on supplied IDs, and document-derived content is untrusted. The [deployment reference](DEPLOYMENT.md#review-access-and-data-handling) describes the access-control and retention work to review before use with real users.
 
-### 6. InterviewCoach.ServiceDefaults (shared defaults)
+## Changing the hosting model
 
-OpenTelemetry, health checks, service discovery, and HTTP client defaults. Shared across all projects so you don't repeat the setup.
+The optional Container Apps deployment hosts the existing .NET services. Moving agent execution into Foundry Agent Service is a separate architecture change. `LlmProvider` selects one of the two implemented model-provider paths.
 
-## Multi-Agent Handoff Workflow
-
-```mermaid
-sequenceDiagram
-    participant U as User / WebUI
-    participant T as Triage Agent
-    participant R as Receptionist Agent
-    participant MID as MarkItDown MCP
-    participant MDB as InterviewData MCP
-    participant B as Behavioral Interviewer
-    participant TI as Technical Interviewer
-    participant S as Summarizer Agent
-
-    U->>T: Start interview
-    T->>MDB: Create session
-    T-->>R: Handoff → gather materials
-
-    R->>U: Request resume
-    U->>R: Provides resume URL
-    R->>MID: Parse resume
-    MID-->>R: Markdown content
-    R->>MDB: Update session with resume
-
-    R->>U: Request job description
-    U->>R: Provides JD
-    R->>MDB: Update session with JD
-    R-->>B: Handoff → begin behavioral interview
-
-    loop Behavioral Q&A
-        B->>U: Ask behavioral question
-        U->>B: Answer
-    end
-    B-->>TI: Handoff → begin technical interview
-
-    loop Technical Q&A
-        TI->>U: Ask technical question
-        U->>TI: Answer
-    end
-    TI-->>S: Handoff → generate summary
-
-    U->>S: Stop interview
-    S->>S: Generate summary via LLM
-    S->>MDB: Save complete transcript
-    S->>U: Display summary
-```
-
-## Next steps
-
-- [Learning objectives](LEARNING-OBJECTIVES.md)
-- [Tutorials](TUTORIALS.md)
-- [FAQ](FAQ.md)
+For a managed-agent migration, choose a runtime and definition format using the [Foundry Agent Service documentation](https://learn.microsoft.com/azure/ai-foundry/agents/overview). Map the identity and network path to both MCP servers, decide who owns conversation state, and trace the response back through `/ag-ui` to the Blazor client. That migration needs its own implementation and lifecycle, permissions, networking, and retention checks.
