@@ -8,11 +8,17 @@ import Checkpoint from '../../../components/Checkpoint.astro';
 import Hint from '../../../components/Hint.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
 
-The **InterviewData** project already has a repository for creating and reading interview records. We'll expose its operations through Model Context Protocol (MCP), start the service, and ask it which tools are available.
+The practice function runs inside the agent service. Interview records belong to a different service, **InterviewData**. We'll expose its repository operations through Model Context Protocol (MCP).
 
-Continue in the same `interview-coach-lab` project from the previous chapter. The coach keeps its local `practice-guidance` tooling function for this lesson. Work in the **InterviewData** project and root `apphost.cs`.
+A local function is a good fit when your application owns the capability. MCP gives clients a common way to discover and call tools owned by a service. The same InterviewData server could support another agent application without moving its repository into that application.
 
-## Give the repository operations tool names
+That separation adds a connection and another service to operate. We'll check the server independently before connecting the coach, so we can distinguish discovery failures from agent behavior.
+
+Keep the coach's local `practice-guidance` function for this lesson. In `interview-coach-lab`, we'll work in the **InterviewData** project and root `apphost.cs`.
+
+## Describe the operations the server owns
+
+MCP can expose several kinds of capabilities. This workshop uses tools. Each tool has a name, a description, and input metadata. Our server uses HTTP at `/mcp`. MCP also supports other transports.
 
 Open `src/InterviewCoach.Mcp.InterviewData/InterviewSessionTool.cs`.
 
@@ -26,9 +32,9 @@ Next we'll add an attribute to each method, starting with the operation that cre
 
 <CodeStep id="mcp-expose-add-interview-session" />
 
-`Name` becomes the public tool name. The existing descriptions explain the operation and its arguments to a client.
+`Name` becomes the public tool name. The existing descriptions explain the operation and its arguments to a client. The attribute exposes a method that already exists. The repository still implements persistence.
 
-Apply the same pattern to listing, lookup, update, and completion:
+Apply the same pattern to listing, lookup, update, and completion. Notice that lookup retrieves a record, update changes an existing record, and completion is a separate operation:
 
 <CodeStep id="mcp-expose-get-interview-sessions" />
 
@@ -56,7 +62,7 @@ Now apply the supplied resource declaration in root `apphost.cs`. It starts the 
 <CodeStep id="mcp-resources-file-apphost" />
 
 :::caution[Resources and cost]
-Local run mode uses the Cosmos emulator. Your configured Foundry model remains cloud-backed and model calls incur charges. Use your approved environment and the root run command below; publishing this graph can provision managed resources.
+Local run mode uses the Cosmos emulator. Your configured Foundry model remains cloud-backed and model calls incur charges. Use your approved environment and the root run command below. Publishing this graph can provision managed resources.
 :::
 
 ## List the tools from your terminal
@@ -119,7 +125,7 @@ You now have a discoverable server. Connecting those tools to the coach is the n
 
 For a connection error, compare the URL with the dashboard endpoint and confirm InterviewData is running. The terminal probe needs the dashboard's host and port. If it connects but lists no tools, check the class and method attributes, assembly registration, and `/mcp` mapping.
 
-The probe only lists tools; creating a record comes next.
+The probe only lists tools. Creating a record comes next. Successful discovery narrows a problem to later operations, but it does not prove that storage calls will succeed.
 
 </Hint>
 

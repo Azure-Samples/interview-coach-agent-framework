@@ -40,6 +40,41 @@ test('the workshop derives only the selected backend without changing the standa
   }
 });
 
+test('teaching comments preserve the source instructions and executable agent bodies', () => {
+  const withoutCommentLines = source => source.split('\n').filter(line => !/^\s*\/\//.test(line)).join('\n');
+  for (const [start, end] of [[anchors.single, anchors.handoff], [anchors.workflow, '\n}\n']]) {
+    assert.equal(
+      withoutCommentLines(sourceSlice(get(reference, paths.factory), start, end)),
+      withoutCommentLines(sourceSlice(get(standaloneReference, paths.factory), start, end)),
+    );
+  }
+  const history = /FIX:|The old instructions|original monolithic|instead of back to Triage|Changed from pure hub-and-spoke/;
+  for (const id of stageIds) {
+    assert.doesNotMatch(get(makeStage(reference, id), paths.factory), history, id);
+  }
+  for (const step of contract.transitions.flatMap(item => item.steps)) {
+    assert.doesNotMatch(step.before + step.after, history, step.id);
+  }
+  for (const id of ['02-starter', '03-first-coach', '03-streaming']) {
+    const single = sourceSlice(get(makeStage(reference, id), paths.factory),
+      '    // MODE 1:', anchors.handoff);
+    assert.doesNotMatch(single, /all MCP tools|Has all MCP tools|monolithic/, id);
+  }
+});
+
+test('handoff diagrams distinguish permitted returns from normal turn endings', () => {
+  const diagrams = readFileSync(new URL('../src/components/ConceptDiagram.astro', import.meta.url), 'utf8');
+  const first = sourceSlice(diagrams, "  'first-handoff': {", '  interviewers: {');
+  assert.match(first, /saves the inputs and ends its turn/);
+  assert.match(first, /unexpected request/);
+  assert.doesNotMatch(first, /returns control to triage when intake is ready|then hands control back to triage/);
+  const interviewers = sourceSlice(diagrams, '  interviewers: {', '  handoffs: {');
+  assert.match(interviewers, /acknowledges the end without a handoff/);
+  assert.match(interviewers, /unexpected request can return to triage/);
+  const complete = sourceSlice(diagrams, '  handoffs: {', '\n};');
+  assert.equal([...complete.matchAll(/\{ from:/g)].length, 11);
+});
+
 test('every learner stage requires resource reuse and has its own file-based secrets identity', () => {
   assert.match(get(standaloneReference, 'Directory.Build.props'), /<UserSecretsId>/);
   for (const id of stageIds) {

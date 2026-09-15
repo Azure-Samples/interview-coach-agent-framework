@@ -1,14 +1,17 @@
 ---
 title: Find and fix a failed step
-description: Trace a failed document fetch, correct the input, and follow an early-finish route.
+description: Recover a failed document fetch, then compare repeated runs against expected behavior.
 ---
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 import Checkpoint from '../../../components/Checkpoint.astro';
+import CodeSample from '../../../components/CodeSample.astro';
 import Hint from '../../../components/Hint.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
 import { siteLink } from '../../../data/course';
 
-Practice a small recovery: give the parser an invalid URL, inspect the failure, then supply working input. We'll finish the same interview early and follow its route to the summariser.
+Let's give the application a problem we can recognize: a document URL that cannot resolve. We'll inspect the failure, correct the input, and finish the interview early.
+
+Then we'll ask a different question: does the agent follow the same requirement across repeated runs? A working request is useful evidence, but it does not establish reliable behavior.
 
 Continue in the same `interview-coach-lab` project from Chapter 12. Your five-agent workflow is complete. Keep `WorkshopHosting.cs`, the MCP discovery probe, and the session ID display unchanged.
 
@@ -85,9 +88,83 @@ In DevUI's graph, locate the expected early-finish route: `behavioural_interview
 
 If the coach asks another question instead of finishing, compare the agents' instructions, their permitted destinations, and your latest request in the same conversation.
 
+## Turn an expectation into an evaluation
+
+An evaluation compares observed behavior with a requirement. A model can choose different words or actions across runs, even when the input is unchanged. We need criteria that allow useful variation without accepting the wrong outcome.
+
+Keep a small set of fictional cases:
+
+| Case | Expected behavior | Evidence |
+| --- | --- | --- |
+| Normal intake | Save supplied resume and job text before practice. | Both fields contain the input under the current session ID. |
+| Invalid document URL | Report the failed fetch and request usable input or permission to skip. | A parser error and no claim that missing text was extracted. |
+| Early finish | Save a summary and complete the current interview without another question. | Summary in `Transcript`, `IsCompleted: true`, and the next reply. |
+
+Use the early-finish case for this comparison. Keep the other rows as cases to repeat after future changes.
+
+:::caution[Repeated runs use the model]
+This comparison uses four short, fresh conversations. Model calls incur charges. Keep the same approved deployment and use only the fictional inputs below.
+:::
+
+### Record the original behavior
+
+1. Start a new WebUI chat.
+2. Send the setup message below.
+3. Wait for the first behavioural question.
+4. Send the finish message below.
+5. Inspect the saved record and record the result.
+6. Repeat once in another new chat.
+
+Setup message:
+
+```text
+My fictional resume says I maintain C# APIs. The job is backend developer.
+Save those inputs and ask one behavioural question.
+```
+
+Finish message:
+
+```text
+Finish this interview now. Save a short summary and mark the record complete.
+Do not ask another question.
+```
+
+Use the same messages in each run. If setup fails, record that failure rather than treating it as an early-finish result.
+
+| Instructions | Run | Session ID | Summary saved? | Complete? | Another question? | Errors or observed route |
+| --- | --- | --- | --- | --- | --- | --- |
+| Original | 1 | Record the ID | | | | |
+| Original | 2 | Record the ID | | | | |
+| Changed | 1 | Record the ID | | | | |
+| Changed | 2 | Record the ID | | | | |
+
+Record a route only if execution telemetry identifies the agents that actually ran. If that evidence is unavailable, write "route not observed." A permitted edge or database write alone does not prove the route.
+
+### Change one routing rule
+
+Stop the app. In `src/InterviewCoach.Agent/AgentDelegateFactory.cs`, find the triage instructions inside `CreateHandOffWorkflow`.
+
+Remove only this early-finish rule, including its continuation line:
+
+<CodeSample stage="07-handoffs" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="                - If the user wants to stop or finish" end="                - If the latest message supplies" lang="text" />
+
+Keep every other instruction and handoff edge unchanged. Build and start the app with the commands at the beginning of this chapter. Repeat the two fresh-chat runs and fill the changed-instructions rows.
+
+Did any outcome change? A weaker prompt may still pass because other instructions and the user's message support the intended behavior. Record that result honestly. Four runs cannot establish a reliable failure rate or prove that the rule is unnecessary.
+
+Before continuing, restore the rule in its original position above the replacement-document rule. Build again. Keep the original instructions as the workshop baseline.
+
+## Choose evidence for the question
+
+Code tests check deterministic contracts, such as appending only incoming transcript text. Agent evaluations check behavior across inputs and repeated runs. Traces help explain how a particular result occurred.
+
+Keep useful cases when you change instructions, tool schemas, or model deployments. Change one factor at a time and compare against the same criteria. For larger datasets, see [agent evaluation with Foundry](https://learn.microsoft.com/agent-framework/agents/evaluation).
+
+Our agents still run in the local application. Using Foundry evaluation tooling is a separate integration, not a move of their execution into Foundry.
+
 <Hint title="Keep the investigation in the current conversation">
 
-A saved interview record can be fetched by ID. The WebUI's visible chat and agent conversation have separate lifecycles; refreshing the WebUI starts a new session. For this exercise, correct the failed input in the conversation that produced it.
+A saved interview record can be fetched by ID. The WebUI's visible chat and agent conversation have separate lifecycles. Refreshing the WebUI starts a new session. For this exercise, correct the failed input in the conversation that produced it.
 
 Use the completed checkpoint in a separate folder if you need to compare source:
 

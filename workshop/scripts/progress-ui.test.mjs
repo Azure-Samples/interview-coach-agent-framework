@@ -154,10 +154,10 @@ test('current-version alias normalization updates every navigation surface on lo
   assert.equal(ui.landing.href, ui.next.href);
 });
 
-test('a completed previous curriculum leaves the new summary and current navigation incomplete', () => {
+test('a completed version-4 curriculum leaves the new activities and current navigation incomplete', () => {
   const ui = fixture();
-  const previousKey = progressState.progressKey(base, '3');
-  const previous = JSON.stringify([...ids.slice(0, 13), '13-capstone', '14-debugging']);
+  const previousKey = progressState.progressKey(base, '4');
+  const previous = JSON.stringify(ids);
   ui.records.set(previousKey, previous);
   ui.connect();
   assert.equal(ui.records.get(previousKey), previous);

@@ -20,7 +20,7 @@ if (options.filter(option => option.correct).length !== 1) throw new Error(`Chec
   <button type="submit">Check answer</button>
   <button type="reset" class="secondary">Clear answer</button>
   <p class="check-feedback" aria-live="polite" aria-atomic="true"></p>
-  <noscript><p>Read the answer explanations:</p><ul>{options.map(o => <li>{o.text}: {o.explanation}</li>)}</ul></noscript>
+  <noscript><p>Read the answer explanations:</p><ul>{options.map(o => <li><strong>{o.correct ? 'Correct.' : 'Incorrect.'}</strong> {o.text} {o.explanation}</li>)}</ul></noscript>
 </form>
 <script>
   function connectChecks() {

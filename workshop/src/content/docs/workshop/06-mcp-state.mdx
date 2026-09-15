@@ -7,11 +7,14 @@ import CodeStep from '../../../components/CodeStep.astro';
 import Checkpoint from '../../../components/Checkpoint.astro';
 import ConceptDiagram from '../../../components/ConceptDiagram.astro';
 import Hint from '../../../components/Hint.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
 
-The server can list its tools. Now give those tools to the coach and use them to save a small fictional record. We'll fetch the same record and compare its fields with the request.
+The server can list its tools. Now we'll connect an MCP client in the agent service and give the discovered tools to the coach.
 
-Continue in the same `interview-coach-lab` project from the previous chapter. You'll edit root `apphost.cs`, then `Program.cs` and `AgentDelegateFactory.cs` in `src/InterviewCoach.Agent`.
+This completes the path from a model's request to a repository operation in another process. We'll create a fictional record, fetch it again, and compare its fields with our input.
+
+In `interview-coach-lab`, edit root `apphost.cs`, then `Program.cs` and `AgentDelegateFactory.cs` in `src/InterviewCoach.Agent`. Keep the server configuration from Chapter 5.
 
 <ConceptDiagram kind="mcp-connection" />
 
@@ -41,9 +44,23 @@ In `AgentDelegateFactory.cs`, remove the local practice function, then replace i
 
 <CodeStep id="mcp-discover-tools" />
 
-`ListToolsAsync` returns the server's callable tools. Pass them to the coach with instructions to perform record operations when explicitly asked:
+`ListToolsAsync` returns client-side representations of the server's tools, including their names, descriptions, and input schemas. They can forward an invocation through the MCP connection. They do not contain the server's C# method bodies.
+
+Discovery itself does not call the repository. We must still pass the tools to the agent. A production server also needs to authorize each invocation before executing it. This learning sample keeps the service private and does not implement per-user record ownership.
+
+Pass the tools to the coach with instructions to perform record operations when explicitly asked:
 
 <CodeStep id="mcp-agent-tools" />
+
+<KnowledgeCheck
+  id="mcp-discovery"
+  question="ListToolsAsync returned all five InterviewData tools. What does that establish?"
+  options={[
+    { text: "The client connected and discovered the advertised tools.", correct: true, explanation: "Discovery confirms this part of the connection. A real invocation is still needed to check arguments, repository behavior, and its result." },
+    { text: "The five repository methods have already run.", explanation: "Listing tools reads their advertised contracts. It does not create, update, or complete an interview." },
+    { text: "The model downloaded the repository implementation.", explanation: "The client receives tool metadata and callable representations. The repository code stays in InterviewData." }
+  ]}
+/>
 
 ## Save and fetch a known record
 
@@ -80,7 +97,7 @@ ProceedWithoutJobDescription true, and Transcript
 "Created for the MCP connection test." Then fetch that record again.
 ```
 
-Look for the lookup, create, and final lookup in the tool results. In the Aspire dashboard, open Cosmos Data Explorer, then `interviewdb` / `interviewsessions`. Find JSON `id` `11111111-1111-4111-8111-111111111111`; its `ResumeText` and `Transcript` should match the input.
+Look for the lookup, create, and final lookup in the tool results. In the Aspire dashboard, open Cosmos Data Explorer, then `interviewdb` / `interviewsessions`. Find JSON `id` `11111111-1111-4111-8111-111111111111`. Its `ResumeText` and `Transcript` should match the input.
 
 On a repeat run, an existing record needs only a lookup. Choose a fresh GUID if you want to repeat creation.
 

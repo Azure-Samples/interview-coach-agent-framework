@@ -8,21 +8,26 @@ import CodeStep from '../../../components/CodeStep.astro';
 import Checkpoint from '../../../components/Checkpoint.astro';
 import ConceptDiagram from '../../../components/ConceptDiagram.astro';
 import Hint from '../../../components/Hint.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
 
-Now we'll split the interview intake process into two agent roles.
+Our single coach now handles the whole interview. We'll keep it for comparison and split document intake into two roles.
 
-A triage agent sends the conversation to the receptionist agent, which collects and saves the interview materials. You'll see that transfer before adding any interviewers.
+Triage selects the role that should handle a request. The receptionist collects and saves the materials. This gives intake its own instructions and tools, which we can change without rewriting the other roles.
+
+The tradeoff is another decision: who takes the next turn? We'll allow two routes and observe one transfer before adding the interviewers.
 
 Continue in the same `interview-coach-lab` project from the previous chapter. We'll be working in `src/InterviewCoach.Agent/AgentDelegateFactory.cs` and root `apphost.settings.json`.
 
 <ConceptDiagram kind="first-handoff" />
 
+A handoff transfers control to another agent. It is different from calling a record tool and returning its result to the same agent. The agents share the configured model, but each has its own role instructions and available tools.
+
 Handoffs can add model calls and cost. Use the short fictional example below with your existing approved Foundry setup.
 
 ## Connect the workflow to the supplied host
 
-Find the existing `AddHandOffWorkflow` method near the top of the file, just below `AddAIAgent`. It currently throws `NotSupportedException`. Replace that whole method, including its signature, with the code below. Stop before the following `CreateProviderAgent` method; leave that method in place. Do not add a second `AddHandOffWorkflow`.
+Find the existing `AddHandOffWorkflow` method near the top of the file, just below `AddAIAgent`. It currently throws `NotSupportedException`. Replace that whole method, including its signature, with the code below. Stop before the following `CreateProviderAgent` method. Leave that method in place. Do not add a second `AddHandOffWorkflow`.
 
 <CodeStep id="handoff-hosting-adapter" />
 
@@ -46,7 +51,7 @@ If the definition is missing, restore this method inside the `AgentDelegateFacto
 
 Find the existing `CreateHandOffWorkflow(IServiceProvider sp, string key)` method at the bottom of the file, under `MODE 2: Handoff workflow`. It returns `Workflow` and currently throws `NotSupportedException`. This is a different method from `AddHandOffWorkflow`, which registers the workflow with the host.
 
-Replace the `CreateHandOffWorkflow` stub with the next block. Then apply the three edits that follow inside that same method. Wait until all four edits are in place before building the solution; the last edit adds the return statement.
+Replace the `CreateHandOffWorkflow` stub with the next block. Then apply the three edits that follow inside that same method. Wait until all four edits are in place before building the solution. The last edit adds the return statement.
 
 <CodeStep id="handoff-workflow-tools" />
 
@@ -54,7 +59,7 @@ The workflow discovers the same two MCP tool sets as the single coach.
 
 <CodeStep id="handoff-triage-agent" />
 
-The triage agent receives a routing instructions prompt which will let it know about the receptionist. Its handoff tools come from the workflow.
+The triage instructions name the available specialist and when to choose it. Triage has no application tools, such as record updates. The workflow supplies its handoff tools.
 
 <CodeStep id="handoff-receptionist-agent" />
 
@@ -64,7 +69,23 @@ Select the complete receptionist definition: from `// --- Receptionist Agent ---
 
 <CodeStep id="handoff-two-agent-graph" />
 
-A graph defines the agents in a workflow and the allowed handoff routes between them. `AgentWorkflowBuilder` builds this graph and sets triage as the starting agent. Here, the routes let triage hand off to the receptionist and let the receptionist return control to triage. These routes limit which agent can take over the conversation.
+A graph defines the agents and allowed handoff routes. `AgentWorkflowBuilder` builds this graph and sets triage as the starting agent.
+
+Here, triage can hand off to the receptionist. The receptionist can return to triage for an unexpected request. When normal intake finishes, its instructions say to report that the interview specialists are not connected yet.
+
+An edge makes a destination available. It does not require the active agent to transfer there. Instructions and conversation context guide that choice.
+
+The `MAAIW001` pragma acknowledges an experimental handoff API in the pinned package. Keep the suppression narrow and keep the package pins. Review this API before upgrading a separate application.
+
+<KnowledgeCheck
+  id="handoff-tool-access"
+  question="At this two-agent stage, why can the receptionist save a record while triage cannot?"
+  options={[
+    { text: "The receptionist receives InterviewData tools. Triage receives only handoff tools.", correct: true, explanation: "Tool registration determines the capabilities available to each agent. Routing instructions alone do not give triage a record-writing tool." },
+    { text: "The receptionist uses a more capable model.", explanation: "Both agents use the same configured model. Their instructions and available tools differ." },
+    { text: "The graph automatically saves a record whenever an edge is followed.", explanation: "The graph permits transfers. The receptionist must still request a record operation and receive its result." }
+  ]}
+/>
 
 Select `HandOff` in root `apphost.settings.json`:
 
@@ -137,7 +158,7 @@ The `mcp-interview-data` logs now show entries for this interview. Read them by 
 Triage has no InterviewData tools. The receptionist does. These successful database calls show that intake reached the receptionist. Next, check what it saved.
 
 <Hint title="If the expected entries are missing">
-Check **Resource**, **Level**, and **Message filter** first. Replace the old search text with the ID; do not add the ID to the old text.
+Check **Resource**, **Level**, and **Message filter** first. Replace the old search text with the ID. Do not add the ID to the old text.
 
 If there is an `Added` entry but no `Updated` entry, creation succeeded, but the logs have not confirmed a later save. Inspect the record below. If its input fields are empty, return to the same chat and check the reply for a question or tool error.
 </Hint>
@@ -164,7 +185,7 @@ Select **Apply Filter**, then select the matching ID in the results. Read the JS
 Both text fields must contain the supplied inputs. An empty record or a chat reply saying "saved" is not enough. Select **New chat** if you want to repeat the exercise.
 
 <Hint title="Where DevUI fits">
-The `agent` resource opens DevUI. In handoff mode, `coach` shows a workflow graph. It shows the permitted routes between roles; it does not replay this WebUI conversation. Use WebUI for chat and the checks above to confirm the saved result.
+The `agent` resource opens DevUI. In handoff mode, `coach` shows a workflow graph with the permitted routes between roles. It does not replay this WebUI conversation. Use WebUI for chat and the checks above to confirm the saved result.
 </Hint>
 
 <Checkpoint stage="07-first-handoff" />
