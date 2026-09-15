@@ -28,8 +28,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Fetch tags
-        run: git fetch --tags
+      - name: Fetch workshop reference tag
+        env:
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          source_tag="$(jq -r '.sourceTag' workshop/labs/manifest.json)"
+          if [[ ! "$source_tag" =~ ^workshop-[a-z0-9.-]+$ ]]; then
+            echo "::error::Invalid workshop source tag: $source_tag"
+            exit 1
+          fi
+
+          repository="${HEAD_REPOSITORY:-${{ github.repository }}}"
+          git fetch --no-tags "https://github.com/${repository}.git" \
+            "refs/tags/${source_tag}:refs/tags/${source_tag}"
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
