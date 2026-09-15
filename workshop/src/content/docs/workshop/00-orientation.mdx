@@ -126,7 +126,30 @@ Clone this finished example once. Keep `interview-coach-example` for trying the 
 
    <ShellCommands command={`git checkout --detach ${labs.sourceTag}`} />
 
-3. Azure CLI supplies your sign-in, but Aspire still needs to know where it should provision resources. Replace `YOUR_APPROVED_AZURE_REGION` with a region that supports the configured model. Use an existing approved resource group if you were given one; otherwise replace `YOUR_NAME` with something that makes the new group easy to identify.
+3. Set your Azure location and resource group once as environment variables. Replace `YOUR_APPROVED_AZURE_REGION` with a region that supports the configured model. Use an existing approved resource group if you were given one; otherwise replace `YOUR_NAME` with something that makes the new group easy to identify.
+
+   <Tabs syncKey="shell">
+   <TabItem label="Bash">
+
+   ```bash
+   export location="YOUR_APPROVED_AZURE_REGION"
+   export resourceGroup="rg-interview-coach-YOUR_NAME"
+   ```
+
+   </TabItem>
+   <TabItem label="PowerShell">
+
+   ```powershell
+   $env:location = "YOUR_APPROVED_AZURE_REGION"
+   $env:resourceGroup = "rg-interview-coach-YOUR_NAME"
+   ```
+
+   </TabItem>
+   </Tabs>
+
+   Keep this terminal open through Chapter 2. The commands reuse these values, so you can copy them unchanged. A new terminal needs this variable setup again.
+
+4. Save the Azure context for Aspire. Azure CLI supplies your sign-in; these commands tell Aspire where it should provision resources.
 
    <Tabs syncKey="shell">
    <TabItem label="Bash">
@@ -134,8 +157,6 @@ Clone this finished example once. Keep `interview-coach-example` for trying the 
    ```bash
    subscriptionId=$(az account show --query id --output tsv)
    tenantId=$(az account show --query tenantId --output tsv)
-   location="YOUR_APPROVED_AZURE_REGION"
-   resourceGroup="rg-interview-coach-YOUR_NAME"
 
    aspire secret set "Azure:SubscriptionId" "$subscriptionId" --apphost ./apphost.cs
    aspire secret set "Azure:TenantId" "$tenantId" --apphost ./apphost.cs
@@ -150,29 +171,30 @@ Clone this finished example once. Keep `interview-coach-example` for trying the 
    ```powershell
    $subscriptionId = az account show --query id --output tsv
    $tenantId = az account show --query tenantId --output tsv
-   $location = "YOUR_APPROVED_AZURE_REGION"
-   $resourceGroup = "rg-interview-coach-YOUR_NAME"
 
    aspire secret set "Azure:SubscriptionId" "$subscriptionId" --apphost ./apphost.cs
    aspire secret set "Azure:TenantId" "$tenantId" --apphost ./apphost.cs
-   aspire secret set "Azure:Location" "$location" --apphost ./apphost.cs
-   aspire secret set "Azure:ResourceGroup" "$resourceGroup" --apphost ./apphost.cs
+   aspire secret set "Azure:Location" "$env:location" --apphost ./apphost.cs
+   aspire secret set "Azure:ResourceGroup" "$env:resourceGroup" --apphost ./apphost.cs
    aspire secret set "Azure:CredentialSource" "AzureCli" --apphost ./apphost.cs
    ```
 
    </TabItem>
    </Tabs>
 
-   These values are stored in the example's local AppHost user secrets, outside the repository. The learner project will have its own configuration and reuse this model. Aspire creates the named resource group if it does not exist and your account has permission. If your organization does not allow resource-group creation, use an existing group supplied by your administrator.
+   These values are stored in the example's local AppHost user secrets, outside the repository. The learner project will have its own configuration and reuse this model. The next step enables Aspire to create the named resource group if it does not exist and your account has permission. If your organization does not allow resource-group creation, use an existing group supplied by your administrator.
 
-4. Open this folder in your editor.
+5. Open this folder in your editor.
 
-In the root `apphost.settings.json`, review these existing values, keeping the other settings:
+In the example's root `apphost.settings.json`, add the `Azure` section below (or update it if it already exists) and review the model settings. Keep the file's other settings:
 
 ```json
 {
   "AgentMode": "HandOff",
   "LlmProvider": "MicrosoftFoundry",
+  "Azure": {
+    "AllowResourceGroupCreation": true
+  },
   "MicrosoftFoundry": {
     "DeploymentName": "gpt-5-mini",
     "ModelVersion": "2025-08-07",
@@ -182,6 +204,8 @@ In the root `apphost.settings.json`, review these existing values, keeping the o
   }
 }
 ```
+
+Set `Azure:AllowResourceGroupCreation` to `true` for this initial example when creating a new resource group. With it set to `false`, provisioning fails if the named group does not exist. If you must use an existing approved group, keep it `false` and confirm that group exists. The later `interview-coach-lab` starter deliberately keeps this setting `false` because it reuses the example's resources.
 
 Confirm that this model, version, SKU, and capacity are available and approved in your chosen environment. (The best way may be to just try what we have above and see if it works.)
 
@@ -234,45 +258,48 @@ Look for feedback tied to your answers and a final summary. Exact wording will v
 
 ## Keep the model for your learner project
 
-We'll keep using this Foundry account and its model deployment throughout the workshop. Find its account name and resource group:
+The learner app will use the same Foundry account and model. Run this in the terminal from setup. It gets just the account name for your selected subscription, resource group, and location, then saves it in `foundryName`. There is nothing to copy or type.
 
 <Tabs syncKey="shell">
 <TabItem label="Bash">
 
 ```bash
-az cognitiveservices account list --query "[?kind=='AIServices'].{Account:name,ResourceGroup:resourceGroup,Location:location}" --output table
+foundryName=$(az cognitiveservices account list --subscription "$subscriptionId" --resource-group "$resourceGroup" --query "[?kind=='AIServices' && location=='$location'].name" --output tsv) &&
+export foundryName
 ```
 
 </TabItem>
 <TabItem label="PowerShell">
 
 ```powershell
-az cognitiveservices account list --query "[?kind=='AIServices'].{Account:name,ResourceGroup:resourceGroup,Location:location}" --output table
+$env:foundryName = az cognitiveservices account list --subscription "$subscriptionId" --resource-group "$env:resourceGroup" --query "[?kind=='AIServices' && location=='$env:location'].name" --output tsv
 ```
 
 </TabItem>
 </Tabs>
 
-Use the account in the resource group you configured above. Replace the two placeholders to list its deployments:
+The example uses a deployment named `chat`. Save that name for Chapter 2:
 
 <Tabs syncKey="shell">
 <TabItem label="Bash">
 
 ```bash
-az cognitiveservices account deployment list --name "YOUR_ACCOUNT_NAME" --resource-group "YOUR_RESOURCE_GROUP" --query "[].{Deployment:name,Model:properties.model.name,State:properties.provisioningState}" --output table
+export deploymentName="chat"
 ```
 
 </TabItem>
 <TabItem label="PowerShell">
 
 ```powershell
-az cognitiveservices account deployment list --name "YOUR_ACCOUNT_NAME" --resource-group "YOUR_RESOURCE_GROUP" --query "[].{Deployment:name,Model:properties.model.name,State:properties.provisioningState}" --output table
+$env:deploymentName = "chat"
 ```
 
 </TabItem>
 </Tabs>
 
-Keep the account name, resource group, and **Deployment** value for Chapter 2. The example normally names the Azure deployment `chat`; the **Model** column names the model running inside it. We'll reuse the deployment without changing its model or capacity.
+This sets a variable. It does not create or change a deployment.
+
+Chapter 2 uses `location`, `resourceGroup`, `foundryName`, and `deploymentName` from this terminal. You will not need to type these values again. If you open a new terminal, repeat the Azure sign-in check and the commands that set these four variables.
 
 ## Stop the example
 

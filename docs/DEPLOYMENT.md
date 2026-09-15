@@ -8,11 +8,11 @@ Container Apps deployment is an optional task after the completed capstone. It h
 
 The completed project's `azure.yaml` points to `src/InterviewCoach.AppHost/InterviewCoach.AppHost.csproj` with `host: containerapp`. Review that project's `appsettings.json`. Root `apphost.settings.json` configures the separate file-based AppHost.
 
-The repository source already contains the completed graph. In workshop downloads, the project-based AppHost and its settings stay in their cloud-free starter state through `07-handoffs`. Finish the required supplied-support step in [the capstone](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/13-capstone/) before deployment.
+The repository source already contains the completed graph. In workshop downloads, the root AppHost runs the full interview by the capstone. The project-based AppHost and its settings remain in their starter state throughout the core course.
 
-That step uses the source-only `08-complete-support.patch`. It restores the pinned agent `Program.cs`, deployment AppHost and settings, and removes the temporary hosting helper and MCP probe. It also restores topology comments in `AgentDelegateFactory.cs`; all agent definitions and prompts stay unchanged. The capstone displays every affected file and provides a `git apply --check` command before application. Keep local work if the check fails and compare the named file with the preceding checkpoint. The support patch excludes `WORKSHOP.txt` and secrets.
+To deploy a learner project, follow the [optional deployment setup](https://codemillmatt.github.io/interview-coach-agent-framework/resources/deployment/#check-the-deployment-entry-point). Its `deployment-apphost.patch` changes only `src/InterviewCoach.AppHost/AppHost.cs` and that project's `appsettings.json`. It retains `WorkshopHosting.cs`, the MCP discovery probe, and all agent and UI code. Run `git apply --check` before applying it. Preserve local work if the check fails. The patch excludes `WORKSHOP.txt` and secrets.
 
-For entry-point details, see [architecture](ARCHITECTURE.md#local-and-deployed-entry-points) and [configuration](CONFIGURATION.md#entry-points-and-precedence). The workshop pins source revision `68fd993f39643d7b458bf1798094be953a1020a5`; optional deployment uses that completed application.
+For entry-point details, see [architecture](ARCHITECTURE.md#local-and-deployed-entry-points) and [configuration](CONFIGURATION.md#entry-points-and-precedence). The workshop download manifest records the source tag and revision used to generate its projects and deployment patch.
 
 ## Review access and data handling
 

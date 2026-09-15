@@ -34,6 +34,6 @@ aspire start --apphost ./apphost.cs -- --provider GitHubCopilot --mode HandOff
 
 Authenticate for the chosen provider before starting. Restart and create a new chat after switching. Follow the provider-specific reference for model selection and authentication; the available models depend on your account and configuration.
 
-These settings apply to the completed root AppHost. Optional deployment uses the project-based AppHost's own settings. In the learner scaffold, that project stays in its starter state until the capstone patch restores its completed graph. See [entry points and precedence](../CONFIGURATION.md#entry-points-and-precedence).
+These settings apply to the completed root AppHost. Optional deployment uses the project-based AppHost's own settings. In learner projects, prepare that separate AppHost only if you choose optional deployment. See [entry points and precedence](../CONFIGURATION.md#entry-points-and-precedence).
 
 Both provider paths use the same interview roles and MCP services. Check each provider's actual tool calls and saved records when comparing behavior. Additional providers require code changes to model setup and agent construction.

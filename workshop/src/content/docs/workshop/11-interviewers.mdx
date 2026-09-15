@@ -9,9 +9,9 @@ import ConceptDiagram from '../../../components/ConceptDiagram.astro';
 import Hint from '../../../components/Hint.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
 
-Take the saved intake into an interview. We'll add behavioural and technical specialists, answer a question, and follow the transfer between them.
+Now we'll add the behavioural and technical interview agents. We'll add handoffs between them and then test the flow.
 
-Continue in the same `interview-coach-lab` project from the previous chapter. All edits belong in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`. Keep the single coach and existing hosting setup.
+Continue in the same `interview-coach-lab` project from the previous chapter. We'll edit `src/InterviewCoach.Agent/AgentDelegateFactory.cs` and the WebUI's `Chat.razor` page. Keep the single coach and existing hosting setup.
 
 <ConceptDiagram kind="interviewers" />
 
@@ -37,13 +37,24 @@ The behavioural interviewer asks about experience and uses STAR: Situation, Task
 
 <CodeStep id="specialists-technical-agent" />
 
-The technical interviewer asks practical questions grounded in the saved materials. When we ask to finish at this checkpoint, it gives feedback and ends the turn. Unexpected requests can return to `triage`. Summary generation arrives in the next lesson.
+The technical interviewer asks practical questions grounded in the saved materials. It gives feedback and ends the turn. Unexpected requests can return to `triage`. (We'll add summary generation in the next lesson.)
 
 Both interviewers receive InterviewData tools. The receptionist already saved the document text they need.
 
-Connect the four agents before building:
 
 <CodeStep id="specialists-interviewer-graph" />
+
+## Show the session ID in the chat page
+
+A reply can omit the session ID. We need a reliable way to find the matching logs and interview record. The chat page already creates this ID, so we will display it directly above the conversation.
+
+Open `src/InterviewCoach.WebUI/Components/Pages/Chat/Chat.razor`. Find the `<ChatHeader ... />` tag near the top. Replace it with the block below. Keep the existing `<ChatMessageList ...>` block after it.
+
+<CodeStep id="interviewers-session-id" />
+
+`@sessionId` displays the existing value that the page sends to the agents. **New chat** creates a new ID and updates the display. This works without an agent reply or a prompt change.
+
+The ID appears before a record is saved. Use the tool results and database to confirm that the record exists and contains your inputs.
 
 ## Move from behavioural to technical practice
 
@@ -70,10 +81,11 @@ aspire start --apphost ./apphost.cs
 </TabItem>
 </Tabs>
 
-Open a fresh `coach` conversation in DevUI:
+In the Aspire dashboard, open `webui`. Look for **Session ID** above the conversation before you send a message. Select **New chat** and check that the displayed ID changes. Use this new ID for the rest of the exercise.
+
+DevUI shows the workflow graph; use WebUI for this conversation. Send:
 
 ```text
-Use session ID 33333333-3333-4333-8333-333333333333.
 My fictional resume says I maintain C# APIs and integration tests.
 The job is backend developer on a reliability team.
 Save these inputs and start with one behavioural question.
@@ -85,13 +97,13 @@ Answer with a fictional example of catching an API regression before release. Th
 Let's move to technical practice. Ask a question related to my API work.
 ```
 
-In the run details, follow the transfer from `behavioural_interviewer` to `technical_interviewer`. Open the technical agent's record lookup and compare its context with the question it asks.
+The technical question should relate to the API work in the saved inputs. Check that the displayed session ID stays the same as you move between interviewers. In DevUI's graph, locate the permitted transfer from `behavioural_interviewer` to `technical_interviewer`; the graph shows the available route, not the live conversation.
 
-In Cosmos Data Explorer, check that the same record contains the new behavioural exchange and retains both input fields. The update contract still requires preserving document fields and sending only new transcript text. Use a fresh GUID if you repeat the exercise.
+Copy the **Session ID** shown above the conversation. Check the `mcp-interview-data` logs for record lookups and updates with that ID. In Cosmos Data Explorer, check that the record contains the new behavioural exchange and retains both input fields. The update contract still requires preserving document fields and sending only new transcript text. Select **New chat** for another attempt.
 
 <Hint title="How the roles share context">
 
-The saved record carries the resume, job description, and transcript. Each interviewer fetches that context through InterviewData. Triage uses the conversation to select a phase and has no application tools.
+The saved record carries the resume, job description, and transcript. Each interviewer fetches that context through the InterviewData MCP server. Triage uses the conversation to select a phase and has no application tools.
 
 `WithHandoffs` declares the destinations each active agent can choose. The four agents take turns; each transfer follows one permitted edge.
 

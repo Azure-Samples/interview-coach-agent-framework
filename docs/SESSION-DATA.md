@@ -16,6 +16,8 @@ The WebUI uses server-interactive Blazor: `Program.cs` registers `AddInteractive
 
 `Chat.razor.AddSessionSystemMessages` creates a GUID and sends it as `SessionId: ...`. Initialization and new-chat reset assign that ID to `ChatOptions.ConversationId`.
 
+In the workshop, [Chapter 11](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/11-interviewers/#show-the-session-id-in-the-chat-page) adds a **Session ID** display above the conversation. Checkpoints from `07-interviewers` onward include it. The display reads the existing ID and updates when **New chat** creates another one. It works even when an agent omits the ID from its reply. The ID appears before a record is saved; use tool results and the database to confirm the save.
+
 The AG-UI endpoint does not retain earlier turns merely because a conversation ID is supplied. Before a request, `Chat.razor` takes a snapshot with `messages.ToArray()`, including the system messages, previous questions and answers, and tool exchanges. Response updates are added to the component's history for the next request. **New chat** clears that history and creates a new ID.
 
 The named `agent` HTTP client removes the shared short-timeout/retry policy. A turn can spend time calling the model and tools before streaming its first text, and retrying its POST could repeat a record append. The chat gives each turn up to five minutes and shows transport, timeout, or empty-response errors in place. Check the saved record before manually retrying a failed turn: a tool may have written data before the response failed. Canceling a turn or starting a new chat prevents its delayed response from being appended to the new conversation.

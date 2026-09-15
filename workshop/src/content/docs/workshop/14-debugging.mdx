@@ -30,16 +30,15 @@ aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOf
 
 ## Find the failed document request
 
-Open a fresh `coach` conversation in DevUI so you can inspect the tool results:
+In the Aspire dashboard, open `webui` and select **New chat**. Keep the dashboard open for the `mcp-markitdown` and `mcp-interview-data` logs. The page displays **Session ID** above the conversation. Send:
 
 ```text
-Use session ID 66666666-6666-4666-8666-666666666666.
 Start an interview for this fictional job: "Backend developer."
 Read my resume with MarkItDown:
 https://example.invalid/workshop-resume.pdf
 ```
 
-Use a fresh GUID if repeating the exercise. Open the parser call and check the URL and error result. With this deliberately invalid address, the expected failure is the document fetch. The coach should report that it could not read the resume and ask for usable input.
+Copy the **Session ID** shown above the conversation. Keep this ID while you correct the input in the same chat. Check the `mcp-markitdown` logs for the failed fetch. With this deliberately invalid address, the expected failure is the document fetch. The coach should report that it could not read the resume and ask for usable input. Select **New chat** if repeating the whole exercise.
 
 Follow the first failed step when investigating:
 
@@ -62,7 +61,7 @@ Save the extracted text in ResumeText and use "Backend developer" as the
 JobDescriptionText. Check both saved fields before beginning behavioural practice.
 ```
 
-Check that the new parser call returns recognizable document text. In Cosmos Data Explorer, find the exercise ID under `interviewdb` / `interviewsessions` and inspect `ResumeText`.
+Check the `mcp-markitdown` logs for the new request. In Cosmos Data Explorer, find the WebUI session ID under `interviewdb` / `interviewsessions` and check that `ResumeText` contains recognizable text from the sample.
 
 If the public sample is unavailable from your network, paste `"I build C# APIs and maintain integration tests"` as fictional resume text and ask the coach to save it. Pasted text can proceed directly to storage.
 
@@ -75,9 +74,9 @@ I want to stop now. Summarize what we covered, save the summary, and
 complete this interview. Skip the remaining interview phases.
 ```
 
-Inspect the transfer events. The expected early-finish route is `behavioural_interviewer` to `triage`, then `triage` to `summariser`. Check the summary update and completion result for the same ID. The saved summary should reflect the short session.
+In DevUI's graph, locate the expected early-finish route: `behavioural_interviewer` to `triage`, then `triage` to `summariser`. The graph shows permitted routes, not a live trace of this conversation. Check the `mcp-interview-data` logs for the update and completion entries with the same ID. In Cosmos Data Explorer, confirm that `IsCompleted` is `true` and the saved summary reflects the short session.
 
-If another route is chosen, compare the active agent's outgoing instructions, its permitted destinations, and the conversation triage received.
+If the coach asks another question instead of finishing, compare the agents' instructions, their permitted destinations, and your latest request in the same conversation.
 
 <Hint title="Keep the investigation in the current conversation">
 

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { anchors, makeStage, paths, replaceOnce, sourceSlice, stageIds } from '../labs/recipes.mjs';
+import { anchors, deploymentPaths, makeDeploymentProject, makeStage, paths, replaceOnce, sessionIdDisplay, sourceSlice, stageIds } from '../labs/recipes.mjs';
 import { assertSameFiles, buildEditContract, replayTransition } from '../labs/edits.mjs';
 import { readReference, createWorkshopReference } from '../labs/reference.mjs';
 
@@ -25,7 +25,7 @@ test('the workshop derives only the selected backend without changing the standa
   const changed = [...standaloneReference.keys()].filter(path =>
     !reference.has(path) || !standaloneReference.get(path).equals(reference.get(path)));
   const allowedChanges = new Set([
-    paths.factory, paths.program, ...paths.settings, 'src/InterviewCoach.Agent/Constants.cs',
+    paths.factory, paths.program, paths.chat, ...paths.settings, 'src/InterviewCoach.Agent/Constants.cs',
     'src/InterviewCoach.Agent/InterviewCoach.Agent.csproj', 'src/InterviewCoach.AppHost.Core/LlmProvider.cs',
     'src/InterviewCoach.AppHost.Core/LlmResourceFactory.cs', 'Directory.Build.props', 'Directory.Packages.props', 'InterviewCoach.slnx', 'aspire.config.json',
   ]);
@@ -93,15 +93,42 @@ test('the starter is cloud-free in both AppHost forms and does not instantiate a
   assert.match(get(starter, paths.home), /Coaching is not connected/);
 });
 
-test('the early UI keeps the supplied chat intact apart from its route, then removes Home', () => {
+test('chat changes only its early route and the session ID display introduced in Chapter 11', () => {
   for (const id of stageIds) {
     const stage = makeStage(reference, id);
     const early = ['02-starter', '03-first-coach'].includes(id);
+    const displaysId = stageIds.indexOf(id) >= stageIds.indexOf('07-interviewers');
     assert.equal(stage.has(paths.home), early, id);
     const expected = early
-      ? replaceOnce(get(reference, paths.chat), '@page "/"', '@page "/chat"')
-      : get(reference, paths.chat);
-    assert.equal(get(stage, paths.chat), expected, id);
+      ? replaceOnce(get(standaloneReference, paths.chat), '@page "/"', '@page "/chat"')
+      : get(standaloneReference, paths.chat);
+    const chat = get(stage, paths.chat);
+    assert.equal(chat.includes(sessionIdDisplay), displaysId, id);
+    assert.equal(displaysId ? replaceOnce(chat, `\n${sessionIdDisplay}`, '') : chat, expected, id);
+  }
+});
+
+test('Chapter 11 teaches the existing session ID display once and later checkpoints preserve it', () => {
+  const transition = contract.transitions.find(item => item.to === '07-interviewers');
+  const step = transition.steps.find(item => item.id === 'interviewers-session-id');
+  assert.ok(step);
+  assert.equal(step.file, paths.chat);
+  assert.equal(step.ownership, 'learner');
+  assert.equal(step.operation, 'replace');
+  assert.deepEqual(step.location, { kind: 'file' });
+  assert.equal(step.before, '<ChatHeader OnNewChat="@ResetConversationAsync" />\n\n');
+  assert.equal(step.after, `${step.before.trimEnd()}\n${sessionIdDisplay}\n\n`);
+  assert.equal(transition.steps.at(-1), step);
+  assert.equal(contract.transitions.flatMap(item => item.steps).filter(item => item.id === step.id).length, 1);
+  assert.doesNotMatch(get(standaloneReference, paths.chat), /Session ID: <code>/);
+  assert.ok(!contract.transitions.at(-1).changedFiles.includes(paths.chat), 'Capstone must keep the learner display.');
+  for (const id of ['07-interviewers', '07-handoffs', '08-complete']) {
+    const chat = get(makeStage(reference, id), paths.chat);
+    assert.equal(chat.split(sessionIdDisplay).length - 1, 1, id);
+    assert.ok(chat.indexOf(sessionIdDisplay) < chat.indexOf('<ChatMessageList '), id);
+    assert.match(chat, /sessionId = Guid.NewGuid\(\).ToString\(\)/, id);
+    assert.match(chat, /sessionIdMessage = new\(ChatRole.System, \$"SessionId: \{sessionId\}"\)/, id);
+    assert.match(chat, /ResetConversationAsync\(\)[\s\S]*?AddSessionSystemMessages\(\);/, id);
   }
 });
 
@@ -145,17 +172,27 @@ test('first-coach teaches the real Foundry agent branch and reaches DevUI before
   assert.match(branch(get(stage, paths.factory)), /new ChatClientAgent/);
 });
 
-test('the first agent has five focused edits and the supplied bootstrap is unchanged until completion', () => {
+test('the first agent has five focused edits and every checkpoint retains the supplied bootstrap', () => {
   const first = contract.transitions.find(item => item.to === '03-first-coach');
   assert.equal(first.steps.length, 5);
   assert.equal(first.steps.reduce((sum, step) => sum + step.after.split('\n').length, 0) <= 60, true);
   const scaffold = get(makeStage(reference, '02-starter'), paths.bootstrap);
-  for (const id of stageIds.slice(0, -1)) {
+  for (const id of stageIds) {
     const stage = makeStage(reference, id);
     assert.equal(get(stage, paths.bootstrap), scaffold, id);
     assert.match(get(stage, paths.probe), /await client.ListToolsAsync\(\)/);
     assert.doesNotMatch(get(stage, paths.hosts[1]), /\.WithLlmReference|var cosmos|var mcpMarkItDown|var mcpInterviewData/, id);
     assert.equal(JSON.parse(get(stage, paths.settings[1])).AgentMode, 'Single', id);
+  }
+});
+
+test('all later checkpoints retain the provider helper implemented in the first-agent lesson', () => {
+  const step = contract.transitions.find(item => item.to === '03-first-coach').steps
+    .find(step => step.id === 'coach-foundry-agent');
+  for (const id of stageIds.slice(1)) {
+    const factory = get(makeStage(reference, id), paths.factory);
+    assert.equal(factory.split(anchors.provider).length - 1, 1, id);
+    assert.equal(sourceSlice(factory, anchors.provider, '    // ==='), step.after, id);
   }
 });
 
@@ -257,6 +294,61 @@ test('the first handoff only instantiates and routes between triage and receptio
   assert.equal(JSON.parse(get(stage, paths.settings[0])).AgentMode, 'HandOff');
 });
 
+test('the first handoff replaces both existing stubs and shows meaningful insertion context', () => {
+  const steps = contract.transitions.find(item => item.to === '07-first-handoff').steps;
+  for (const [id, signature] of [
+    ['handoff-hosting-adapter', anchors.adapter],
+    ['handoff-workflow-tools', anchors.workflow],
+  ]) {
+    const step = steps.find(step => step.id === id);
+    assert.equal(step.operation, 'replace');
+    assert.match(step.title, /^Replace the existing /);
+    assert.ok(step.before.startsWith(signature), id);
+    assert.match(step.before, /=> throw new NotSupportedException/);
+    assert.ok(step.after.startsWith(signature), id);
+  }
+  for (const [id, landmark] of [
+    ['handoff-triage-agent', 'var interviewDataTools ='],
+    ['handoff-receptionist-agent', 'var triageAgent ='],
+    ['handoff-two-agent-graph', 'var receptionistAgent ='],
+  ]) {
+    const step = steps.find(step => step.id === id);
+    assert.ok(step.before.includes(landmark), id);
+    assert.ok(step.after.includes(landmark), id);
+    assert.ok(step.before.trimEnd().endsWith(');'), id);
+    assert.doesNotMatch(step.before, /^\s*}\s*$/m, id);
+    assert.doesNotMatch(step.after, /^\s*}\s*$/m, id);
+    assert.deepEqual(step.location, { kind: 'function', name: 'CreateHandOffWorkflow' });
+  }
+  const before = makeStage(reference, '06-documents');
+  const provider = sourceSlice(get(before, paths.factory), anchors.provider, '    // ===');
+  let current = before;
+  for (const step of steps) {
+    current = replayTransition(current, { steps: [step] });
+    assert.equal(sourceSlice(get(current, paths.factory), anchors.provider, '    // ==='), provider, step.id);
+  }
+  const after = replayTransition(before, { steps });
+  const factory = get(after, paths.factory);
+  assert.equal(factory.split(anchors.adapter).length - 1, 1);
+  assert.equal(factory.split(anchors.workflow).length - 1, 1);
+  assert.equal(sourceSlice(factory, anchors.single, anchors.handoff),
+    sourceSlice(get(before, paths.factory), anchors.single, anchors.handoff));
+  assertSameFiles(after, makeStage(reference, '07-first-handoff'), 'Chapter 10 instructional edits');
+});
+
+test('adding handoff agents and the graph leaves surrounding closing braces untouched', () => {
+  const steps = contract.transitions.find(item => item.to === '07-first-handoff').steps;
+  const opening = replayTransition(makeStage(reference, '06-documents'), { steps: steps.slice(0, 2) });
+  const standardEnding = '    }\n\n}\n';
+  const reformattedEnding = '    }\n}\n';
+  opening.set(paths.factory, Buffer.from(replaceOnce(get(opening, paths.factory), standardEnding, reformattedEnding)));
+  const result = replayTransition(opening, { steps: steps.slice(2) });
+  assert.ok(get(result, paths.factory).endsWith(reformattedEnding));
+  const expected = makeStage(reference, '07-first-handoff');
+  expected.set(paths.factory, Buffer.from(replaceOnce(get(expected, paths.factory), standardEnding, reformattedEnding)));
+  assertSameFiles(result, expected, 'Chapter 10 preserves the learner closing braces');
+});
+
 test('the four-agent checkpoint only routes to its available specialists', () => {
   const stage = makeStage(reference, '07-interviewers');
   const workflow = get(stage, paths.factory).slice(get(stage, paths.factory).indexOf(anchors.workflow));
@@ -269,17 +361,55 @@ test('the four-agent checkpoint only routes to its available specialists', () =>
   assert.match(workflow, /Do not ask another question or hand off/);
 });
 
-test('completed handoff preserves the agent definitions and finalization restores exact reference membership', () => {
-  const factory = get(makeStage(reference, '07-handoffs'), paths.factory);
+test('the capstone retains the complete Chapter 12 application without source edits', () => {
+  const handoffs = makeStage(reference, '07-handoffs');
+  const complete = makeStage(reference, '08-complete');
+  assertSameFiles(complete, handoffs, 'capstone continuity');
+  assert.deepEqual(contract.transitions.at(-1), {
+    from: '07-handoffs', to: '08-complete', steps: [], changedFiles: [],
+  });
+  const factory = get(complete, paths.factory);
+  assert.equal(factory.slice(0, factory.indexOf(anchors.handoff)),
+    get(reference, paths.factory).slice(0, get(reference, paths.factory).indexOf(anchors.handoff)));
   assert.equal(factory.slice(factory.indexOf(anchors.workflow)),
     get(reference, paths.factory).slice(get(reference, paths.factory).indexOf(anchors.workflow)));
-  assertSameFiles(makeStage(reference, '08-complete'), reference, '08-complete');
-  assert.equal(contract.transitions.at(-1).steps.every(step => step.ownership === 'supplied'), true);
-  const finalizedFactory = contract.transitions.at(-1).steps.find(step => step.file === paths.factory);
-  assert.equal(finalizedFactory.before.slice(0, finalizedFactory.before.indexOf(anchors.handoff)),
-    finalizedFactory.after.slice(0, finalizedFactory.after.indexOf(anchors.handoff)));
-  assert.equal(finalizedFactory.before.slice(finalizedFactory.before.indexOf(anchors.workflow)),
-    finalizedFactory.after.slice(finalizedFactory.after.indexOf(anchors.workflow)));
+  const layoutChanges = new Set([paths.factory, paths.program, ...deploymentPaths]);
+  for (const [path, content] of reference) {
+    if (!layoutChanges.has(path)) assert.ok(complete.get(path)?.equals(content), path);
+  }
+  assert.deepEqual([...complete.keys()].filter(path => !reference.has(path)).sort(), [paths.bootstrap, paths.probe].sort());
+  const referenceProgram = get(reference, paths.program);
+  const bootstrap = get(complete, paths.bootstrap);
+  for (const block of [
+    sourceSlice(referenceProgram, anchors.model, anchors.agent),
+    sourceSlice(referenceProgram, 'builder.Services.AddOpenAIResponses();', 'builder.Services.AddAGUIServer();'),
+    'app.MapOpenAIResponses();\napp.MapOpenAIConversations();',
+    'app.MapDevUI();',
+  ]) {
+    const indented = block.trimEnd().split('\n').map(line => line ? `        ${line}` : '').join('\n');
+    assert.ok(bootstrap.includes(indented), 'The retained helper must contain the reference model and DevUI setup.');
+  }
+  const program = get(complete, paths.program);
+  assert.match(program, /builder\.AddWorkshopHosting\(\)/);
+  assert.match(program, /app\.MapWorkshopDevUI\(\)/);
+  assert.match(program, /app\.MapAGUIServer\(agentBuilder, "ag-ui"\)/);
+  assert.match(get(complete, paths.probe), /await client\.ListToolsAsync\(\)/);
+});
+
+test('optional deployment changes only its AppHost and settings while retaining the workshop application', () => {
+  const complete = makeStage(reference, '08-complete');
+  const deployment = makeDeploymentProject(reference);
+  assert.deepEqual([...deployment.keys()], [...complete.keys()]);
+  const changed = [...complete.keys()].filter(path => !complete.get(path).equals(deployment.get(path))).sort();
+  assert.deepEqual(changed, [...deploymentPaths].sort());
+  for (const path of deploymentPaths) assert.ok(deployment.get(path).equals(reference.get(path)), path);
+  for (const path of paths.settings) {
+    const settings = JSON.parse(get(deployment, path));
+    assert.equal(settings.AgentMode, 'HandOff', path);
+    assert.equal(settings.MicrosoftFoundry.UseExisting, true, path);
+    assert.equal(settings.Azure.AllowResourceGroupCreation, false, path);
+  }
+  assertSameFiles(complete, makeStage(reference, '08-complete'), 'Deployment must not mutate the core checkpoint.');
 });
 
 test('handoff prompts preserve document context and distinguish recovery from phase completion', () => {
@@ -304,7 +434,7 @@ test('every explicit transition replays exactly from one continuously edited sta
     actual = replayTransition(actual, item);
     assertSameFiles(actual, makeStage(reference, item.to), item.to);
   }
-  assertSameFiles(actual, reference, 'learner final source parity');
+  assertSameFiles(actual, makeStage(reference, '08-complete'), 'learner final checkpoint');
 });
 
 test('the contract exposes stable globally unique focused steps and every changed file', () => {
@@ -323,14 +453,13 @@ test('the contract exposes stable globally unique focused steps and every change
       assert.ok(['learner', 'supplied'].includes(step.ownership));
       assert.ok(['replace', 'create', 'delete'].includes(step.operation));
       assert.notEqual(step.before, step.after, step.id);
-      const suppliedFinalization = item.to === '08-complete' && step.ownership === 'supplied';
-      assert.ok(suppliedFinalization || step.after.split('\n').length <= 60, `${step.id} must remain a focused edit`);
-      if (!suppliedFinalization && [paths.factory, paths.program, paths.chat].includes(step.file)) {
+      assert.ok(step.after.split('\n').length <= 60, `${step.id} must remain a focused edit`);
+      if ([paths.factory, paths.program, paths.chat].includes(step.file)) {
         assert.notEqual(step.after, get(after, step.file), `${step.id} must not replace a finished application file`);
       }
     }
   }
-  assert.equal(contract.transitions.at(-1).steps.length, 6);
+  assert.equal(contract.transitions.at(-1).steps.length, 0);
   assert.equal(contract.sourceRevision, manifest.sourceRevision);
 });
 
@@ -390,5 +519,5 @@ test('scaffold deletion refuses modified learner content and equality detects ex
   assert.throws(() => replayTransition(modified, item), /Cannot delete modified scaffold/);
   const final = makeStage(reference, '08-complete');
   final.set('unexpected.cs', Buffer.from('extra'));
-  assert.throws(() => assertSameFiles(final, reference, 'extra file'), /unexpected.cs/);
+  assert.throws(() => assertSameFiles(final, makeStage(reference, '08-complete'), 'extra file'), /unexpected.cs/);
 });

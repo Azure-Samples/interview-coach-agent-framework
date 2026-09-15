@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { deriveEditLocation } from '../labs/edit-location.mjs';
 import { buildEditContract, replayTransition } from '../labs/edits.mjs';
-import { makeStage, paths, stageIds } from '../labs/recipes.mjs';
+import { makeStage, stageIds } from '../labs/recipes.mjs';
 import { readReference, createWorkshopReference } from '../labs/reference.mjs';
 import { validateEditContract } from '../src/data/edit-contract.mjs';
 
@@ -171,6 +171,6 @@ test('every real transition carries a reproducible source location without writi
   }
   assert.deepEqual(actual.get('coach-foundry-agent'), { kind: 'function', name: 'CreateProviderAgent' });
   assert.deepEqual(actual.get('mcp-expose-get-interview-session'), { kind: 'function', name: 'GetInterviewSessionAsync' });
-  const finalFactory = contract.transitions.at(-1).steps.find(step => step.file === paths.factory);
-  assert.deepEqual(finalFactory.location, { kind: 'type', name: 'AgentDelegateFactory' });
+  assert.deepEqual(actual.get('interviewers-session-id'), { kind: 'file' });
+  assert.deepEqual(contract.transitions.at(-1).steps, []);
 });

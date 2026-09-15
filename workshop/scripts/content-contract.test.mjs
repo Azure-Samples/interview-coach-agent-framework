@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { stepReferences, validateCourseContent, validateEditCoverage, validateLegacyRedirects } from './content-contract.mjs';
 
 const course = {
@@ -16,6 +17,67 @@ const pages = () => new Map([
   ['setup', '---\ntitle: Install the required tools\n---\nInstall the tools before running the example.']
 ]);
 const steps = [{ id: 'agent-create', from: 'starter', to: 'agent', path: 'src/Agent.cs' }];
+
+test('handoff conversations use WebUI and its session IDs rather than the DevUI graph', () => {
+  for (const chapter of ['10-first-handoff', '11-interviewers', '12-handoffs', '14-debugging']) {
+    const source = readFileSync(new URL(`../src/content/docs/workshop/${chapter}.mdx`, import.meta.url), 'utf8');
+    assert.match(source, /(?:open (?:the \*\*http\*\* endpoint for )?`webui`|Find the `webui` row and open its link)/i, chapter);
+    assert.match(source, /\*\*New chat\*\*/, chapter);
+    if (chapter === '10-first-handoff') {
+      assert.match(source, /Started new chat session with SessionId/, chapter);
+    } else {
+      assert.match(source, /copy the \*\*Session ID\*\* shown above the conversation/i, chapter);
+    }
+    assert.match(source, /`mcp-interview-data` logs/, chapter);
+    assert.doesNotMatch(source, /Use session ID [0-9a-f-]{36}/i, chapter);
+    assert.doesNotMatch(source, /(?:fresh .*conversation in DevUI|In the run details|Inspect the transfer events)/, chapter);
+  }
+});
+
+test('Chapter 11 teaches the UI display and later lessons use it without assuming a saved record', () => {
+  const read = chapter => readFileSync(new URL(`../src/content/docs/workshop/${chapter}.mdx`, import.meta.url), 'utf8');
+  const chapter = read('11-interviewers');
+  assert.equal(stepReferences(chapter).filter(id => id === 'interviewers-session-id').length, 1);
+  assert.ok(chapter.indexOf('<CodeStep id="interviewers-session-id" />') > chapter.indexOf('<CodeStep id="specialists-interviewer-graph" />'));
+  assert.ok(chapter.indexOf('<CodeStep id="interviewers-session-id" />') < chapter.indexOf('dotnet build'));
+  assert.match(chapter, /src\/InterviewCoach.WebUI\/Components\/Pages\/Chat\/Chat.razor/);
+  assert.match(chapter, /`@sessionId` displays the existing value/);
+  assert.match(chapter, /before you send a message/);
+  assert.match(chapter, /displayed ID changes/);
+  assert.match(chapter, /session ID stays the same as you move between interviewers/);
+  assert.match(chapter, /before a record is saved/);
+  for (const id of ['11-interviewers', '12-handoffs', '13-capstone', '14-debugging']) {
+    const source = read(id);
+    assert.match(source, /copy the \*\*Session ID\*\* shown above the conversation/i, id);
+    assert.doesNotMatch(source, /Started new chat session with SessionId/, id);
+    assert.match(source, /Cosmos Data Explorer/, id);
+  }
+  assert.doesNotMatch(read('10-first-handoff'), /interviewers-session-id|Copy the \*\*Session ID\*\* shown/);
+});
+
+test('the first handoff explains the observed dashboard filters and saved-record check', () => {
+  const page = readFileSync(new URL('../src/content/docs/workshop/10-first-handoff.mdx', import.meta.url), 'utf8');
+  const check = page.slice(page.indexOf('## Watch intake change hands'));
+  for (const label of [
+    'Resources', 'URLs', 'Structured', 'Structured logs', 'Resource', 'Level', '(All)',
+    'Message filter', 'Timestamp', 'Log entry details', 'Log entry', 'Data Explorer', 'Explorer',
+    'Items', 'Apply Filter',
+  ]) {
+    assert.ok(check.includes(`**${label}**`), label);
+  }
+  const tools = readFileSync(new URL('../../src/InterviewCoach.Mcp.InterviewData/InterviewSessionTool.cs', import.meta.url), 'utf8');
+  for (const message of [
+    'Interview session with ID', 'Added interview session', 'Retrieved interview session', 'Updated interview session',
+  ]) {
+    assert.ok(tools.includes(message), message);
+    assert.ok(check.includes(`\`${message}\``), message);
+  }
+  assert.match(check, /```sql\nWHERE c\.id = 'YOUR_SESSION_ID'\n```/);
+  for (const field of ['id', 'ResumeText', 'JobDescriptionText', 'IsCompleted']) {
+    assert.ok(check.includes(`| \`${field}\` |`), field);
+  }
+  assert.doesNotMatch(check, /localhost:\d+|\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b/i);
+});
 
 test('natural headings and curriculum-driven chapter counts are accepted', () => {
   assert.deepEqual(validateCourseContent(course, manifest, pages()), []);
@@ -77,15 +139,33 @@ test('support pages cannot mark a lesson complete', () => {
   assert.ok(validateCourseContent(course, manifest, source).some(error => error.includes('support pages')));
 });
 
-test('supplied transitions expand into every required edit and cannot hide learner edits', () => {
-  const source = pages();
-  source.set('agent', source.get('agent').replace('<CodeStep id="agent-create" />', '<SuppliedSteps transition="agent" />'));
-  const supplied = steps.map(step => ({ ...step, ownership: 'supplied' }));
-  assert.deepEqual(validateCourseContent(course, manifest, source), []);
-  assert.deepEqual(validateEditCoverage(course, source, supplied), []);
-  assert.ok(validateEditCoverage(course, source, steps).some(error => error.includes('learner-owned')));
-  source.set('agent', source.get('agent').replace('transition="agent"', 'transition="missing"'));
-  assert.ok(validateEditCoverage(course, source, supplied).some(error => error.includes('unknown edit')));
+test('the capstone verifies the completed interview without a hosting or file-layout exercise', () => {
+  const curriculum = JSON.parse(readFileSync(new URL('../src/data/course.json', import.meta.url), 'utf8'));
+  const chapter = curriculum.chapters.find(item => item.id === '13-capstone');
+  assert.equal(chapter.kind, 'verification');
+  assert.equal(chapter.from, '07-handoffs');
+  assert.deepEqual(chapter.checkpoints, ['08-complete']);
+  const source = readFileSync(new URL('../src/content/docs/workshop/13-capstone.mdx', import.meta.url), 'utf8');
+  assert.deepEqual(stepReferences(source), []);
+  assert.doesNotMatch(source, /SuppliedSteps|git apply|support.patch|hosting setup/i);
+  assert.match(source, /No further code changes are needed/);
+  assert.match(source, /Keep `WorkshopHosting.cs` and the MCP discovery probe/);
+  assert.match(source, /same application source as the end of Chapter 12/);
+  for (const field of ['id', 'Transcript', 'IsCompleted']) assert.ok(source.includes(`\`${field}\``), field);
+  assert.match(source, /aspire stop --apphost \.\/apphost.cs[\s\S]*dotnet build InterviewCoach.slnx[\s\S]*aspire start/);
+});
+
+test('only the optional deployment guide asks learners to prepare the project-based AppHost', () => {
+  const source = readFileSync(new URL('../src/content/docs/resources/deployment.mdx', import.meta.url), 'utf8');
+  const labs = JSON.parse(readFileSync(new URL('../labs/manifest.json', import.meta.url), 'utf8'));
+  assert.match(source, /only if you choose to deploy/);
+  assert.equal(source.split(`git apply --check ./${labs.deploymentPatch}`).length - 1, 2);
+  assert.equal(source.split(`git apply ./${labs.deploymentPatch}`).length - 1, 2);
+  assert.match(source, /keeps your agents and `WorkshopHosting.cs` unchanged/);
+  assert.doesNotMatch(source, /08-complete-support.patch|capstone.*required/i);
+  const extensions = readFileSync(new URL('../src/content/docs/resources/extensions.mdx', import.meta.url), 'utf8');
+  assert.match(extensions, /check its saved result before trying an extension/);
+  assert.doesNotMatch(extensions, /hosting patch|support.patch/i);
 });
 
 test('completion-only lessons can reuse a checkpoint while code edits have one owner', () => {

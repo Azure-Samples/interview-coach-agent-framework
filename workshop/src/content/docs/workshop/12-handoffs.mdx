@@ -60,10 +60,9 @@ aspire start --apphost ./apphost.cs
 </TabItem>
 </Tabs>
 
-Open a fresh `coach` conversation in DevUI:
+In the Aspire dashboard, open `webui` and select **New chat**. The page displays **Session ID** above the conversation. Keep the display you added in Chapter 11. DevUI shows the workflow graph; use WebUI for this conversation. Send:
 
 ```text
-Use session ID 44444444-4444-4444-8444-444444444444.
 My fictional resume says I build C# APIs and review integration tests.
 The job is backend developer. Save those inputs.
 Let's do one behavioural question and one technical question.
@@ -71,9 +70,9 @@ Let's do one behavioural question and one technical question.
 
 Answer the behavioural question, request technical practice, and answer that question. Then ask the coach to finish and save a summary.
 
-In the run details, follow the transfer from `technical_interviewer` to `summariser`. Inspect the summariser's record lookup, update, and completion calls.
+In DevUI's graph, locate the permitted transfer from `technical_interviewer` to `summariser`. To check the saved result, copy the **Session ID** shown above the conversation. In the `mcp-interview-data` logs, find the lookup, update, and `Completed interview session` entries for that ID.
 
-Find the same ID in Cosmos Data Explorer. `Transcript` should include feedback about your answers and the final summary; `IsCompleted` should be `true`. The summary update must preserve document fields and append only new text. Use a fresh GUID for another run.
+Find the same ID in Cosmos Data Explorer. `Transcript` should include feedback about your answers and the final summary; `IsCompleted` should be `true`. The summary update must preserve document fields and append only new text. Select **New chat** for another run.
 
 <Hint title="All eleven permitted handoffs">
 

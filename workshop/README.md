@@ -26,7 +26,7 @@ Static checks need no Azure credentials. Live model calls and deployment require
 
 Core chapters live in `src/content/docs/workshop/`. `src/data/course.json` owns all 15 lessons, numbered 0 through 14, their groups, and their entry/exit stages. Chapter 0, `00-orientation`, combines prerequisites and the completed-example run. Link tool checks to `workshop/00-orientation/#check-your-tools`; `01-readiness` is a legacy redirect.
 
-Learners clone the finished app once into `interview-coach-example` in Chapter 0, then download `interview-coach-lab-starter.zip` once into a sibling `interview-coach-lab` folder in Chapter 1 (`01-starter`). They keep editing that same learner project through Chapter 14. The course splits MCP server exposure (`05-mcp-server`) from client connection (`06-mcp-state`), and extraction (`08-document-extraction`) from document use (`09-documents`). The specialist sequence is `10-first-handoff`, `11-interviewers`, then `12-handoffs`. Capstone finalization (`13-capstone`) reaches checkpoint `08-complete`; `14-debugging` uses that same completed checkpoint for verification.
+Learners clone the finished app once into `interview-coach-example` in Chapter 0, then download `interview-coach-lab-starter.zip` once into a sibling `interview-coach-lab` folder in Chapter 1 (`01-starter`). They keep editing that same learner project through Chapter 14. The course splits MCP server exposure (`05-mcp-server`) from client connection (`06-mcp-state`), and extraction (`08-document-extraction`) from document use (`09-documents`). The specialist sequence is `10-first-handoff`, `11-interviewers`, then `12-handoffs`. The capstone (`13-capstone`) verifies that completed workflow without further code changes. Its `08-complete` checkpoint has the same application source as `07-handoffs`; `14-debugging` uses it too.
 
 Use headings about the work. Explain the change and why it belongs there, show the file and exact replacement point, then give a concrete run check. Keep the ordinary lesson focused on a few meaningful edits and its next working result. Use `Hint` for optional explanations. Keep billing, data handling, and cleanup warnings visible before the relevant action.
 
@@ -44,7 +44,11 @@ Version 3 retains versions 1 and 2 in `previousVersions`. Earlier completion rec
 
 The chapter renumbering keeps version 3 because the lessons and their completion criteria are unchanged. `legacyChapterIds` maps the old version-3 route IDs to their new names. Progress reads migrate these IDs in place, including mixed old/new records, while preserving completion and course order. Invalid records stay untouched until the learner explicitly toggles or resets progress. If a migration cannot be saved, the page keeps the completion marks and reports the storage failure.
 
-`astro.config.mjs` uses the same mapping for public redirects, including the Pages base path. The removed `01-readiness` URL redirects separately to Chapter 0's tool checks; it is not a version-3 completion ID. Keep checkpoint IDs in `from`, `checkpoints`, `Checkpoint`, `CodeStep`, and `SuppliedSteps` unchanged when renaming a lesson route.
+The Chapter 11 session ID display also keeps curriculum version 3. It makes the existing record check easier to follow; the interview and storage objectives stay the same.
+
+Removing the capstone cleanup patch keeps curriculum version 3. Existing completion records already cover the same interview and saved-record checks. Chapter 13 is now a `verification` lesson.
+
+`astro.config.mjs` uses the same mapping for public redirects, including the Pages base path. The removed `01-readiness` URL redirects separately to Chapter 0's tool checks; it is not a version-3 completion ID. Keep checkpoint IDs in `from`, `checkpoints`, `Checkpoint`, and `CodeStep` unchanged when renaming a lesson route.
 
 ## Show both shells
 
@@ -52,7 +56,7 @@ Every shell-command example on the site has **Bash** and **PowerShell** tabs, ev
 
 Keep C#, JSON, sample prompts, and expected output in their own code blocks. Translate shell-specific variable assignments, environment variables, quoting, and line continuations rather than copying Bash syntax into the PowerShell tab.
 
-For commands built from source metadata, use `src/components/ShellCommands.astro`: pass `command` when both shells use the same text, or explicit `bash` and `powershell` strings when they differ. The pinned checkout command and supplied capstone patch use this component.
+For commands built from source metadata, use `src/components/ShellCommands.astro`: pass `command` when both shells use the same text, or explicit `bash` and `powershell` strings when they differ. The pinned checkout command uses this component.
 
 In canonical `docs/` Markdown, write adjacent Bash and PowerShell fenced blocks. The reference importer turns each pair into the same tabs on the website while leaving both versions readable on GitHub. Edit those source files rather than generated reference pages.
 
@@ -62,11 +66,11 @@ The starter includes `src/InterviewCoach.Agent/WorkshopHosting.cs`, derived from
 
 The first-agent lesson begins with the learner's `ChatClientAgent` constructor and coaching instructions. Learners then activate the helper, register the coach, map DevUI, and add the model reference to root `apphost.cs`. Keep that deliberate activation and its cost warning visible.
 
-All core orchestration edits use root `apphost.cs`. Keep `src/InterviewCoach.AppHost/AppHost.cs` and its settings in their cloud-free starter state through `07-handoffs`. The completed repository remains the reference application with both fully wired entry points.
+All core orchestration edits use root `apphost.cs`. Keep `src/InterviewCoach.AppHost/AppHost.cs` and its settings in their cloud-free starter state throughout the core course. The standalone repository retains both fully wired entry points.
 
-At the capstone, `<SuppliedSteps transition="08-complete" />` accounts for the entire required supplied-support transition. Its source-only `08-complete-support.patch` restores the packaged reference `Program.cs`, project-based AppHost and settings, and removes `WorkshopHosting.cs` and `tools/list-mcp-tools.cs`. It also restores topology comments in `AgentDelegateFactory.cs`, bringing the patch to six files. All agent definitions and prompts stay unchanged.
+The capstone keeps `WorkshopHosting.cs`, its calls in `Program.cs`, and `tools/list-mcp-tools.cs`. The `07-handoffs` to `08-complete` transition has no source edits. The generator verifies that this transition preserves the application and removes stale capstone patches. Learners demonstrate the complete interview and inspect the saved result; they do not need to match the standalone repository's file layout.
 
-The component lists the affected files and provides `git apply --check` followed by `git apply`. Apply only after the check succeeds; resolve mismatches by comparing the named files while preserving local work. The patch excludes `WORKSHOP.txt`, secrets, and packaging-only changes. Every source change remains in the declared edit contract and full replay/parity checks. Optional deployment starts after this finalization.
+Optional deployment has a separate `deployment-apphost.patch`, named in the lab manifest. `makeDeploymentProject` replaces only the project-based AppHost and its settings with their source-derived completed versions. The patch retains the learner's startup helper, agent instructions, UI, and root AppHost. The deployment guide requires `git apply --check` before application and explains how to preserve local work if the check fails. The patch excludes `WORKSHOP.txt`, secrets, and packaging-only changes. Generation checks its exact two-file scope; `check:labs` also builds the deployment variant.
 
 ## Keep the reference in one place
 
@@ -78,7 +82,9 @@ Reference pages hold state mechanics, authentication, update semantics, hosting,
 
 `labs/manifest.json` records the immutable reference in `sourceTag`, its exact `sourceRevision`, and direct NuGet package versions. The manifest defines 13 checkpoint stages; checkpoint IDs are independent of lesson numbering. The initial archive is named `interview-coach-lab-starter.zip`.
 
-`labs/reference.mjs` derives the Foundry-only workshop profile from that tagged source. It removes the alternative provider implementation, configuration, and dependencies and excludes the standalone test project from learner downloads. It also requires existing-model reuse in both AppHost settings, selects root `apphost.cs` in `aspire.config.json`, and removes the inherited `UserSecretsId` from `Directory.Build.props`; file-based learner apps get path-specific stores. The original repository and its tests retain both providers and their default provisioning behavior. All other runtime source files must remain byte-identical. The generated manifest records both source and packaged hashes, plus the complete list of files changed or omitted by the profile.
+`labs/reference.mjs` derives the Foundry-only workshop profile from that tagged source. It removes the alternative provider implementation, configuration, and dependencies and excludes the standalone test project from learner downloads. It also requires existing-model reuse in both AppHost settings, selects root `apphost.cs` in `aspire.config.json`, and removes the inherited `UserSecretsId` from `Directory.Build.props`; file-based learner apps get path-specific stores. The original repository and its tests retain both providers and their default provisioning behavior.
+
+Profile `foundry-workshop-v2` also adds a session ID display to the source-derived `Chat.razor`. This is a declared workshop-only change; the tagged source and standalone application stay unchanged. The recipes omit the display before `07-interviewers`. Chapter 11 teaches its addition through `interviewers-session-id`, and later stages retain it. The display reads the existing `sessionId` field without changing messages, model calls, or record creation.
 
 `labs/recipes.mjs` derives stages from that packaged reference; `labs/edits.mjs` defines their source-backed transition steps. The generated contract records each step's file, operation, before/after code, and learner or supplied ownership.
 
@@ -86,7 +92,9 @@ Replay validation applies every documented edit in order and compares the result
 
 The MCP server stage must support real tool discovery with the supplied probe. The extraction stage must return parsed text on request while keeping its existing record lifecycle. The four-agent stage must route among its available roles; the summary agent arrives in `07-handoffs`.
 
-The final application matches the declared Foundry-only workshop reference exactly, including its pinned direct package versions. `WORKSHOP.txt` supplies packaging instructions. MarkItDown retains the reference's `latest` image tag, so runtime reports should record its digest.
+The completed workflow and single-agent implementation come from the Foundry-only reference. The generated application keeps its workshop startup layout. Tests cover the complete agent definitions, root service graph, model setup, AG-UI endpoints, tool contracts, and the unchanged capstone transition. The generated manifest records `sourceHashes` for the tagged source, `packagedHashes` for the Foundry-only base reference, and `completedHashes` for the final workshop project. `referenceChanges` and `completedChanges` record the respective source differences. These hashes verify generated downloads; matching the standalone file layout is not a learner completion requirement.
+
+`WORKSHOP.txt` supplies packaging instructions. MarkItDown retains the reference's `latest` image tag, so runtime reports should record its digest.
 
 The generator rejects source drift. Commit source fixes first, then create a new immutable reference tag and update the manifest, recipes, step contracts, and lesson expectations together. Never move an existing published tag or suppress a comparison failure to make a build pass.
 

@@ -63,18 +63,20 @@ In the root `apphost.cs`, add the model reference to the `agent` resource:
 
 `WithLlmReference(config, args)` resolves our existing Foundry deployment and passes the provider, mode, and `chat` connection string to the agent.
 
-Configure the learner project's own AppHost store once. From `interview-coach-lab`, replace the first three values with the names you kept from Chapter 0. Use the Azure **deployment name**, usually `chat`, rather than the model name. The commands read the active subscription and the account's location automatically:
+Configure the learner project's own AppHost store once. Use the same terminal as Chapter 0 and run these commands from `interview-coach-lab`. They use the saved `location`, `resourceGroup`, `foundryName`, and `deploymentName` environment variables. There are no values to replace.
+
+<p>If you opened a new terminal, repeat the Azure sign-in check, the location and resource-group setup, and the <a href={siteLink('workshop/00-orientation/#keep-the-model-for-your-learner-project')}>model variable setup in Chapter 0</a> first. Keep the same approved subscription selected.</p>
 
 <Tabs syncKey="shell">
 <TabItem label="Bash">
 
 ```bash
-foundryName="YOUR_ACCOUNT_NAME"
-resourceGroup="YOUR_RESOURCE_GROUP"
-deploymentName="YOUR_DEPLOYMENT_NAME"
+: "${location:?Run the Chapter 0 variable setup in this terminal.}"
+: "${resourceGroup:?Run the Chapter 0 variable setup in this terminal.}"
+: "${foundryName:?Run the Chapter 0 model variable setup in this terminal.}"
+: "${deploymentName:?Run the Chapter 0 model variable setup in this terminal.}"
 subscriptionId=$(az account show --query id --output tsv)
 tenantId=$(az account show --query tenantId --output tsv)
-location=$(az cognitiveservices account show --name "$foundryName" --resource-group "$resourceGroup" --subscription "$subscriptionId" --query location --output tsv)
 
 dotnet user-secrets set "Azure:SubscriptionId" "$subscriptionId" --file ./apphost.cs
 dotnet user-secrets set "Azure:TenantId" "$tenantId" --file ./apphost.cs
@@ -91,23 +93,21 @@ dotnet user-secrets set "MicrosoftFoundry:Existing:DeploymentName" "$deploymentN
 <TabItem label="PowerShell">
 
 ```powershell
-$foundryName = "YOUR_ACCOUNT_NAME"
-$resourceGroup = "YOUR_RESOURCE_GROUP"
-$deploymentName = "YOUR_DEPLOYMENT_NAME"
+if (!$env:location -or !$env:resourceGroup -or !$env:foundryName -or !$env:deploymentName) {
+    throw "Run the Chapter 0 variable setup in this terminal."
+}
 $subscriptionId = az account show --query id --output tsv
 $tenantId = az account show --query tenantId --output tsv
-$location = az cognitiveservices account show --name $foundryName --resource-group $resourceGroup --subscription $subscriptionId --query location --output tsv
-if ($LASTEXITCODE -ne 0) { throw "Check the account name, resource group, and active subscription." }
 
 dotnet user-secrets set "Azure:SubscriptionId" $subscriptionId --file ./apphost.cs
 dotnet user-secrets set "Azure:TenantId" $tenantId --file ./apphost.cs
-dotnet user-secrets set "Azure:ResourceGroup" $resourceGroup --file ./apphost.cs
-dotnet user-secrets set "Azure:Location" $location --file ./apphost.cs
+dotnet user-secrets set "Azure:ResourceGroup" "$env:resourceGroup" --file ./apphost.cs
+dotnet user-secrets set "Azure:Location" "$env:location" --file ./apphost.cs
 dotnet user-secrets set "Azure:CredentialSource" "AzureCli" --file ./apphost.cs
-dotnet user-secrets set "MicrosoftFoundry:Existing:Name" $foundryName --file ./apphost.cs
-dotnet user-secrets set "MicrosoftFoundry:Existing:ResourceGroup" $resourceGroup --file ./apphost.cs
+dotnet user-secrets set "MicrosoftFoundry:Existing:Name" "$env:foundryName" --file ./apphost.cs
+dotnet user-secrets set "MicrosoftFoundry:Existing:ResourceGroup" "$env:resourceGroup" --file ./apphost.cs
 dotnet user-secrets set "MicrosoftFoundry:Existing:SubscriptionId" $subscriptionId --file ./apphost.cs
-dotnet user-secrets set "MicrosoftFoundry:Existing:DeploymentName" $deploymentName --file ./apphost.cs
+dotnet user-secrets set "MicrosoftFoundry:Existing:DeploymentName" "$env:deploymentName" --file ./apphost.cs
 ```
 
 </TabItem>
