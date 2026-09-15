@@ -1,7 +1,7 @@
 {
   "version": 3,
-  "sourceRevision": "443eac269743643d1bd5a35582fa3fac27bc6ad5",
-  "sourceTag": "workshop-v3-reference.1",
+  "sourceRevision": "2064147b5fdc2f0a808cdce7bdf772e4fb3b3039",
+  "sourceTag": "3.0.0-workshop",
   "deploymentPatch": "deployment-apphost.patch",
   "packageVersions": {
     "Aspire.Hosting.Azure": "13.5.3",
