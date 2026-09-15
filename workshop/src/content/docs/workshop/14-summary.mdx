@@ -1,0 +1,114 @@
+---
+title: Review what you built
+description: Connect the workshop concepts to their code and the problems they solve.
+---
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+We started with a local application shell. By Chapter 12, our coach could collect documents, conduct an interview, and save feedback through five agent roles. Chapter 13 tested recovery when a document request failed.
+
+This chapter connects those changes to the decisions behind them. There is no new code or interview exercise.
+
+## Connect the services with Aspire
+
+We got all our prerequisites setup in [Chapter 0](../00-orientation/) including running the final interview coach application to verify everything was OK. 
+
+Then in [Chapter 1](../01-starter/) we started in on the application we were going to build in the workshop. The supplied starter app was very straight-forward. A Blazor user interface, database repository, and service defaults. We concentrated on agent behavior and service connections.
+
+And we used Aspire!. `apphost.cs` in the solution root describes the resources that run together. We added the model reference, InterviewData, and MarkItDown as the lessons needed them. `WithReference` supplies connection information. `WaitFor` controls startup dependencies.
+
+## Keep the agent separate from the model
+
+In [Chapter 2](../02-first-coach/), we created a `ChatClientAgent` in `AgentDelegateFactory.cs`. We gave it a name, instructions, and an `IChatClient` for model calls. The instructions defined the coach's task: ask one question at a time and give specific feedback.
+
+Microsoft Agent Framework runs the agent in our .NET service. Microsoft Foundry hosts the model that produces replies and requests tool calls. The agents do not run in Foundry.
+
+The supplied `WorkshopHosting.cs` creates the model client and configures authentication. We activated that helper after writing the first agent. This separation let us change coaching behavior without rewriting the connection code.
+
+We first tried the coach in DevUI. That gave us a way to inspect a reply before connecting the chat page.
+
+
+## Carry the conversation through AG-UI
+
+In [Chapter 3](../03-streaming/), we connected the coach to the supplied Blazor chat page. `AddAGUIServer()` registers the transport services. `MapAGUIServer` exposes the agent at `/ag-ui`.
+
+The WebUI server uses `AGUIChatClient` to send messages and receive response updates. The browser displays those updates through its Blazor connection. This keeps model credentials in the agent service.
+
+`Chat.razor` holds the current messages and sends their full history with each request. It also supplies a `SessionId` and sets `ChatOptions.ConversationId`. The ID identifies the interview, but it does not replace the message history.
+
+That distinction matters after a refresh. A new Blazor circuit creates a new chat. A saved interview record remains a separate source of data.
+
+## Give the model tools that application code executes
+
+In [Chapter 4](../04-tools/), we wrote `GetPracticeGuidance`. `AIFunctionFactory.Create` exposed that C# function as `get_practice_guidance`, with a name and description the model could use.
+
+The model requested a tool call. Agent Framework executed the function and returned its result to the model. We inspected the arguments and result instead of judging success from the final reply alone.
+
+[Chapter 5](../05-mcp-server/) exposed tools across a service boundary with Model Context Protocol (MCP). We marked InterviewData methods with `McpServerTool` attributes and registered the server at `/mcp`.
+
+The supplied probe checked discovery before we connected the coach in [Chapter 6](../06-mcp-state/). In the agent service, a keyed `McpClient` used `ListToolsAsync` to discover the server's tools. We then passed those tools to the agent.
+
+A local function needs no separate service. MCP lets another service own tools that clients can discover and call. That separation also adds a connection to configure and diagnose.
+
+## Save the interview record deliberately
+
+In [Chapter 7](../07-persistence/), we changed the instructions to manage one record throughout an interview. The coach first calls `get_interview_session` with the application's ID. If no record exists, it calls `add_interview_session` with that same ID.
+
+The supplied repository stores records in Cosmos. Its update method replaces six document fields and appends the incoming `Transcript`. An update must preserve the document fields and contain only new transcript text.
+
+These rules follow the repository's actual behavior. Repeating the old transcript duplicates it. Omitting a document field can erase its saved value.
+
+The summary needs two operations: `update_interview_session` saves the new summary text, then `complete_interview_session` marks the record complete. An update alone cannot set `IsCompleted`.
+
+We used returned records and Cosmos Data Explorer to check writes. A chat reply saying "saved" is not evidence that a tool succeeded. The [state reference](../../reference/session-data/) explains the separate lifetimes of chat messages, records, and uploaded files.
+
+## Turn document text into interview context
+
+[Chapter 8](../08-document-extraction/) introduced document extraction. We connected MarkItDown through a second MCP client. Its container fetches a document URL and returns text.
+
+We first compared the extracted text with a sample PDF. In [Chapter 9](../09-documents/), we added instructions to save that text in `ResumeText` and `JobDescriptionText`. The coach could then use those details when choosing questions.
+
+This separation helps locate a failure. Accepting an upload, extracting its text, and saving a record are different operations.
+
+The supplied upload endpoint holds file bytes in the agent process's memory. MarkItDown must be able to reach the returned URL from its container. A process restart loses uploaded bytes, but text saved in Cosmos has a separate lifetime.
+
+Treat document text as untrusted input. It supplies interview context, not permission to change the agent's instructions or tool access.
+
+## Divide the interview into specialist roles
+
+We kept the complete single coach as a comparison. [Chapter 10](../10-first-handoff/) introduced two roles. [Chapter 11](../11-interviewers/) expanded the workflow to four roles. [Chapter 12](../12-handoffs/) added the summariser.
+
+| Role | Responsibility | Application tools |
+| --- | --- | --- |
+| `triage` | Select the next role from the conversation | None |
+| `receptionist` | Create the record and collect documents | MarkItDown and InterviewData |
+| `behavioural_interviewer` | Ask experience questions and save feedback | InterviewData |
+| `technical_interviewer` | Ask technical questions and save feedback | InterviewData |
+| `summariser` | Save final feedback and complete the record | InterviewData |
+
+`CreateHandOffWorkflow` builds the graph with `AgentWorkflowBuilder`. Its handoff declarations define the allowed transfers. The normal path moves directly between specialists. Return paths let triage handle a changed request or an early finish.
+
+The five roles share one model deployment and take turns. The model selects a transfer within the graph's eleven permitted routes.
+
+Separate roles let us change one role's instructions and tools without changing every phase. They also add routing decisions and model calls. More agents do not automatically improve the interview.
+
+The supplied hosting adapter exposes the workflow through the same hosted-agent interface as the single coach. Its `CreateFixedAgent` helper handles string tool results for the pinned AG-UI integration.
+
+## Check the operation that failed
+
+In [Chapter 13](../13-debugging/), an invalid URL caused a document request to fail. We corrected the input in the same conversation and checked the saved record before continuing.
+
+The session ID display from Chapter 11 connected that conversation to InterviewData logs and the Cosmos record. DevUI displayed permitted handoff routes. It did not replay the live WebUI conversation.
+
+We also requested an early finish. The expected route passed through triage to the summariser. We checked the saved summary and `IsCompleted` to see whether the application finished the work.
+
+This is the habit to keep: check the tool result and stored data, especially after a failed response. A tool may write data before the chat reports an error. Retrying without checking can repeat a write.
+
+## Keep the sample's limits in view
+
+The interview coach application remains a learning sample. Use fictional documents and private development endpoints. Real-user access needs authentication, record ownership checks, and retention controls.
+
+Stopping Aspire leaves cloud resources in place. The example and learner app share a model, so cleanup must account for both folders. The [cleanup guide](../../resources/deployment/#remove-only-the-resources-you-own) explains the ownership checks.
+
+The [application reference](../../reference/) holds the detailed contracts. [Optional extensions](../../resources/extensions/) describe focused changes to try after the workshop.
+
+<LessonProgress lessonId="14-summary" />

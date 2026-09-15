@@ -1,6 +1,6 @@
 {
-  "version": "3",
-  "previousVersions": ["1", "2"],
+  "version": "4",
+  "previousVersions": ["1", "2", "3"],
   "legacyChapterIds": {
     "02-starter": "01-starter",
     "03-first-coach": "02-first-coach",
@@ -11,8 +11,10 @@
     "07-first-handoff": "10-first-handoff",
     "07-interviewers": "11-interviewers",
     "07-handoffs": "12-handoffs",
-    "08-capstone": "13-capstone",
-    "08-debugging": "14-debugging"
+    "08-capstone": "14-summary",
+    "08-debugging": "13-debugging",
+    "13-capstone": "14-summary",
+    "14-debugging": "13-debugging"
   },
   "title": "Agent Framework + Foundry",
   "description": "Learn Microsoft Agent Framework and Foundry by writing the code for a working multi-agent application.",
@@ -146,22 +148,22 @@
       "checkpoints": ["07-handoffs"]
     },
     {
-      "id": "13-capstone",
+      "id": "13-debugging",
       "number": 13,
       "group": "Specialist workflows",
-      "title": "Run your completed interview",
-      "description": "Complete an interview and check the tool calls, transitions, and saved summary.",
+      "title": "Find and fix a failed step",
+      "description": "Trace a failed document request and follow an early-finish handoff.",
       "kind": "verification",
       "from": "07-handoffs",
       "checkpoints": ["08-complete"]
     },
     {
-      "id": "14-debugging",
+      "id": "14-summary",
       "number": 14,
       "group": "Specialist workflows",
-      "title": "Find and fix a failed step",
-      "description": "Trace a failed document request and follow an early-finish handoff.",
-      "kind": "verification",
+      "title": "Review what you built",
+      "description": "Connect the workshop concepts to their code and the problems they solve.",
+      "kind": "summary",
       "from": "08-complete",
       "checkpoints": ["08-complete"]
     }

@@ -10,7 +10,9 @@ const next = nextChapterLink([], chapters, import.meta.env.BASE_URL, lessonId);
 <section class="lesson-progress" data-lesson-progress data-progress-root data-id={lessonId} data-version={curriculumVersion} data-base={import.meta.env.BASE_URL} aria-label="Chapter completion">
   <div>
     <span class="eyebrow">Chapter {chapter.number} · {chapter.group}</span>
-    <label><input type="checkbox" data-progress-toggle={lessonId} /> I completed this chapter and checked the result.</label>
+    <label><input type="checkbox" data-progress-toggle={lessonId} /> {chapter.kind === 'summary'
+      ? 'I reviewed the concepts and their implementation.'
+      : 'I completed this chapter and checked the result.'}</label>
     <p class="progress-status" data-progress-summary aria-live="polite"></p>
   </div>
   <a class="action-link" href={next.href} data-progress-next={lessonId}>{next.label}</a>

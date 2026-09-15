@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
 import { stepReferences, validateCourseContent } from './content-contract.mjs';
+import { excludedReferences, workshopReferenceMarkdown } from './reference-scope.mjs';
 
 const course = JSON.parse(readFileSync(new URL('../src/data/course.json', import.meta.url), 'utf8'));
 const manifest = JSON.parse(readFileSync(new URL('../labs/manifest.json', import.meta.url), 'utf8'));
@@ -13,7 +14,7 @@ const ids = [
   '00-orientation', '01-starter', '02-first-coach', '03-streaming', '04-tools',
   '05-mcp-server', '06-mcp-state', '07-persistence', '08-document-extraction',
   '09-documents', '10-first-handoff', '11-interviewers', '12-handoffs',
-  '13-capstone', '14-debugging'
+  '13-debugging', '14-summary'
 ];
 const oldIds = [
   '00-orientation', '02-starter', '03-first-coach', '03-streaming', '04-tools',
@@ -21,7 +22,13 @@ const oldIds = [
   '06-documents', '07-first-handoff', '07-interviewers', '07-handoffs',
   '08-capstone', '08-debugging'
 ];
-const expectedAliases = Object.fromEntries(oldIds.flatMap((id, index) => id === ids[index] ? [] : [[id, ids[index]]]));
+const expectedAliases = {
+  ...Object.fromEntries(oldIds.slice(0, -2).flatMap((id, index) => id === ids[index] ? [] : [[id, ids[index]]])),
+  '08-capstone': '14-summary',
+  '08-debugging': '13-debugging',
+  '13-capstone': '14-summary',
+  '14-debugging': '13-debugging'
+};
 
 test('public lesson IDs, filenames, titles, and completion controls follow chapters 00 through 14', () => {
   assert.deepEqual(course.chapters.map(chapter => chapter.id), ids);
@@ -30,7 +37,7 @@ test('public lesson IDs, filenames, titles, and completion controls follow chapt
   assert.deepEqual(validateCourseContent(course, manifest, pages), []);
 });
 
-test('only public route IDs are renumbered; checkpoint IDs and chapter transitions stay unchanged', () => {
+test('the revised final lessons preserve checkpoint IDs and chapter transitions', () => {
   assert.deepEqual(course.legacyChapterIds, expectedAliases);
   const checkpoints = ['08-complete', ...oldIds.slice(1, -2), '08-complete', '08-complete'];
   assert.deepEqual(course.chapters.map(chapter => chapter.checkpoints), checkpoints.map(id => [id]));
@@ -81,17 +88,22 @@ const authoredPages = [
 ];
 const omittedReferenceRoute = /\breference\/(?:changelog|providers(?:\/github-copilot)?)(?:\/(?:index(?:\.html)?)?)?(?=[#?'"`)\s<>}]|$)/i;
 
-test('authored lesson, resource, README, and root-reference links use canonical routes', () => {
+test('authored workshop and projected reference links use canonical routes without editing standalone docs', () => {
+  const docsRoot = new URL('../../docs/', import.meta.url);
   const files = [
-    new URL('../../README.md', import.meta.url),
     new URL('../README.md', import.meta.url),
-    ...markdownFiles(new URL('../../docs/', import.meta.url)),
     ...authoredPages
   ];
-  for (const file of files) {
-    const source = readFileSync(file, 'utf8');
+  const sources = files.map(file => [file.pathname, readFileSync(file, 'utf8')]);
+  for (const file of markdownFiles(docsRoot)) {
+    const name = file.pathname.slice(docsRoot.pathname.length);
+    if (!excludedReferences.has(name)) {
+      sources.push([file.pathname, workshopReferenceMarkdown(name, readFileSync(file, 'utf8'))]);
+    }
+  }
+  for (const [file, source] of sources) {
     for (const [, id] of source.matchAll(/(?:workshop\/|\.\.\/)(\d{2}-[\w-]+)(?=[/#?'"`.)])/g)) {
-      assert.ok(ids.includes(id), `${file.pathname}: link uses noncanonical lesson ${id}`);
+      assert.ok(ids.includes(id), `${file}: link uses noncanonical lesson ${id}`);
     }
   }
 });

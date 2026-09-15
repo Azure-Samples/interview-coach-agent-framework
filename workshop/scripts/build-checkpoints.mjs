@@ -75,7 +75,7 @@ Setup and resource guidance: https://codemillmatt.github.io/interview-coach-agen
 Run from this directory: aspire start --apphost ./apphost.cs
 ${stage.id === '02-starter' ? 'This application shell runs without cloud resources. Configure reuse of the Chapter 0 model before activating it in Chapter 2.' : 'Configure reuse of the Chapter 0 account and model deployment before starting. Model calls cost money; confirm the subscription and cleanup owner.'}
 Use the root AppHost throughout the course. Keep WorkshopHosting.cs and the MCP discovery probe.
-The capstone runs the completed interview without further source changes.
+Chapter 13 practices debugging with the completed application. Chapter 14 reviews the workshop.
 Prepare the separate project-based AppHost only for optional deployment: https://codemillmatt.github.io/interview-coach-agent-framework/resources/deployment/
 Cosmos arrives in Expose interview tools with MCP; MarkItDown arrives in Read a resume with a tool.
 Stopping local apps keeps the shared Foundry account. Delete cloud resources only when their owner confirms both projects are finished.
@@ -115,4 +115,4 @@ for (const [path, contents] of reference) {
   writeFileSync(resolve(workshop, 'public', path), contents);
   writeFileSync(resolve(workshop, 'public', path.slice('samples/'.length)), contents);
 }
-console.log(`Built ${manifest.stages.length} checkpoint archives and replayed ${contract.transitions.reduce((count, item) => count + item.steps.length, 0)} explicit edits. The capstone retains the working workshop layout; ${manifest.deploymentPatch} prepares only the optional deployment AppHost.`);
+console.log(`Built ${manifest.stages.length} checkpoint archives and replayed ${contract.transitions.reduce((count, item) => count + item.steps.length, 0)} explicit edits. The final lessons retain the working workshop layout; ${manifest.deploymentPatch} prepares only the optional deployment AppHost.`);

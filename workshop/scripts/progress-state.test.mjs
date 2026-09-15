@@ -24,8 +24,8 @@ function fixture(initial = {}) {
 }
 
 test('the UI consumes all fifteen chapters with explicit zero-based numbers and groups', () => {
-  assert.equal(course.version, '3');
-  assert.deepEqual(course.previousVersions, ['1', '2']);
+  assert.equal(course.version, '4');
+  assert.deepEqual(course.previousVersions, ['1', '2', '3']);
   assert.equal(chapters.length, 15);
   assert.deepEqual(chapters.map(chapter => chapter.number), Array.from({ length: 15 }, (_, index) => index));
   assert.deepEqual([...new Set(chapters.map(chapter => chapter.group))], [
@@ -84,7 +84,7 @@ test('stored progress is validated and normalized in course order', () => {
   assert.deepEqual(parseProgress(null, chapters), { ids: [], warning: '', migrated: false });
 });
 
-test('every renamed version-3 ID maps to its chapter, not to a checkpoint with that number', () => {
+test('current-version aliases map to chapters rather than checkpoint numbers', () => {
   for (const [previous, current] of Object.entries(course.legacyChapterIds)) {
     assert.deepEqual(parseProgress(JSON.stringify([previous]), chapters, course.legacyChapterIds), {
       ids: [current], warning: '', migrated: true
@@ -97,7 +97,7 @@ test('mixed old and new IDs migrate once, deduplicate, and persist in course ord
   const { store, records, storage } = fixture({
     [key]: JSON.stringify(['08-debugging', '01-starter', '02-starter', '03-first-coach', '00-orientation', '14-debugging'])
   });
-  const expected = ['00-orientation', '01-starter', '02-first-coach', '14-debugging'];
+  const expected = ['00-orientation', '01-starter', '02-first-coach', '13-debugging'];
   let writes = 0;
   const write = storage.setItem;
   storage.setItem = (key, value) => { writes++; write(key, value); };
@@ -109,20 +109,25 @@ test('mixed old and new IDs migrate once, deduplicate, and persist in course ord
   assert.equal(continueLink(expected, chapters, base).href, `${base}/workshop/03-streaming/`);
 });
 
-test('a completed old version-3 course stays complete for root and Pages base paths', () => {
-  const previous = new Map(Object.entries(course.legacyChapterIds).map(([oldId, id]) => [id, oldId]));
-  const oldIds = ids.map(id => previous.get(id) ?? id);
+test('a completed version-3 course stays saved without completing the new summary', () => {
+  const oldIds = [...ids.slice(0, 13), '13-capstone', '14-debugging'];
   for (const base of ['', '/', '/interview-coach-agent-framework', '/interview-coach-agent-framework/']) {
     const key = progressKey(base, course.version);
-    const { storage, records } = fixture({ [key]: JSON.stringify(oldIds) });
+    const previousKey = progressKey(base, '3');
+    const raw = JSON.stringify(oldIds);
+    const { storage, records } = fixture({ [previousKey]: raw });
     const store = createProgressStore({ ...course, base }, () => storage);
-    assert.deepEqual(store.read().ids, ids);
-    assert.equal(progressView(store.read().ids, chapters).complete, true);
-    assert.equal(records.get(key), JSON.stringify(ids));
-    assert.equal(continueLink(store.read().ids, chapters, base).href, `${base.replace(/\/$/, '')}/workshop/14-debugging/`);
+    assert.deepEqual(store.read().ids, []);
+    assert.match(store.read().warning, /earlier progress is still saved/);
+    assert.equal(records.has(key), false);
+    for (const id of ids.slice(0, -1)) store.toggle(id, true);
+    assert.equal(progressView(store.read().ids, chapters).complete, false);
+    assert.equal(continueLink(store.read().ids, chapters, base).href, `${base.replace(/\/$/, '')}/workshop/14-summary/`);
+    assert.equal(records.get(previousKey), raw);
     store.reset();
     assert.equal(records.has(key), false);
     assert.deepEqual(store.read().ids, []);
+    assert.equal(records.get(previousKey), raw);
   }
 });
 

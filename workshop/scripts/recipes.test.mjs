@@ -121,7 +121,7 @@ test('Chapter 11 teaches the existing session ID display once and later checkpoi
   assert.equal(transition.steps.at(-1), step);
   assert.equal(contract.transitions.flatMap(item => item.steps).filter(item => item.id === step.id).length, 1);
   assert.doesNotMatch(get(standaloneReference, paths.chat), /Session ID: <code>/);
-  assert.ok(!contract.transitions.at(-1).changedFiles.includes(paths.chat), 'Capstone must keep the learner display.');
+  assert.ok(!contract.transitions.at(-1).changedFiles.includes(paths.chat), 'The final checkpoint must keep the learner display.');
   for (const id of ['07-interviewers', '07-handoffs', '08-complete']) {
     const chat = get(makeStage(reference, id), paths.chat);
     assert.equal(chat.split(sessionIdDisplay).length - 1, 1, id);
@@ -361,10 +361,10 @@ test('the four-agent checkpoint only routes to its available specialists', () =>
   assert.match(workflow, /Do not ask another question or hand off/);
 });
 
-test('the capstone retains the complete Chapter 12 application without source edits', () => {
+test('the final checkpoint retains the complete Chapter 12 application without source edits', () => {
   const handoffs = makeStage(reference, '07-handoffs');
   const complete = makeStage(reference, '08-complete');
-  assertSameFiles(complete, handoffs, 'capstone continuity');
+  assertSameFiles(complete, handoffs, 'final checkpoint continuity');
   assert.deepEqual(contract.transitions.at(-1), {
     from: '07-handoffs', to: '08-complete', steps: [], changedFiles: [],
   });

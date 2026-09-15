@@ -19,7 +19,7 @@ const pages = () => new Map([
 const steps = [{ id: 'agent-create', from: 'starter', to: 'agent', path: 'src/Agent.cs' }];
 
 test('handoff conversations use WebUI and its session IDs rather than the DevUI graph', () => {
-  for (const chapter of ['10-first-handoff', '11-interviewers', '12-handoffs', '14-debugging']) {
+  for (const chapter of ['10-first-handoff', '11-interviewers', '12-handoffs', '13-debugging']) {
     const source = readFileSync(new URL(`../src/content/docs/workshop/${chapter}.mdx`, import.meta.url), 'utf8');
     assert.match(source, /(?:open (?:the \*\*http\*\* endpoint for )?`webui`|Find the `webui` row and open its link)/i, chapter);
     assert.match(source, /\*\*New chat\*\*/, chapter);
@@ -46,7 +46,7 @@ test('Chapter 11 teaches the UI display and later lessons use it without assumin
   assert.match(chapter, /displayed ID changes/);
   assert.match(chapter, /session ID stays the same as you move between interviewers/);
   assert.match(chapter, /before a record is saved/);
-  for (const id of ['11-interviewers', '12-handoffs', '13-capstone', '14-debugging']) {
+  for (const id of ['11-interviewers', '12-handoffs', '13-debugging']) {
     const source = read(id);
     assert.match(source, /copy the \*\*Session ID\*\* shown above the conversation/i, id);
     assert.doesNotMatch(source, /Started new chat session with SessionId/, id);
@@ -139,20 +139,52 @@ test('support pages cannot mark a lesson complete', () => {
   assert.ok(validateCourseContent(course, manifest, source).some(error => error.includes('support pages')));
 });
 
-test('the capstone verifies the completed interview without a hosting or file-layout exercise', () => {
+test('debugging follows the summary agent directly without another capstone exercise', () => {
   const curriculum = JSON.parse(readFileSync(new URL('../src/data/course.json', import.meta.url), 'utf8'));
-  const chapter = curriculum.chapters.find(item => item.id === '13-capstone');
+  const chapter = curriculum.chapters.find(item => item.id === '13-debugging');
+  assert.equal(chapter.number, 13);
   assert.equal(chapter.kind, 'verification');
   assert.equal(chapter.from, '07-handoffs');
   assert.deepEqual(chapter.checkpoints, ['08-complete']);
-  const source = readFileSync(new URL('../src/content/docs/workshop/13-capstone.mdx', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/content/docs/workshop/13-debugging.mdx', import.meta.url), 'utf8');
   assert.deepEqual(stepReferences(source), []);
   assert.doesNotMatch(source, /SuppliedSteps|git apply|support.patch|hosting setup/i);
-  assert.match(source, /No further code changes are needed/);
-  assert.match(source, /Keep `WorkshopHosting.cs` and the MCP discovery probe/);
-  assert.match(source, /same application source as the end of Chapter 12/);
-  for (const field of ['id', 'Transcript', 'IsCompleted']) assert.ok(source.includes(`\`${field}\``), field);
+  assert.match(source, /from Chapter 12/);
+  assert.match(source, /Keep `WorkshopHosting.cs`, the MCP discovery probe, and the session ID display unchanged/);
+  assert.match(source, /https:\/\/example\.invalid\/workshop-resume\.pdf/);
+  assert.match(source, /behavioural_interviewer` to `triage`, then `triage` to `summariser`/);
+  assert.match(source, /`IsCompleted` is `true`/);
   assert.match(source, /aspire stop --apphost \.\/apphost.cs[\s\S]*dotnet build InterviewCoach.slnx[\s\S]*aspire start/);
+  assert.match(source, /Stopping Aspire leaves cloud resources in place/);
+});
+
+test('the final summary connects concepts to implementation without adding another run exercise', () => {
+  const curriculum = JSON.parse(readFileSync(new URL('../src/data/course.json', import.meta.url), 'utf8'));
+  const chapter = curriculum.chapters.at(-1);
+  assert.equal(chapter.id, '14-summary');
+  assert.equal(chapter.number, 14);
+  assert.equal(chapter.kind, 'summary');
+  assert.equal(chapter.from, '08-complete');
+  assert.deepEqual(chapter.checkpoints, ['08-complete']);
+  const source = readFileSync(new URL('../src/content/docs/workshop/14-summary.mdx', import.meta.url), 'utf8');
+  assert.deepEqual(stepReferences(source), []);
+  assert.doesNotMatch(source, /```(?:bash|powershell)|aspire start|dotnet build|<Checkpoint/);
+  for (const concept of [
+    'ChatClientAgent', 'IChatClient', 'WorkshopHosting.cs', 'apphost.cs', 'WithReference', 'WaitFor',
+    'AGUIChatClient', 'ChatOptions.ConversationId', 'AIFunctionFactory.Create', 'McpServerTool',
+    'ListToolsAsync', 'MarkItDown', 'ResumeText', 'Transcript', 'complete_interview_session',
+    'AgentWorkflowBuilder', 'CreateFixedAgent', 'Cosmos Data Explorer',
+  ]) assert.ok(source.includes(concept), concept);
+  for (const role of ['triage', 'receptionist', 'behavioural_interviewer', 'technical_interviewer', 'summariser']) {
+    assert.ok(source.includes(`| \`${role}\` |`), role);
+  }
+  assert.match(source, /does not replace the message history/);
+  assert.match(source, /More agents do not automatically improve/);
+  assert.match(source, /Retrying without checking can repeat a write/);
+  assert.match(source, /Chapter 13\]\(\.\.\/13-debugging\/\)/);
+  const progress = readFileSync(new URL('../src/components/LessonProgress.astro', import.meta.url), 'utf8');
+  assert.match(progress, /chapter.kind === 'summary'/);
+  assert.match(progress, /I reviewed the concepts and their implementation/);
 });
 
 test('only the optional deployment guide asks learners to prepare the project-based AppHost', () => {
@@ -177,6 +209,17 @@ test('completion-only lessons can reuse a checkpoint while code edits have one o
   assert.deepEqual(validateEditCoverage(revised, source, steps), []);
   source.set('check', source.get('check') + '\n<CodeStep id="agent-create" />');
   assert.ok(validateEditCoverage(revised, source, steps).some(error => error.includes('already taught')));
+});
+
+test('summary lessons preserve stage continuity without requiring executable steps', () => {
+  const revised = structuredClone(course);
+  revised.chapters.push({ id: 'summary', title: 'Review the concepts', kind: 'summary', from: 'agent', checkpoints: ['agent'] });
+  const source = pages();
+  source.set('summary', '---\ntitle: Review the concepts\n---\n<LessonProgress lessonId="summary" />');
+  assert.deepEqual(validateCourseContent(revised, manifest, source), []);
+  assert.deepEqual(validateEditCoverage(revised, source, steps), []);
+  revised.chapters.at(-1).from = 'starter';
+  assert.ok(validateCourseContent(revised, manifest, source).some(error => error.includes('previous chapter')));
 });
 
 test('display numbers begin at Chapter 0 and every numbered lesson has a group', () => {

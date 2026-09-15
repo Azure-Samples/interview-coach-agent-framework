@@ -6,15 +6,20 @@ import { Tabs, TabItem } from '@astrojs/starlight/components';
 import Checkpoint from '../../../components/Checkpoint.astro';
 import Hint from '../../../components/Hint.astro';
 import LessonProgress from '../../../components/LessonProgress.astro';
+import { siteLink } from '../../../data/course';
 
 Practice a small recovery: give the parser an invalid URL, inspect the failure, then supply working input. We'll finish the same interview early and follow its route to the summariser.
 
-Continue in the same `interview-coach-lab` project from the previous chapter. Keep the completed source unchanged. Start the app with your existing approved configuration:
+Continue in the same `interview-coach-lab` project from Chapter 12. Your five-agent workflow is complete. Keep `WorkshopHosting.cs`, the MCP discovery probe, and the session ID display unchanged.
+
+Use fictional inputs and your existing approved model configuration. Model calls incur charges. From the learner project's root, stop any previous run, build, and start the app:
 
 <Tabs syncKey="shell">
 <TabItem label="Bash">
 
 ```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
 aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOff
 ```
 
@@ -22,6 +27,8 @@ aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOf
 <TabItem label="PowerShell">
 
 ```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
 aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOff
 ```
 
@@ -107,4 +114,6 @@ aspire stop --apphost ./apphost.cs
 </TabItem>
 </Tabs>
 
-<LessonProgress lessonId="14-debugging" />
+<p>Stopping Aspire leaves cloud resources in place. Keep the shared model while either workshop project still needs it. Follow the <a href={siteLink('resources/deployment/#remove-only-the-resources-you-own')}>cleanup guide</a> when both projects are finished.</p>
+
+<LessonProgress lessonId="13-debugging" />

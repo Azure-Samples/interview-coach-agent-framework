@@ -40,6 +40,6 @@
     { "id": "07-first-handoff", "title": "Your first handoff", "description": "Triage and the receptionist share document intake in a runnable two-agent workflow." },
     { "id": "07-interviewers", "title": "Behavioural and technical practice", "description": "Four agents handle intake and both interview phases. The chat page displays the session ID. Summary generation comes next." },
     { "id": "07-handoffs", "title": "Five collaborating specialists", "description": "Expand the two-agent workflow into the reference application's full handoff graph and scoped tool sets." },
-    { "id": "08-complete", "title": "The finished application", "description": "The same working application as the summary-agent checkpoint. The capstone needs no further code changes." }
+    { "id": "08-complete", "title": "The finished application", "description": "The same working application as the summary-agent checkpoint, used for debugging and the workshop summary." }
   ]
 }

@@ -1,4 +1,4 @@
-const kinds = new Set(['tour', 'setup', 'build', 'verification']);
+const kinds = new Set(['tour', 'setup', 'build', 'verification', 'summary']);
 const rubricHeadings = /^(?:##) (?:What we are doing|Why|How and where|See it work|Make it yours|If you get stuck|Carry forward)\s*$/m;
 
 export function stepReferences(source) {
@@ -35,7 +35,7 @@ export function validateCourseContent(course, manifest, pages) {
     for (const stage of chapter.checkpoints ?? []) {
       if (!stages.has(stage)) errors.push(`${prefix}: unknown checkpoint "${stage}".`);
     }
-    if (chapter.kind === 'build' || chapter.kind === 'verification') {
+    if (['build', 'verification', 'summary'].includes(chapter.kind)) {
       if (!chapter.from || !stages.has(chapter.from)) errors.push(`${prefix}: missing or invalid starting checkpoint.`);
       if (chapter.from !== previous) errors.push(`${prefix}: starts at "${chapter.from}" but the previous chapter ends at "${previous}".`);
     }

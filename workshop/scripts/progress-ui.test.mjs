@@ -131,7 +131,7 @@ test('storage events update every mark, checkbox, count and next action', () => 
   assert.equal(ui.landing.textContent, 'Start the workshop');
 });
 
-test('version-3 migration updates every navigation surface on load and after an old-tab write', () => {
+test('current-version alias normalization updates every navigation surface on load and after a tab write', () => {
   const ui = fixture();
   ui.records.set(key, '["02-starter","03-first-coach","00-orientation"]');
   ui.connect();
@@ -152,6 +152,30 @@ test('version-3 migration updates every navigation surface on load and after an 
   assert.equal(ui.path[2].dataset.completed, 'false');
   assert.equal(ui.next.href, `${base}/workshop/02-first-coach/`);
   assert.equal(ui.landing.href, ui.next.href);
+});
+
+test('a completed previous curriculum leaves the new summary and current navigation incomplete', () => {
+  const ui = fixture();
+  const previousKey = progressState.progressKey(base, '3');
+  const previous = JSON.stringify([...ids.slice(0, 13), '13-capstone', '14-debugging']);
+  ui.records.set(previousKey, previous);
+  ui.connect();
+  assert.equal(ui.records.get(previousKey), previous);
+  assert.equal(ui.records.has(key), false);
+  for (const marks of [ui.sidebar, ui.path]) {
+    assert.ok(marks.every(item => item.dataset.completed === 'false'));
+    assert.equal(marks.at(-1).dataset.progressId, '14-summary');
+  }
+  for (const summary of ui.summaries) {
+    assert.match(summary.textContent, /^0 of 15.*earlier progress is still saved/);
+  }
+  assert.equal(ui.landing.textContent, 'Start the workshop');
+  ui.records.set(key, JSON.stringify(ids.slice(0, 14)));
+  ui.storageChange();
+  assert.equal(ui.landing.href, `${base}/workshop/14-summary/`);
+  assert.equal(ui.next.href, ui.landing.href);
+  assert.equal(ui.sidebar[13].dataset.completed, 'true');
+  assert.equal(ui.sidebar[14].dataset.completed, 'false');
 });
 
 test('a failed migration shows the preserved marks and a visible page-only warning', () => {

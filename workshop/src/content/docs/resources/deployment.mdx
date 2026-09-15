@@ -1,12 +1,12 @@
 ---
 title: Optional deployment and cleanup
-description: Prepare a completed capstone for optional deployment and clean up owned resources.
+description: Prepare the completed workshop application for optional deployment and clean up owned resources.
 ---
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 import { siteLink } from '../../../data/course';
 import labs from '../../../../labs/manifest.json';
 
-Deployment is optional after the completed capstone. Azure Container Apps hosts the existing .NET services; the agents continue to execute in `InterviewCoach.Agent`.
+Deployment is optional after the workshop. Azure Container Apps hosts the existing .NET services; the agents continue to execute in `InterviewCoach.Agent`.
 
 **Use an approved, access-restricted development environment with fictional data.** Review [development endpoints, record access, and upload retention](../../reference/deployment/#review-access-and-data-handling) before exposing the app.
 
@@ -37,7 +37,7 @@ git apply ./deployment-apphost.patch
 </TabItem>
 </Tabs>
 
-If the check fails, keep your changes and compare the named file with the capstone checkpoint. The standalone example already has the complete deployment AppHost and does not need this patch.
+If the check fails, keep your changes and compare the named file with the `08-complete` checkpoint. The standalone example already has the complete deployment AppHost and does not need this patch.
 
 Configure the project-based AppHost's `appsettings.json` for deployment. See [entry-point details](../../reference/deployment/#check-the-deployment-entry-point).
 
@@ -49,7 +49,7 @@ Follow the [deployment commands and account checks](../../reference/deployment/#
 
 ## Check the deployed application
 
-Run the capstone's short synthetic interview and inspect its tool calls and saved summary. The [deployment checklist](../../reference/deployment/#check-the-deployed-application) covers service connectivity, identity, and failure diagnosis.
+Repeat the [summary-agent lesson's short interview](../../workshop/12-handoffs/#save-the-final-feedback) and inspect its tool calls and saved summary. The [deployment checklist](../../reference/deployment/#check-the-deployed-application) covers service connectivity, identity, and failure diagnosis.
 
 ## Remove only the resources you own
 
