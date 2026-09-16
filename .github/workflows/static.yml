@@ -33,7 +33,7 @@ jobs:
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: |
           source_tag="$(jq -r '.sourceTag' workshop/labs/manifest.json)"
-          if [[ ! "$source_tag" =~ ^workshop-[a-z0-9.-]+$ ]]; then
+          if [[ ! "$source_tag" =~ ^(workshop-[a-z0-9.-]+|[0-9]+\.[0-9]+\.[0-9]+-workshop)$ ]]; then
             echo "::error::Invalid workshop source tag: $source_tag"
             exit 1
           fi

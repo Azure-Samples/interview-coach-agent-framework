@@ -10,7 +10,7 @@ const included = path => /^(src\/|tests\/|samples\/)/.test(path) ||
 export function readReference(root, manifest, { verifyWorktree = true } = {}) {
   const git = (...args) => execFileSync('git', args, { cwd: root, maxBuffer: 32 * 1024 * 1024 });
   if (!/^[a-f0-9]{40}$/.test(manifest.sourceRevision)) throw new Error('The reference revision must be an exact commit SHA.');
-  if (typeof manifest.sourceTag !== 'string' || !/^workshop-[a-z0-9.-]+$/.test(manifest.sourceTag)) {
+  if (typeof manifest.sourceTag !== 'string' || !/^(workshop-[a-z0-9.-]+|[0-9]+\.[0-9]+\.[0-9]+-workshop)$/.test(manifest.sourceTag)) {
     throw new Error('The reference must name an immutable workshop source tag.');
   }
   const taggedRevision = git('rev-parse', '--verify', `refs/tags/${manifest.sourceTag}^{commit}`).toString().trim();

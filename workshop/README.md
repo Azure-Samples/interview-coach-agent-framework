@@ -104,7 +104,7 @@ The completed workflow and single-agent implementation come from the Foundry-onl
 
 `WORKSHOP.txt` supplies packaging instructions. MarkItDown retains the reference's `latest` image tag, so runtime reports should record its digest.
 
-The generator rejects source drift. Commit source fixes first, then create a new immutable reference tag and update the manifest, recipes, step contracts, and lesson expectations together. Never move an existing published tag or suppress a comparison failure to make a build pass.
+The generator rejects source drift. Commit source fixes first, then create a new immutable reference tag and update the manifest, recipes, step contracts, and lesson expectations together. Tags may use the release format `<major>.<minor>.<patch>-workshop` (for example, `3.0.0-workshop`) or the existing `workshop-` prefix. Publish the tag to the upstream repository before merging the manifest update: pull request runs fetch from the contributor's repository, but pushes to `main` fetch from upstream. Merging a pull request does not copy its tags. The tag must point to the exact `sourceRevision`, not a later commit containing only workshop changes. Never move an existing published tag or suppress a comparison failure to make a build pass.
 
 Archives exclude build outputs, local secrets, and unrelated files. Recovery instructions must extract into a separate folder without discarding existing work, then configure that folder's existing-model identifiers. Missing reuse configuration must fail before any model provisioning. Keep the example's shared model until every dependent project is finished.
 
