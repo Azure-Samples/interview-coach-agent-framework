@@ -2,6 +2,8 @@
 
 This static Astro/Starlight site teaches Microsoft Agent Framework and Foundry by building the interview coach. Learners run the application in their own environment.
 
+The shared `src/components/Head.astro` includes Microsoft Clarity tracking for project `ymclkocaqp` on every content page, including local previews.
+
 ## Work locally
 
 Use Node 24, Git, and `zip` for downloadable checkpoints. From this directory:

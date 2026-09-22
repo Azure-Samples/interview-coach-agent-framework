@@ -8,3 +8,10 @@ const head = Astro.locals.starlightRoute.head.map(item =>
 {head.map(({ tag: Tag, attrs, content }) => <Tag {...attrs} set:html={content} />)}
 <meta name="theme-color" content="#f3f6f6" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#1b252d" media="(prefers-color-scheme: dark)" />
+<script is:inline type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "ymclkocaqp");
+</script>
