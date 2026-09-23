@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout reference history
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Fetch workshop reference tag
@@ -38,11 +38,15 @@ jobs:
             exit 1
           fi
 
-          repository="${HEAD_REPOSITORY:-${{ github.repository }}}"
-          git fetch --no-tags "https://github.com/${repository}.git" \
-            "refs/tags/${source_tag}:refs/tags/${source_tag}"
+          if git show-ref --verify --quiet "refs/tags/${source_tag}"; then
+            echo "Using checked-out workshop reference tag: $source_tag"
+          else
+            repository="${HEAD_REPOSITORY:-${{ github.repository }}}"
+            git fetch --no-tags "https://github.com/${repository}.git" \
+              "refs/tags/${source_tag}:refs/tags/${source_tag}"
+          fi
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm
@@ -60,7 +64,7 @@ jobs:
         run: npm run check
         working-directory: workshop
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "10.0.x"
       - name: Compile isolated checkpoints
@@ -68,7 +72,7 @@ jobs:
         working-directory: workshop
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: workshop/dist
 
@@ -84,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
