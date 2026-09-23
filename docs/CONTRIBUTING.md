@@ -1,80 +1,33 @@
-# Contributing to Interview Coach with Microsoft Agent Framework
+# Contributing
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit <https://cla.opensource.microsoft.com>.
+Keep guided lessons in `workshop/src/content/docs/workshop/` and application reference in `docs/`. The site imports the reference; do not edit generated copies. [Workshop authoring](../workshop/README.md) describes the checkpoint and source-backed edit contracts.
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+## <a name="issue"></a> Report a bug
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+<a id="submit-issue"></a>
 
-- [Code of Conduct](#coc)
-- [Issues and Bugs](#issue)
-- [Feature Requests](#feature)
-- [Submission Guidelines](#submit)
+Search the [issues](https://github.com/codemillmatt/interview-coach-agent-framework/issues) before opening one. Include the affected checkpoint or revision, operating system, command, input, expected result, and actual result. For model behavior, include the provider, model, tool call, and relevant stored state rather than only a screenshot of the reply.
 
-## <a name="coc"></a> Code of Conduct
+Use fictional documents and redact credentials, account details, and transcript contents from logs. Do not post real interview records.
 
-Help us keep this project open and inclusive. Please read and follow our [Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+## <a name="feature"></a> Propose a feature
 
-## <a name="issue"></a> Found an Issue?
+Describe the user task and the contract that would change. For an agent or tool addition, explain its allowed operations, failure behavior, and how you would observe success. Discuss substantial changes in an issue before implementing them so the sample and workshop remain consistent.
 
-If you find a bug in the source code or a mistake in the documentation, you can help us by
-[submitting an issue](#submit-issue) to the GitHub Repository. Even better, you can
-[submit a Pull Request](#submit-pr) with a fix.
+## <a name="submit"></a> Submit a change
 
-## <a name="feature"></a> Want a Feature?
+<a id="submit-pr"></a>
 
-You can *request* a new feature by [submitting an issue](#submit-issue) to the GitHub
-Repository. If you would like to *implement* a new feature, please submit an issue with
-a proposal for your work first, to be sure that we can use it.
+Make the change in a fork and open a pull request with the relevant issue, implementation notes, and checks performed. Use a descriptive commit message. Avoid unrelated formatting or dependency upgrades.
 
-- **Small Features** can be crafted and directly [submitted as a Pull Request](#submit-pr).
+For workshop changes, run the existing content tests and build from `workshop/`. If dependencies are not installed, run `npm ci` first. If executable steps, recipes, or application sources change, also run the checkpoint validation described in the authoring guide. Preserve sample URLs, reference parity checks, and private local settings.
 
-## <a name="submit"></a> Submission Guidelines
+A lesson must let readers make the required edits in their own project. Show focused code with its filename and insertion point, explain the important calls, and give a concrete run check. Do not replace the lesson with a finished-file download or require repeated what/why/how headings.
 
-### <a name="submit-issue"></a> Submitting an Issue
+## Contributor agreement
 
-Before you submit an issue, search the archive, maybe your question was already answered.
+Most contributions require a [Contributor License Agreement](https://cla.opensource.microsoft.com) declaring that you have the right to grant the project permission to use your contribution. The CLA bot checks pull requests and provides any required steps. You generally complete this once for repositories using the agreement.
 
-If your issue appears to be a bug, and hasn't been reported, open a new issue.
-Help us to maximize the effort we can spend fixing issues and adding new
-features, by not reporting duplicate issues.  Providing the following information will increase the
-chances of your issue being dealt with quickly:
+## <a name="coc"></a> Code of conduct
 
-- **Overview of the Issue** - if an error is being thrown a non-minified stack trace helps
-- **Version** - what version is affected (e.g. 0.1.2)
-- **Motivation for or Use Case** - explain what are you trying to do and why the current behavior is a bug for you
-- **Browsers and Operating System** - is this a problem with all browsers?
-- **Reproduce the Error** - provide a live example or a unambiguous set of steps
-- **Related Issues** - has a similar issue been reported before?
-- **Suggest a Fix** - if you can't fix the bug yourself, perhaps you can point to what might be
-  causing the problem (line of code or commit)
-
-You can file new issues by providing the above information at the corresponding repository's [issues link](https://github.com/Azure-Samples/interview-coach-agent-framework/issues/new).
-
-### <a name="submit-pr"></a> Submitting a Pull Request (PR)
-
-Before you submit your Pull Request (PR) consider the following guidelines:
-
-- [Search the repository](https://github.com/Azure-Samples/interview-coach-agent-framework/pulls) for an open or closed PR
-  that relates to your submission. You don't want to duplicate effort.
-- Make your changes in a new git fork:
-- Commit your changes using a descriptive commit message
-- Push your fork to GitHub:
-- In GitHub, create a pull request
-- If we suggest changes then:
-  - Make the required updates.
-  - Rebase your fork and force push to your GitHub repository (this will update your Pull Request):
-
-    ```shell
-    git fetch upstream
-    git rebase upstream/main
-    git push --force-with-lease
-    ```
-
-That's it! Thank you for your contribution!
+This project follows the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). Read the [FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with questions or concerns.

@@ -1,0 +1,196 @@
+---
+title: Find and fix a failed step
+description: Recover a failed document fetch, then compare repeated runs against expected behavior.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import CodeSample from '../../../components/CodeSample.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+import { siteLink } from '../../../data/course';
+
+Let's give the application a problem we can recognize: a document URL that cannot resolve. We'll inspect the failure, correct the input, and finish the interview early.
+
+Then we'll ask a different question: does the agent follow the same requirement across repeated runs? A working request is useful evidence, but it does not establish reliable behavior.
+
+Continue in the same `interview-coach-lab` project from Chapter 12. Your five-agent workflow is complete. Keep `WorkshopHosting.cs`, the MCP discovery probe, and the session ID display unchanged.
+
+Use fictional inputs and your existing approved model configuration. Model calls incur charges. From the learner project's root, stop any previous run, build, and start the app:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOff
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs -- --provider MicrosoftFoundry --mode HandOff
+```
+
+</TabItem>
+</Tabs>
+
+## Find the failed document request
+
+In the Aspire dashboard, open `webui` and select **New chat**. Keep the dashboard open for the `mcp-markitdown` and `mcp-interview-data` logs. The page displays **Session ID** above the conversation. Send:
+
+```text
+Start an interview for this fictional job: "Backend developer."
+Read my resume with MarkItDown:
+https://example.invalid/workshop-resume.pdf
+```
+
+Copy the **Session ID** shown above the conversation. Keep this ID while you correct the input in the same chat. Check the `mcp-markitdown` logs for the failed fetch. With this deliberately invalid address, the expected failure is the document fetch. The coach should report that it could not read the resume and ask for usable input. Select **New chat** if repeating the whole exercise.
+
+Follow the first failed step when investigating:
+
+| Where it fails | What to inspect |
+| --- | --- |
+| Parser startup | MarkItDown's container status and console logs |
+| MCP connection or discovery | The service reference, named client, and `/mcp` endpoint |
+| Document fetch | The URL passed to the parser and its error result |
+| Saving extracted text | InterviewData's update arguments and repository logs |
+
+## Correct the input and try again
+
+Continue in the same conversation:
+
+```text
+Use this working fictional resume URL instead:
+https://codemillmatt.github.io/interview-coach-agent-framework/samples/resume-peter-parker.pdf
+Return to document intake and use MarkItDown to read this replacement URL.
+Save the extracted text in ResumeText and use "Backend developer" as the
+JobDescriptionText. Check both saved fields before beginning behavioural practice.
+```
+
+Check the `mcp-markitdown` logs for the new request. In Cosmos Data Explorer, find the WebUI session ID under `interviewdb` / `interviewsessions` and check that `ResumeText` contains recognizable text from the sample.
+
+If the public sample is unavailable from your network, paste `"I build C# APIs and maintain integration tests"` as fictional resume text and ask the coach to save it. Pasted text can proceed directly to storage.
+
+## Finish during behavioural practice
+
+Once the behavioural interviewer has asked a question, send:
+
+```text
+I want to stop now. Summarize what we covered, save the summary, and
+complete this interview. Skip the remaining interview phases.
+```
+
+In DevUI's graph, locate the expected early-finish route: `behavioural_interviewer` to `triage`, then `triage` to `summariser`. The graph shows permitted routes, not a live trace of this conversation. Check the `mcp-interview-data` logs for the update and completion entries with the same ID. In Cosmos Data Explorer, confirm that `IsCompleted` is `true` and the saved summary reflects the short session.
+
+If the coach asks another question instead of finishing, compare the agents' instructions, their permitted destinations, and your latest request in the same conversation.
+
+## Turn an expectation into an evaluation
+
+An evaluation compares observed behavior with a requirement. A model can choose different words or actions across runs, even when the input is unchanged. We need criteria that allow useful variation without accepting the wrong outcome.
+
+Keep a small set of fictional cases:
+
+| Case | Expected behavior | Evidence |
+| --- | --- | --- |
+| Normal intake | Save supplied resume and job text before practice. | Both fields contain the input under the current session ID. |
+| Invalid document URL | Report the failed fetch and request usable input or permission to skip. | A parser error and no claim that missing text was extracted. |
+| Early finish | Save a summary and complete the current interview without another question. | Summary in `Transcript`, `IsCompleted: true`, and the next reply. |
+
+Use the early-finish case for this comparison. Keep the other rows as cases to repeat after future changes.
+
+:::caution[Repeated runs use the model]
+This comparison uses four short, fresh conversations. Model calls incur charges. Keep the same approved deployment and use only the fictional inputs below.
+:::
+
+### Record the original behavior
+
+1. Start a new WebUI chat.
+2. Send the setup message below.
+3. Wait for the first behavioural question.
+4. Send the finish message below.
+5. Inspect the saved record and record the result.
+6. Repeat once in another new chat.
+
+Setup message:
+
+```text
+My fictional resume says I maintain C# APIs. The job is backend developer.
+Save those inputs and ask one behavioural question.
+```
+
+Finish message:
+
+```text
+Finish this interview now. Save a short summary and mark the record complete.
+Do not ask another question.
+```
+
+Use the same messages in each run. If setup fails, record that failure rather than treating it as an early-finish result.
+
+| Instructions | Run | Session ID | Summary saved? | Complete? | Another question? | Errors or observed route |
+| --- | --- | --- | --- | --- | --- | --- |
+| Original | 1 | Record the ID | | | | |
+| Original | 2 | Record the ID | | | | |
+| Changed | 1 | Record the ID | | | | |
+| Changed | 2 | Record the ID | | | | |
+
+Record a route only if execution telemetry identifies the agents that actually ran. If that evidence is unavailable, write "route not observed." A permitted edge or database write alone does not prove the route.
+
+### Change one routing rule
+
+Stop the app. In `src/InterviewCoach.Agent/AgentDelegateFactory.cs`, find the triage instructions inside `CreateHandOffWorkflow`.
+
+Remove only this early-finish rule, including its continuation line:
+
+<CodeSample stage="07-handoffs" path="src/InterviewCoach.Agent/AgentDelegateFactory.cs" start="                - If the user wants to stop or finish" end="                - If the latest message supplies" lang="text" />
+
+Keep every other instruction and handoff edge unchanged. Build and start the app with the commands at the beginning of this chapter. Repeat the two fresh-chat runs and fill the changed-instructions rows.
+
+Did any outcome change? A weaker prompt may still pass because other instructions and the user's message support the intended behavior. Record that result honestly. Four runs cannot establish a reliable failure rate or prove that the rule is unnecessary.
+
+Before continuing, restore the rule in its original position above the replacement-document rule. Build again. Keep the original instructions as the workshop baseline.
+
+## Choose evidence for the question
+
+Code tests check deterministic contracts, such as appending only incoming transcript text. Agent evaluations check behavior across inputs and repeated runs. Traces help explain how a particular result occurred.
+
+Keep useful cases when you change instructions, tool schemas, or model deployments. Change one factor at a time and compare against the same criteria. For larger datasets, see [agent evaluation with Foundry](https://learn.microsoft.com/agent-framework/agents/evaluation).
+
+Our agents still run in the local application. Using Foundry evaluation tooling is a separate integration, not a move of their execution into Foundry.
+
+<Hint title="Keep the investigation in the current conversation">
+
+A saved interview record can be fetched by ID. The WebUI's visible chat and agent conversation have separate lifecycles. Refreshing the WebUI starts a new session. For this exercise, correct the failed input in the conversation that produced it.
+
+Use the completed checkpoint in a separate folder if you need to compare source:
+
+<Checkpoint stage="08-complete" />
+
+</Hint>
+
+Stop the local run when finished:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+<p>Stopping Aspire leaves cloud resources in place. Keep the shared model while either workshop project still needs it. Follow the <a href={siteLink('resources/deployment/#remove-only-the-resources-you-own')}>cleanup guide</a> when both projects are finished.</p>
+
+<LessonProgress lessonId="13-debugging" />

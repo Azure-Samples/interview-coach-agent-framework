@@ -26,11 +26,9 @@
         You are a professional interview coach who helps the user prepare for both behavioral and technical questions.
         """;
 
-    private int statefulMessageCount;
     private readonly ChatOptions chatOptions = new();
     private readonly List<ChatMessage> messages = new();
     private string sessionId = Guid.Empty.ToString();
-    private string? lastSessionId;
     private ChatMessage? systemPromptMessage;
     private ChatMessage? sessionIdMessage;
     private CancellationTokenSource? currentResponseCancellation;
@@ -39,7 +37,6 @@
 
     protected override void OnInitialized()
     {
-        statefulMessageCount = 0;
         AddSessionSystemMessages();
         chatOptions.Tools = [];
         chatOptions.ConversationId = sessionId;
@@ -48,12 +45,6 @@
     private async Task AddUserMessageAsync(ChatMessage userMessage)
     {
         CancelAnyCurrentResponse();
-
-        if (string.Equals(lastSessionId, sessionId, StringComparison.Ordinal) == false)
-        {
-            statefulMessageCount = 0;
-            lastSessionId = sessionId;
-        }
 
         // If a file is attached, upload it and append the URL to the message
         var file = chatInput?.AttachedFile;
@@ -83,16 +74,20 @@
         await chatInput!.FocusAsync();
 
         var responseText = new TextContent("");
-        currentResponseMessage = new ChatMessage(ChatRole.Assistant, [responseText]);
-        currentResponseCancellation = new();
+        var responseMessage = new ChatMessage(ChatRole.Assistant, [responseText]);
+        currentResponseMessage = responseMessage;
+        using var responseCancellation = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+        currentResponseCancellation = responseCancellation;
 
-        var outboundMessages = BuildOutboundMessages();
-        await GetStreamingResponseAsync(outboundMessages, responseText, currentResponseMessage,
-currentResponseCancellation.Token);
+        var outboundMessages = messages.ToArray();
+        await GetStreamingResponseAsync(outboundMessages, responseText, responseMessage, responseCancellation.Token);
 
-        messages.Add(currentResponseMessage!);
-        statefulMessageCount = chatOptions.ConversationId is not null ? messages.Count : 0;
-        currentResponseMessage = null;
+        if (ReferenceEquals(currentResponseMessage, responseMessage))
+        {
+            messages.Add(responseMessage);
+            currentResponseMessage = null;
+            currentResponseCancellation = null;
+        }
     }
 
     private async Task GetStreamingResponseAsync(IEnumerable<ChatMessage> outboundMessages, TextContent responseText,
@@ -104,7 +99,7 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
         {
             await foreach (var update in ChatClient.GetStreamingResponseAsync(outboundMessages, chatOptions, cancellationToken))
             {
-                await Task.Delay(50);
+                await Task.Delay(50, cancellationToken);
 
                 messages.AddMessages(update, filter: c => c is not TextContent);
 
@@ -116,11 +111,35 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
 
                 StateHasChanged();
             }
+            if (string.IsNullOrWhiteSpace(responseText.Text) && !cancellationToken.IsCancellationRequested)
+            {
+                Logger.LogWarning("The agent completed without visible text for conversation {ConversationId}", chatOptions.ConversationId);
+                responseText.Text = "The coach returned no reply. Check the agent logs and saved record before retrying; a tool may already have changed the record.";
+                ChatMessageItem.NotifyChanged(responseMessage);
+                StateHasChanged();
+            }
         }
         catch (System.Text.Json.JsonException ex)
         {
             Logger.LogError(ex, "JSON parsing error at position {Position}. The response from the agent endpoint is not valid JSON. This usually means the endpoint is returning plain text or HTML instead of the expected streaming format.", ex.BytePositionInLine);
             responseText.Text = "Error: The interview coach service returned an unexpected response format. Please check the agent service logs for details.";
+            ChatMessageItem.NotifyChanged(responseMessage);
+            StateHasChanged();
+        }
+        catch (OperationCanceledException ex)
+        {
+            if (ReferenceEquals(currentResponseMessage, responseMessage))
+            {
+                Logger.LogWarning(ex, "The interview coach request timed out for conversation {ConversationId}", chatOptions.ConversationId);
+                responseText.Text = "The coach took too long to respond. Your chat is still here. Check the agent logs before retrying; a tool may already have saved part of this turn.";
+                ChatMessageItem.NotifyChanged(responseMessage);
+                StateHasChanged();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "The interview coach request failed for conversation {ConversationId}", chatOptions.ConversationId);
+            responseText.Text = "The coach service could not complete the request. Your chat is still here. Check the agent logs and saved record before retrying.";
             ChatMessageItem.NotifyChanged(responseMessage);
             StateHasChanged();
         }
@@ -133,8 +152,9 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
             messages.Add(currentResponseMessage);
         }
 
-        currentResponseCancellation?.Cancel();
         currentResponseMessage = null;
+        currentResponseCancellation?.Cancel();
+        currentResponseCancellation = null;
     }
 
     private async Task ResetConversationAsync()
@@ -143,7 +163,6 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
         messages.Clear();
         AddSessionSystemMessages();
         chatOptions.ConversationId = sessionId;
-        statefulMessageCount = 0;
         await chatInput!.FocusAsync();
     }
 
@@ -158,22 +177,6 @@ ChatMessage responseMessage, CancellationToken cancellationToken)
         messages.Add(sessionIdMessage);
 
         Logger.LogInformation("Started new chat session with SessionId: {SessionId}", sessionId);
-    }
-
-    private IEnumerable<ChatMessage> BuildOutboundMessages()
-    {
-        var baseMessages = messages.Skip(statefulMessageCount);
-
-        if (systemPromptMessage is null || sessionIdMessage is null)
-        {
-            return baseMessages;
-        }
-
-        var outboundMessages = new[] { systemPromptMessage, sessionIdMessage }
-            .Concat(baseMessages.Where(m => ReferenceEquals(m, systemPromptMessage) == false &&
-                                            ReferenceEquals(m, sessionIdMessage) == false));
-
-        return outboundMessages;
     }
 
     public void Dispose()

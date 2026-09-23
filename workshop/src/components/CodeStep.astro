@@ -1,0 +1,53 @@
+---
+import SourceCode from './SourceCode.astro';
+import contract from '../../.generated/edit-contract.json';
+import { validateEditContract, flattenEdits } from '../data/edit-contract.mjs';
+
+interface Props { id: string }
+const { id } = Astro.props;
+validateEditContract(contract);
+const step = flattenEdits(contract).find(item => item.id === id);
+if (!step) throw new Error(`Unknown workshop code step "${id}". Check the generated edit contract.`);
+const removesBlock = step.operation === 'replace' && step.after === '';
+const removesCode = step.operation === 'delete' || removesBlock;
+const code = removesCode ? step.before : step.after;
+function language(file: string) {
+  if (file.endsWith('.cs')) return 'csharp';
+  if (file.endsWith('.json')) return 'json';
+  if (file.endsWith('.razor')) return 'html';
+  if (/\.(?:props|targets|csproj|slnx)$/.test(file)) return 'xml';
+  return 'text';
+}
+const instruction = step.operation === 'create'
+  ? 'Create this file with the following contents.'
+  : step.operation === 'delete'
+    ? 'Delete this file. The code below identifies the file you are removing.'
+    : removesBlock
+      ? 'Remove the following block from this file. Keep the rest of the file.'
+    : 'Replace the matching block with the code below. Open "Current code" to locate the block in your file.';
+---
+<section class="code-step" data-code-step={id} data-step-source={code}>
+  <h3 id={`edit-${id}`}>{step.title}</h3>
+  <div class="code-step-location">
+    <p>File to edit: <code>{step.file}</code></p>
+    <p>{step.location.kind === 'function'
+      ? <>Function to edit: <code>{step.location.name}</code></>
+      : <>Scope to edit: {step.location.kind === 'type'
+          ? <><code>{step.location.name}</code> type</>
+          : step.location.kind === 'imports' ? 'File-level imports'
+          : step.location.kind === 'top-level' ? 'Top-level statements (no enclosing function)'
+          : 'File-level contents (no enclosing function)'}</>}</p>
+    {step.ownership === 'supplied' && <p>Supplied setup to apply</p>}
+  </div>
+  <p>{instruction}</p>
+  {step.operation === 'replace' && !removesBlock && (
+    <details class="code-step-before">
+      <summary>Current code</summary>
+      <SourceCode code={step.before} lang={language(step.file)} title="Current code" />
+    </details>
+  )}
+  <div class="source-sample">
+    <div data-step-result><SourceCode code={code} lang={language(step.file)}
+      title={step.operation === 'delete' ? 'File to remove' : removesBlock ? 'Block to remove' : step.operation === 'create' ? 'New file' : 'Updated code'} /></div>
+  </div>
+</section>

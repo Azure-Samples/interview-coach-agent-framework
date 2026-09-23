@@ -1,0 +1,22 @@
+---
+title: Hosting and extensions
+description: Plan a focused change to your completed interview coach.
+---
+
+Run the [summary-agent lesson's interview](../../workshop/12-handoffs/#save-the-final-feedback) and check its saved result before trying an extension. Keep a copy of the completed checkpoint for comparison.
+
+To start a different application, use [build your own agent](../your-own-agent/). It separates the model connection and agent from the supplied workshop infrastructure.
+
+## Consider a different place to run the agents
+
+Use [optional deployment](../deployment/) to host the existing .NET services in Container Apps. Moving agent execution into a managed agent service is a separate implementation project; [hosting architecture](../../reference/architecture/#changing-the-hosting-model) lists the decisions to make about runtime, identity, networking, and state.
+
+## Make record updates harder to misuse
+
+Try splitting document-field replacement from transcript append. Start with the [existing update behavior and extension checklist](../../reference/session-data/#changing-the-update-contract), including repeated-call behavior. Change the repository, MCP schema, instructions, and tests together.
+
+## Add a tool before adding another specialist
+
+A read-only competency catalog could give the technical interviewer more useful context. Give it a typed query and an authoritative data source, then inspect discovery and a real call.
+
+Add a specialist when its responsibility needs separate instructions or tool access and you can define a clear route to it. Review [service-boundary access controls](../../reference/deployment/#review-access-and-data-handling) for any tool that reads user records.

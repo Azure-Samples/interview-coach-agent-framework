@@ -1,0 +1,21 @@
+---
+import { chapters, curriculumVersion, siteLink } from '../data/course';
+import { continueLink } from '../scripts/progress-state.mjs';
+interface Props { startAt?: 'overview' | 'chapter' }
+const onOverview = Astro.url.pathname.replace(/\/$/, '') === siteLink('workshop');
+const { startAt = onOverview ? 'chapter' : 'overview' } = Astro.props;
+const start = continueLink([], chapters, import.meta.env.BASE_URL, startAt);
+---
+<div class="course-start" data-progress-root data-base={import.meta.env.BASE_URL} data-version={curriculumVersion}>
+  <a
+    class="primary-link"
+    href={start.href}
+    data-continue
+    data-start-at={startAt}
+  >{start.label}</a>
+  <p class="course-progress" data-progress-summary aria-live="polite"></p>
+</div>
+<script>
+  import { connectProgress } from '../scripts/progress';
+  connectProgress();
+</script>

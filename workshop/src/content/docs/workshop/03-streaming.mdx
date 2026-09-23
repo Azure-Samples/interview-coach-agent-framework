@@ -1,0 +1,145 @@
+---
+title: Put the coach in the chat UI
+description: Register AG-UI, expose the hosted coach, and activate the supplied Blazor conversation.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import CodeSample from '../../../components/CodeSample.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+Our coach can answer through DevUI. Now we'll put the conversation in the supplied Blazor chat page and watch its reply arrive.
+
+[AG-UI (Agent-User Interaction)](https://docs.ag-ui.com/introduction) is an open protocol that connects agents to user-facing applications. It defines how a client sends messages to an agent and receives events, including response text and tool activity.
+
+Why use a protocol here? An agent can produce a reply gradually and call tools while it works. The UI needs to interpret those updates. AG-UI gives the client and agent service a shared event format, so we don't have to design our own.
+
+In this application, the WebUI server is the AG-UI client. It sends the conversation to the agent service and reads the response stream. Blazor then updates the browser as text arrives, instead of waiting for the whole reply.
+
+The supplied client already understands AG-UI. We'll enable the matching server support and expose our existing coach at `/ag-ui`. The agent's instructions and model connection stay unchanged.
+
+<ConceptDiagram kind="ag-ui" />
+
+Continue in the same `interview-coach-lab` folder from the previous chapter. From its root, stop the AppHost before editing:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Complete all five edits before building. We'll keep the coach, model connection, and DevUI endpoints from the previous chapter.
+
+## Expose the coach over AG-UI
+
+Open `src/InterviewCoach.Agent/Program.cs` and update the imports:
+
+<CodeStep id="streaming-program-imports" />
+
+The ASP.NET Core AG-UI namespace supplies the two extension methods we'll use. Register the transport before `builder.Build()`:
+
+<CodeStep id="streaming-server-services" />
+
+`AddAGUIServer()` adds the transport services. Next, map the hosted coach to a route after the app is built:
+
+<CodeStep id="streaming-agent-endpoint" />
+
+`MapAGUIServer(agentBuilder, "ag-ui")` attaches our existing `coach` registration to `/ag-ui`. The supplied WebUI client already calls that route.
+
+## Make chat the home page
+
+Remove `src/InterviewCoach.WebUI/Components/Pages/Home.razor` to free the `/` route:
+
+<CodeStep id="streaming-remove-home" />
+
+In `src/InterviewCoach.WebUI/Components/Pages/Chat/Chat.razor`, change the chat route to `/`:
+
+<CodeStep id="streaming-chat-route" />
+
+Keep the rest of the component unchanged. It already reads streamed response updates and displays them in the conversation.
+
+## Try the chat
+
+From the same working root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Open the `webui` endpoint from the dashboard. You should now see the chat page. The coach remembers messages while you stay in this conversation, but it does not save an interview record yet. We'll add that later.
+
+Send:
+
+```text
+Ask me a behavioural interview question about working with a team to design a web API.
+```
+
+Answer the question. Then ask `Which part of my answer should I explain more clearly?` Look for a reply that refers to your answer from the same conversation. Text appears as updates arrive. A short response can arrive quickly enough to look almost immediate.
+
+Click **New chat** and check that the visible conversation clears. We can now use this interface for the remaining lessons, starting with a C# tool.
+
+## Decide who owns the conversation
+
+A model needs context to refer to your earlier answer. In this application, `Chat.razor` holds the messages in a server-side Blazor component. The WebUI sends the full conversation with every AG-UI request.
+
+The session ID labels that conversation. It does not contain the messages or reload them after a refresh.
+
+| Kind of state | Owner in this workshop | What it preserves |
+| --- | --- | --- |
+| Visible chat and current messages | The WebUI's Blazor circuit | Context while this chat remains active. |
+| Agent conversation state | Supplied messages through this AG-UI client | Context available to the current request. |
+| Interview record, added later | InterviewData and Cosmos | Saved inputs, transcript, and completion status. |
+
+For an agent you call directly, Agent Framework also offers `AgentSession`. You create a session and pass it to successive runs. The agent implementation determines how conversation state is stored. Persisting that state across process restarts needs an explicit storage strategy.
+
+Use that abstraction when the agent should manage conversation continuity. Keep business records separate when other services need structured data. See the [framework conversation guide](https://learn.microsoft.com/agent-framework/agents/conversations/) for the alternatives.
+
+If the page reports an unexpected response format, inspect the agent's status and logs. Check that both AG-UI registration and mapping are present and that the route is `ag-ui`.
+
+<Hint title="Follow the AG-UI request">
+The WebUI's `AGUIChatClient` runs on the server and uses Aspire service discovery to find `agent`. Its supplied registration is in `src/InterviewCoach.WebUI/Program.cs`:
+
+<CodeSample stage="03-streaming" path="src/InterviewCoach.WebUI/Program.cs" start="builder.Services.AddChatClient" end="var app = builder.Build();" />
+
+The model credentials stay in the agent service. Look for `Getting streaming response for conversation` in the WebUI logs. Then find the matching agent request. Browser network tools show the browser-to-WebUI connection. The `/ag-ui` call happens between servers.
+</Hint>
+
+<Hint title="How the chat keeps its conversation">
+The supplied `Chat.razor` holds messages and a session ID in its server-side Blazor component. `AddSessionSystemMessages` creates a GUID, adds a `SessionId: ...` system message, and assigns the ID to `ChatOptions.ConversationId`.
+
+The AG-UI chat client is stateless, so the WebUI sends the current conversation's full message history with each request. `GetStreamingResponseAsync` reads updates and asks Blazor to refresh the displayed response. **New chat** clears the messages and creates a new ID. A full browser reload also creates a new component and ID. Saved interview records arrive in later lessons.
+</Hint>
+
+Use this checkpoint if you'd like to compare your connected chat with the working version:
+
+<Checkpoint stage="03-streaming" />
+
+<LessonProgress lessonId="03-streaming" />

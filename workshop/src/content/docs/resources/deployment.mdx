@@ -1,0 +1,75 @@
+---
+title: Optional deployment and cleanup
+description: Prepare the completed workshop application for optional deployment and clean up owned resources.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import { siteLink } from '../../../data/course';
+import labs from '../../../../labs/manifest.json';
+
+Deployment is optional after the workshop. Azure Container Apps hosts the existing .NET services; the agents continue to execute in `InterviewCoach.Agent`.
+
+**Use an approved, access-restricted development environment with fictional data.** Review [development endpoints, record access, and upload retention](../../reference/deployment/#review-access-and-data-handling) before exposing the app.
+
+## Check the deployment entry point
+
+The root `apphost.cs` already runs the complete interview. Follow this setup only if you choose to deploy your learner project.
+
+`azure.yaml` targets the separate project at `src/InterviewCoach.AppHost/InterviewCoach.AppHost.csproj`. That AppHost stays in its starter state during the core lessons. The deployment patch adds its service connections and selects handoff mode. It changes only `src/InterviewCoach.AppHost/AppHost.cs` and `src/InterviewCoach.AppHost/appsettings.json`. It keeps your agents and `WorkshopHosting.cs` unchanged.
+
+<p><a href={siteLink(`downloads/${labs.deploymentPatch}`)} download>Download the deployment AppHost patch</a> into your working project's root. From that folder, run the check below. Run the second command only when the check succeeds.</p>
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+git apply --check ./deployment-apphost.patch
+git apply ./deployment-apphost.patch
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+git apply --check ./deployment-apphost.patch
+git apply ./deployment-apphost.patch
+```
+
+</TabItem>
+</Tabs>
+
+If the check fails, keep your changes and compare the named file with the `08-complete` checkpoint. The standalone example already has the complete deployment AppHost and does not need this patch.
+
+Configure the project-based AppHost's `appsettings.json` for deployment. See [entry-point details](../../reference/deployment/#check-the-deployment-entry-point).
+
+The learner checkpoint keeps Foundry reuse enabled. Supply the same four `MicrosoftFoundry:Existing` identifiers to the deployment entry point's configuration; its configuration is separate from the root file-based AppHost. Review the existing model's access for the deployed identity. See [existing Foundry resources](../../reference/providers/microsoft-foundry/#reuse-an-existing-account-and-deployment).
+
+## Provision an approved development environment
+
+Follow the [deployment commands and account checks](../../reference/deployment/#provision-an-approved-development-environment). Confirm the selected subscription, region, model access, capacity, and cleanup owner before `azd up`.
+
+## Check the deployed application
+
+Repeat the [summary-agent lesson's short interview](../../workshop/12-handoffs/#save-the-final-feedback) and inspect its tool calls and saved summary. The [deployment checklist](../../reference/deployment/#check-the-deployed-application) covers service connectivity, identity, and failure diagnosis.
+
+## Remove only the resources you own
+
+For a running local AppHost, run this from the folder that started it:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+**Cloud resources remain until cleanup.** The example and learner share the Chapter 0 Foundry account and deployment. Keep them until both projects are finished. Review any separate `azd` environment too; never assume its cleanup command owns the shared model. Follow the [cleanup reference](../../reference/deployment/#remove-only-the-resources-you-own) to review each scope and remove only owned resources.

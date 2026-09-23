@@ -1,0 +1,117 @@
+---
+title: Give the coach a C# tool
+description: Register a practice-guidance function and watch the coach use its result.
+---
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import CodeStep from '../../../components/CodeStep.astro';
+import Checkpoint from '../../../components/Checkpoint.astro';
+import ConceptDiagram from '../../../components/ConceptDiagram.astro';
+import Hint from '../../../components/Hint.astro';
+import KnowledgeCheck from '../../../components/KnowledgeCheck.astro';
+import LessonProgress from '../../../components/LessonProgress.astro';
+
+Our coach can generate advice, but sometimes we want an answer grounded in a rule our application owns. We'll give it a C# function that returns established preparation guidance.
+
+The function is small on purpose. Its result is easy to recognize, so we can follow the whole request without a database or another service.
+
+Continue in the same `interview-coach-lab` project from the previous chapter. All the changes will occur in `src/InterviewCoach.Agent/AgentDelegateFactory.cs`.
+
+## Let the model request application code
+
+Registering a tool gives the model a contract: a name, a description, and a schema for its arguments. The schema describes the inputs it can supply. The model receives that information, not the C# method body.
+
+When the model requests a tool, Agent Framework invokes the registered function with those arguments. The framework sends the result back to the model. The model can then answer or request another tool.
+
+<ConceptDiagram kind="tool-loop" />
+
+One user message can therefore cause several model calls. Instructions and tool descriptions help the model choose. The function still has to validate its input and report failures.
+
+<KnowledgeCheck
+  id="tool-execution"
+  question="The model returns get_practice_guidance with category technical. What executes the C# function?"
+  options={[
+    { text: "The model executes the method inside Foundry.", explanation: "The model returns a requested tool name and arguments. The registered method remains in our application." },
+    { text: "Agent Framework invokes the registered function in our agent service.", correct: true, explanation: "The runtime invokes the function and returns its output to the model. You can put a C# breakpoint inside that function." },
+    { text: "The Blazor page interprets the tool name.", explanation: "The page displays responses. This function is registered and executed in the agent service." }
+  ]}
+/>
+
+## Write and register the function
+
+Inside `CreateSingleAgent`, add this local function before `CreateProviderAgent`. Its two return values give us an easy result to recognize.
+
+<CodeStep id="tools-practice-function" />
+
+The parameter description tells the model which categories to choose. The switch accepts `behavioural` and `technical`, ignores case, and rejects other values. Describing allowed inputs helps the model. Checking them in code enforces the function's contract.
+
+<CodeStep id="tools-function-registration" />
+
+`AIFunctionFactory.Create` wraps the delegate as a callable tool. Its name and description help the model select it. The function runs inside the agent process.
+
+<CodeStep id="tools-agent-instructions" />
+
+The final edit passes the tool list to the agent and adds a reason to call it: a request for preparation tips.
+
+## Ask for technical preparation tips
+
+From your working project root:
+
+<Tabs syncKey="shell">
+<TabItem label="Bash">
+
+```bash
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+<TabItem label="PowerShell">
+
+```powershell
+aspire stop --apphost ./apphost.cs
+dotnet build InterviewCoach.slnx
+aspire start --apphost ./apphost.cs
+```
+
+</TabItem>
+</Tabs>
+
+Open `coach` in DevUI and send:
+
+```text
+Call get_practice_guidance with category technical, then explain how I
+could use that guidance while answering an API-design interview question.
+```
+
+In the run details, open the tool call. Check that `category` is `technical`. The function result should be:
+
+```text
+Clarify assumptions, explain your approach, and discuss tradeoffs.
+```
+
+Compare that result with the final reply. The coach can expand the sentence into advice about an API-design answer. The exact reply can vary even though this function returns fixed text.
+
+Now start a new DevUI conversation and ask:
+
+```text
+How should I prepare to explain my approach to an API-design interview question?
+```
+
+This request does not name the function. Predict whether the coach will use it, then inspect the run. If it answers without a tool, compare the request with the tool description and coaching instructions.
+
+The explicit request checked that the tool works. The natural request explores whether the model chooses it. Both are useful checks, but they answer different questions.
+
+<Hint title="Try an unsupported category">
+
+Ask for `get_practice_guidance` with category `baseball`. Inspect the arguments the model sends: it may ask for clarification or choose a supported category. If `baseball` reaches the function, the switch throws `ArgumentException` with `Choose behavioural or technical.`
+
+For a closer look, put a debugger breakpoint inside `GetPracticeGuidance` and inspect `category`. You can leave the source unchanged throughout this experiment.
+
+</Hint>
+
+Keep the function as written. We'll replace it with interview-record tools after exposing their MCP server.
+
+<Checkpoint stage="04-tools" />
+
+<LessonProgress lessonId="04-tools" />

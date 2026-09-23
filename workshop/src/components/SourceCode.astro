@@ -1,0 +1,22 @@
+---
+import { Code } from '@astrojs/starlight/components';
+
+interface Props { code: string; lang: string; title?: string }
+const { code, lang, title } = Astro.props;
+---
+<workshop-source-code data-copy-source={JSON.stringify(code).replace(/</g, '\\u003c')}>
+  <Code code={code} lang={lang} title={title} />
+  <p class="copy-status" data-copy-status role="status" aria-live="polite" aria-atomic="true"></p>
+  <textarea class="copy-fallback" data-copy-fallback aria-label="Code to copy" readonly hidden></textarea>
+</workshop-source-code>
+<script>
+  import { connectSourceCopy } from '../scripts/source-copy';
+
+  if (!customElements.get('workshop-source-code')) {
+    customElements.define('workshop-source-code', class extends HTMLElement {
+      connectedCallback() {
+        connectSourceCopy(this);
+      }
+    });
+  }
+</script>
