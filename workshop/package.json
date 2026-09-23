@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@astrojs/mdx": "8.0.1",
-    "@astrojs/starlight": "0.42.0",
+    "@astrojs/starlight": "0.42.1",
     "astro": "7.3.2"
   },
   "devDependencies": {
