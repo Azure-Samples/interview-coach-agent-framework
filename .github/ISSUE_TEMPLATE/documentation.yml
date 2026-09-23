@@ -1,0 +1,50 @@
+name: Documentation issue or request
+description: Report incorrect or missing documentation, or request clearer guidance.
+title: "[Docs]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues before submitting. Use this form for reference documentation and workshop lessons.
+        Use fictional examples and redact credentials, account details, and transcript contents. Do not post real interview records.
+  - type: input
+    id: location
+    attributes:
+      label: Documentation location
+      description: Provide the page URL, file path, or workshop lesson and checkpoint. For missing documentation, describe where it belongs.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Documentation problem or gap
+      description: Describe what is incorrect, unclear, or missing.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-content
+    attributes:
+      label: Expected or requested content
+      description: Describe the correction or guidance you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: If an instruction fails, include the command, input, and actual result.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and versions
+      description: If relevant, include the operating system, SDK and tool versions, and affected release or commit.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste redacted errors or logs without Markdown code fences.
+      render: text
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context

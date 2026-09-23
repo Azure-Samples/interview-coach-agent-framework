@@ -1,0 +1,38 @@
+name: Feature request
+description: Propose a new capability or an improvement to an existing feature.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues before submitting. Discuss substantial changes here before implementing them so the sample and workshop remain consistent.
+        Use fictional examples. Do not include credentials, account details, or real interview records.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or user task
+      description: Describe what you are trying to accomplish and what currently prevents it.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: Describe the desired behavior and the existing behavior or contract that would change.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe other approaches or workarounds you have considered.
+  - type: textarea
+    id: success-criteria
+    attributes:
+      label: How to verify success
+      description: For an agent or tool addition, include its allowed operations, failure behavior, and how you would observe success.
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Include relevant checkpoints, versions, examples, or links.

@@ -1,0 +1,73 @@
+name: Regression
+description: Report behavior that worked previously but stopped working in a newer version.
+title: "[Regression]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues before submitting. Include working and failing versions so we can narrow down the change.
+        Use fictional examples and redact credentials, account details, and transcript contents from logs. Do not post real interview records.
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: What stopped working?
+      description: Describe the actual behavior in the failing version.
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Minimal steps to reproduce
+      description: Include the command, input, and any setup needed to reproduce the regression.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: Describe how this behaved in the working version.
+    validations:
+      required: true
+  - type: input
+    id: last-working-version
+    attributes:
+      label: Last known working version
+      description: Provide the release, commit, or workshop checkpoint where you last observed this working.
+    validations:
+      required: true
+  - type: input
+    id: first-failing-version
+    attributes:
+      label: First known failing version
+      description: Provide the earliest release, commit, or workshop checkpoint where you observed the failure.
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system and version
+      placeholder: Windows 11, Ubuntu 24.04, or macOS 15
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: SDK, runtime, and tool versions
+      description: Include relevant versions and any environment or configuration changes between the working and failing cases.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste redacted errors or logs without Markdown code fences.
+      render: text
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Include workarounds or suspected changes. For model behavior, include the provider, model, tool call, and relevant redacted stored state.

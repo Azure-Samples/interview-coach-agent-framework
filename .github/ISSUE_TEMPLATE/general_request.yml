@@ -1,0 +1,33 @@
+name: General request
+description: Ask a question or make a request that does not fit the other forms.
+title: "[Request]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues before submitting. Use the bug, feature, documentation, or regression form when one fits your request.
+        Use fictional examples and redact credentials, account details, and transcript contents. Do not post real interview records.
+  - type: textarea
+    id: request
+    attributes:
+      label: Request or question
+      description: Explain what you need help with and why.
+    validations:
+      required: true
+  - type: textarea
+    id: desired-outcome
+    attributes:
+      label: Desired outcome
+      description: Describe the answer, guidance, or change you are looking for.
+    validations:
+      required: true
+  - type: textarea
+    id: attempted-solutions
+    attributes:
+      label: What have you tried?
+      description: Include any approaches you have tried or documentation you have consulted.
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Include relevant checkpoints, versions, environment details, links, or redacted logs.

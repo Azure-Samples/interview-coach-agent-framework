@@ -1,0 +1,58 @@
+name: Bug report
+description: Report something that is not working as expected.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues before submitting. If this worked in an earlier version, use the regression form instead.
+        Use fictional examples and redact credentials, account details, and transcript contents from logs. Do not post real interview records.
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: What happened?
+      description: Describe the problem and the actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Minimal steps to reproduce
+      description: Include the command, input, and any setup needed to reproduce the problem.
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system and version
+      placeholder: Windows 11, Ubuntu 24.04, or macOS 15
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: Include the affected checkpoint, release, or commit and relevant SDK, runtime, and tool versions.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Paste redacted errors or logs without Markdown code fences.
+      render: text
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: For model behavior, include the provider, model, tool call, and relevant redacted stored state.
