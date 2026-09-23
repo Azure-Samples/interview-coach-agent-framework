@@ -9,3 +9,40 @@ updates:
       interval: "weekly"
     cooldown:
       default-days: 7
+
+  # NuGet packages are centrally managed in Directory.Packages.props and use
+  # floating versions (for example "13.*" and "1.*-*"), so minor, patch and
+  # prerelease updates are already resolved at restore time and are ignored
+  # here. Dependabot only proposes major version bumps, which require the
+  # floating range itself to change. Dependabot rewrites a floating range to a
+  # resolved version when it opens a pull request, so review those pull
+  # requests and restore the floating notation (for example "14.*" or "2.*-*").
+  - package-ecosystem: "nuget"
+    directories:
+      - "/"
+      - "/src/**"
+      - "/tests/**"
+    groups:
+      nuget:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+
+  # Workshop site dependencies and devDependencies in workshop/package.json.
+  # Dependabot keeps workshop/package-lock.json in sync with the manifest.
+  - package-ecosystem: "npm"
+    directory: "/workshop"
+    groups:
+      npm:
+        patterns: ["*"]
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
