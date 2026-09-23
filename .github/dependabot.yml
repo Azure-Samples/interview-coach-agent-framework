@@ -17,6 +17,8 @@ updates:
   # floating range itself to change. Dependabot rewrites a floating range to a
   # resolved version when it opens a pull request, so review those pull
   # requests and restore the floating notation (for example "14.*" or "2.*-*").
+  # The project directories are listed explicitly because Dependabot does not
+  # discover projects through the .slnx solution file.
   - package-ecosystem: "nuget"
     directories:
       - "/"
