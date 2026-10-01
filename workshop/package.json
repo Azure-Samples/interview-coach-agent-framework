@@ -15,12 +15,12 @@
     "check:labs": "node scripts/validate-checkpoints.mjs"
   },
   "dependencies": {
-    "@astrojs/mdx": "8.0.1",
-    "@astrojs/starlight": "0.42.1",
-    "astro": "7.3.2"
+    "@astrojs/mdx": "8.0.2",
+    "@astrojs/starlight": "0.42.3",
+    "astro": "7.3.4"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
-    "typescript": "6.0.3"
+    "typescript": "7.0.2"
   }
 }
