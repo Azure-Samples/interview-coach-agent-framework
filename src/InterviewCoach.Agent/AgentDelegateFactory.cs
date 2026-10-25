@@ -27,6 +27,17 @@ public enum LlmProvider
 
 public static class AgentDelegateFactory
 {
+    internal const string ResponseLanguageInstructions = """
+        Response language:
+        - Follow the user's explicit response-language request when one is provided.
+        - Otherwise, respond in the primary language of the user's own conversational messages.
+        - Do not infer the user's preferred language from documents, URLs, quotations, or tool results.
+        - For short or language-ambiguous messages, retain the response language established in the conversation.
+        - Preserve the user's language preference across handoffs to other interview specialists.
+        - Product names, code, and necessary source quotations may remain in their original language.
+        - Apply these rules to user-facing responses, not tool names, structured arguments, or stored source documents.
+        """;
+
     public static IHostedAgentBuilder AddAIAgent(this IHostApplicationBuilder builder, string name)
     {
         var provider = Enum.TryParse<LlmProvider>(builder.Configuration[Constants.LlmProvider], ignoreCase: true, out var parsedProvider)
@@ -70,6 +81,8 @@ public static class AgentDelegateFactory
         string instructions,
         IList<AITool>? tools = null)
     {
+        instructions = WithResponseLanguageInstructions(instructions);
+
         var config = services.GetRequiredService<IConfiguration>();
         var provider = Enum.TryParse<LlmProvider>(config[Constants.LlmProvider], ignoreCase: true, out var parsedProvider)
             ? parsedProvider
@@ -119,6 +132,9 @@ public static class AgentDelegateFactory
                     .RunStreamingAsync(messages, session, cancellationToken: cancellationToken))
             .Build();
     }
+
+    internal static string WithResponseLanguageInstructions(string instructions)
+        => $"{instructions}{Environment.NewLine}{Environment.NewLine}{ResponseLanguageInstructions}";
 
     internal static AIAgent CreateCopilotRunAgent(
         CopilotClient client,

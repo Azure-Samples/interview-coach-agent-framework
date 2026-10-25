@@ -49,6 +49,17 @@ Aspire supplies provider/mode environment variables and the `chat` connection st
 
 `AZURE_TENANT_ID` can set the credential tenant. The development path excludes the managed-identity probe and uses available developer credentials. Check the deployed identity's access separately against the actual provisioned resources. The [Foundry authentication reference](providers/MICROSOFT-FOUNDRY.md#authenticate) describes this path.
 
+## Response language
+
+Both providers and both agent modes share server-side response-language instructions.
+An explicit language request takes priority; otherwise, agents use the primary language
+of the user's own messages. Documents, URLs, quotations, and tool results do not determine
+the response language. Short or ambiguous replies retain the established conversation
+language, including across specialist handoffs. Product names, code, and necessary
+source quotations can remain in their original language. These instructions do not
+translate tool names, structured arguments, or stored source documents, and require no
+additional configuration.
+
 ## Service references
 
 The UI references `agent`. The agent references `mcp-markitdown` and `mcp-interview-data`. InterviewData references the Cosmos database. Prefer these resource references over hard-coded local ports.

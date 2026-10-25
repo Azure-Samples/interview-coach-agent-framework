@@ -10,6 +10,46 @@ namespace InterviewCoach.Agent.Tests;
 
 public class CopilotAgentConfigurationTests
 {
+    [Theory]
+    [InlineData("coach")]
+    [InlineData("triage")]
+    [InlineData("receptionist")]
+    [InlineData("behavioural_interviewer")]
+    [InlineData("technical_interviewer")]
+    [InlineData("summariser")]
+    public void WithResponseLanguageInstructions_PreservesRoleAndAddsSharedPolicy(string role)
+    {
+        var roleInstructions = $"You are the {role}.";
+
+        var instructions = AgentDelegateFactory.WithResponseLanguageInstructions(roleInstructions);
+
+        Assert.StartsWith(roleInstructions, instructions);
+        Assert.EndsWith(AgentDelegateFactory.ResponseLanguageInstructions, instructions);
+        Assert.Contains("explicit response-language request", instructions);
+        Assert.Contains("user's own conversational messages", instructions);
+        Assert.Contains("documents, URLs, quotations, or tool results", instructions);
+        Assert.Contains("short or language-ambiguous", instructions, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("across handoffs", instructions);
+        Assert.Contains("not tool names, structured arguments, or stored source documents", instructions);
+    }
+
+    [Fact]
+    public void CreateCopilotSessionConfig_PreservesSharedPolicyAndRuntimeHandoffInstructions()
+    {
+        var instructions = AgentDelegateFactory.WithResponseLanguageInstructions("You are the triage agent.");
+        var options = new ChatClientAgentRunOptions(new ChatOptions
+        {
+            Instructions = "Call a handoff tool to transfer control.",
+        });
+
+        var config = AgentDelegateFactory.CreateCopilotSessionConfig(
+            null, AgentDelegateFactory.MergeCopilotInstructions(instructions, options), null);
+
+        Assert.Contains("You are the triage agent.", config.SystemMessage!.Content);
+        Assert.Contains(AgentDelegateFactory.ResponseLanguageInstructions, config.SystemMessage.Content);
+        Assert.Contains("Call a handoff tool to transfer control.", config.SystemMessage.Content);
+    }
+
     [Fact]
     public async Task CreateCopilotRunAgent_PreservesIdentityAcrossInvocations()
     {

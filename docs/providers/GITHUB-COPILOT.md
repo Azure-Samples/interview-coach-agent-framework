@@ -114,13 +114,7 @@ aspire start --apphost ./src/InterviewCoach.AppHost -- --provider GitHubCopilot 
 
 `Program.cs` selects `CopilotClientMode.Empty`. The adapter supplies interview instructions and assigned MCP tools; built-in shell, filesystem, and coding tools stay disabled. It also merges handoff instructions and transfer tools supplied at run time. Retain that adapter when comparing modes.
 
-For Copilot handoffs, the adapter keeps a stable agent ID across per-invocation wrappers
-and forwards the transfer call to Agent Framework without
-the SDK's placeholder completion or subsequent reply. Agent Framework must see an
-unresolved transfer request to run the next specialist. Otherwise, the coach can say it
-has transferred the conversation without running the receptionist or saving a session.
-This handling applies only to Copilot transfer tools; ordinary MCP results and the
-Foundry provider are unchanged.
+For Copilot handoffs, the adapter keeps a stable agent ID across per-invocation wrappers and forwards the transfer call to Agent Framework without the SDK's placeholder completion or subsequent reply. Agent Framework must see an unresolved transfer request to run the next specialist. Otherwise, the coach can say it has transferred the conversation without running the receptionist or saving a session. This handling applies only to Copilot transfer tools; ordinary MCP results and the Foundry provider are unchanged.
 
 ## Usage limits
 
