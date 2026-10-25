@@ -25,7 +25,7 @@ var cosmos = builder.AddAzureCosmosDB(ResourceConstants.Cosmos);
 #pragma warning disable ASPIRECOSMOSDB001
 if (builder.ExecutionContext.IsRunMode)
 {
-    cosmos.RunAsPreviewEmulator(emulator => emulator.WithDataExplorer());
+    cosmos.RunAsEmulator(emulator => emulator.WithDataExplorer());
 }
 #pragma warning restore ASPIRECOSMOSDB001
 

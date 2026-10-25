@@ -77,7 +77,7 @@ The selected provider remains your choice of Microsoft Foundry or GitHub Copilot
 
 ## Check the deployed application
 
-Inspect resource health and model access, then follow the service path: WebUI -> agent -> both MCP servers, and InterviewData -> Cosmos. The deployment graph provisions managed Cosmos resources; local run mode uses the preview emulator.
+Inspect resource health and model access, then follow the service path: WebUI -> agent -> both MCP servers, and InterviewData -> Cosmos. The deployment graph provisions managed Cosmos resources; local run mode uses the Linux-based (vNext) emulator.
 
 Run the [summary-agent lesson's short synthetic interview](https://codemillmatt.github.io/interview-coach-agent-framework/workshop/12-handoffs/#save-the-final-feedback). Check the tool invocations, handoffs, saved transcript, summary, and completion flag. Record the actual results and any failing operation. A deployment review also includes endpoint exposure, identity, document reachability, and retained data.
 
