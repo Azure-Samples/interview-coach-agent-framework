@@ -98,6 +98,8 @@ Profile `foundry-workshop-v2` also adds a session ID display to the source-deriv
 
 Profile `foundry-workshop-v3` retains those changes and replaces maintenance-history comments with present-tense design explanations. Intermediate-stage comments describe only the capabilities available at that stage. This comment projection must preserve executable statements and agent instructions. Tests compare the single-agent and workflow bodies with the tagged source after removing standalone comment lines.
 
+Profile `foundry-workshop-v4` also preserves the tagged source's response-language policy, helper, and factory call when removing the alternative provider. Recipes omit all three before `07-handoffs`. Chapter 12 teaches their addition as learner edits, then checks different conversational and document languages, ambiguous replies, explicit language requests, and handoffs. Any model-supported language can serve either role; English and Korean are examples, not special cases. Live observations are separate from the structural tests and do not establish universal model compliance.
+
 `labs/recipes.mjs` derives stages from that packaged reference; `labs/edits.mjs` defines their source-backed transition steps. The generated contract records each step's file, operation, before/after code, and learner or supplied ownership.
 
 Replay validation applies every documented edit in order and compares the resulting files with the target checkpoint. Require complete changed-file coverage, unique anchors, exact ordering, and explicit supplied steps. Keep those checks alongside checkpoint compilation.

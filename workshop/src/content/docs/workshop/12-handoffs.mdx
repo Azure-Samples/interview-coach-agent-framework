@@ -1,6 +1,6 @@
 ---
 title: Finish with a summary agent
-description: Add the summariser, complete the handoff graph, and save the final feedback.
+description: Add the summariser, preserve the user's response language across handoffs, and save the final feedback.
 ---
 import { Tabs, TabItem } from '@astrojs/starlight/components';
 import CodeStep from '../../../components/CodeStep.astro';
@@ -56,6 +56,30 @@ The graph permits transfers without forcing a fixed sequence. If the next operat
   ]}
 />
 
+## Keep the response language across handoffs
+
+The conversation and its documents can use different languages. A specialist may follow the language of a resume or job description instead of the user's messages. This can happen after a handoff, even when the previous specialist used the user's language.
+
+Before adding a policy, try the `07-interviewers` checkpoint from Chapter 11 in WebUI. Choose a conversational language and provide fictional resume and job description text in another language. English, Korean, Spanish, Japanese, or any other language supported by your model can be either the conversational or document language. Ask for behavioural practice, then technical practice, and note the response language. A language change is possible, not required; model responses vary.
+
+We'll add a shared policy at the agent factory so every specialist receives the same rules. An explicit response-language request takes priority. Otherwise, use the user's conversational language, retaining the established language for short or ambiguous replies. Documents and tool results provide interview context, not a language preference.
+
+Add the policy constant inside `AgentDelegateFactory`, before `AddAIAgent`:
+
+<CodeStep id="handoffs-language-policy" />
+
+Add a helper after `CreateProviderAgent` to append the policy to each agent's own instructions:
+
+<CodeStep id="handoffs-language-helper" />
+
+Call the helper at the start of `CreateProviderAgent`, before constructing the `ChatClientAgent`:
+
+<CodeStep id="handoffs-language-apply" />
+
+Both the single coach and the workflow specialists use this factory. Keeping the policy here avoids copying it into each role's prompt. The policy has no list of allowed languages; the model's language capabilities still determine which languages work well. Instructions guide responses, but they do not guarantee compliance.
+
+The policy applies to user-facing responses. Tool names, structured arguments, and stored source documents keep their original meaning and format.
+
 ## Save the final feedback
 
 From the working project root:
@@ -96,6 +120,21 @@ In DevUI's graph, locate the permitted transfer from `technical_interviewer` to 
 Find the same ID in Cosmos Data Explorer. `Transcript` should include feedback about your answers and the final summary. `IsCompleted` should be `true`. The summary update must preserve document fields and append only new text. Select **New chat** for another run.
 
 The saved record proves the data operations. It does not identify every agent that ran, because several roles share InterviewData tools. Use agent execution telemetry when you need that evidence. DevUI's static graph shows what is allowed, not what happened in this conversation.
+
+### Check the language policy
+
+Select **New chat** and repeat your mixed-language case using the updated project. Write your conversational messages in your chosen language and provide fictional documents in a different language. Repeat with the languages reversed or with another pair if you can assess both. Neither English nor Korean has a special role.
+
+Check these behaviours:
+
+| Interaction | Expected observation |
+| --- | --- |
+| Provide documents in a different language from your messages, then move from intake to interview practice. | Replies follow your conversational language across specialist handoffs. |
+| Reply with a number or a short, language-ambiguous acknowledgement such as `OK`. | The established response language is retained. |
+| Explicitly request a different response language, including one different from both the conversation and the documents. | Replies use the requested language, including after the next handoff. |
+| Inspect the saved resume/job description text in Cosmos Data Explorer and the tool calls in execution telemetry. | Source text is preserved; tool names and structured fields are not translated. User-facing feedback can use the chosen response language. |
+
+Record your language choices and what happened. If a response breaks the policy, keep the failing turn and inspect the active agent's instructions and conversation context. A successful run is evidence for that case, not proof that every model and language pair behaves the same way.
 
 <Hint title="All eleven permitted handoffs">
 

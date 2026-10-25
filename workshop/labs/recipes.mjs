@@ -46,6 +46,9 @@ export const anchors = {
   workflow: '    private static Workflow CreateHandOffWorkflow(IServiceProvider sp, string key)',
   adapter: '    private static IHostedAgentBuilder AddHandOffWorkflow(',
   provider: '    private static AIAgent CreateProviderAgent(',
+  languagePolicy: '    internal const string ResponseLanguageInstructions = """',
+  languageCall: '        instructions = WithResponseLanguageInstructions(instructions);\n\n',
+  languageHelper: '    internal static string WithResponseLanguageInstructions(',
   model: 'var llmProvider = ',
   agent: 'var agentBuilder = ',
   upload: '// --- File Upload Endpoints ---',
@@ -295,6 +298,9 @@ ${id === '07-first-handoff' ? initialHandoff(source) : id === '07-interviewers' 
 `}
 }
 `);
+    factory = replaceSection(factory, anchors.languagePolicy, '    public static IHostedAgentBuilder AddAIAgent(');
+    factory = replaceOnce(factory, anchors.languageCall, '');
+    factory = replaceSection(factory, anchors.languageHelper, anchors.handoff.replace('MODE 2:', 'MODE 1:'));
     if (before('07-first-handoff')) {
       factory = replaceSection(factory, anchors.adapter, anchors.provider,
         `${anchors.adapter}this IHostApplicationBuilder builder, string key, Func<IServiceProvider, string, Workflow> createWorkflowDelegate)

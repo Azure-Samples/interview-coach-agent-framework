@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { anchors, paths, replaceOnce, sessionIdDisplay, sourceSlice } from './recipes.mjs';
 
-export const referenceProfile = 'foundry-workshop-v3';
+export const referenceProfile = 'foundry-workshop-v4';
 const included = path => /^(src\/|tests\/|samples\/)/.test(path) ||
   /^(Directory\.Build\.(props|targets)|Directory\.Packages\.props|InterviewCoach\.slnx|LICENSE\.md|global\.json|apphost\.cs|apphost\.settings\.json|aspire\.config\.json|azure\.yaml)$/.test(path);
 
@@ -52,9 +52,15 @@ export function createWorkshopReference(reference, packageVersions) {
   const constructor = sourceSlice(factory, '            return new ChatClientAgent(', '        }\n\n        if (provider !=')
     .split('\n').map(line => line.startsWith('    ') ? line.slice(4) : line).join('\n');
   const singleHeader = '    // ============================================================================\n    // MODE 1:';
-  factory = replaceOnce(factory, sourceSlice(factory, anchors.provider, singleHeader),
-    `${providerSignature}${constructor}    }\n\n`);
-  factory = withoutLines(factory, /using GitHub\.Copilot/);
+  const providerBody = sourceSlice(factory, anchors.provider, singleHeader);
+  const { languageCall } = anchors;
+  if (!providerBody.startsWith(`${providerSignature}${languageCall}`)) {
+    throw new Error('The provider agent no longer applies the shared response-language policy first.');
+  }
+  const languageHelper = sourceSlice(factory, anchors.languageHelper, '    internal static AIAgent CreateCopilotRunAgent(');
+  factory = replaceOnce(factory, providerBody,
+    `${providerSignature}${languageCall}${constructor}    }\n\n${languageHelper}`);
+  factory = withoutLines(factory, /using GitHub\.Copilot|using System\.Runtime\.CompilerServices/);
   factory = replaceOnce(factory, '    MicrosoftFoundry,\n    GitHubCopilot', '    MicrosoftFoundry');
   factory = replaceOnce(factory, sourceSlice(factory, singleHeader, anchors.single),
     `${singleHeader} Single Agent\n    // One agent handles the conversation with its configured instructions and tools.\n    // ============================================================================\n`);

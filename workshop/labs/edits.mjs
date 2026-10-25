@@ -221,6 +221,14 @@ function transition(previous, target, from, to) {
     change('specialists-handoff-graph', 'Connect the completed workflow', paths.factory,
       sourceSlice(text(current, paths.factory), '        // Connect the four available agents.', endOfWorkflow),
       sourceSlice(text(target, paths.factory), '        // Build the handoff workflow', endOfWorkflow));
+    const modeOne = anchors.handoff.replace('MODE 2:', 'MODE 1:');
+    insert('handoffs-language-policy', 'Define one response-language policy', paths.factory,
+      '    public static IHostedAgentBuilder AddAIAgent(',
+      between(anchors.languagePolicy, '    public static IHostedAgentBuilder AddAIAgent('));
+    insert('handoffs-language-helper', 'Append the policy to agent instructions', paths.factory, modeOne,
+      between(anchors.languageHelper, modeOne));
+    section('handoffs-language-apply', 'Apply the policy to every agent', paths.factory,
+      between(anchors.provider, '        return new ChatClientAgent('));
   } else if (to !== '08-complete') {
     throw new Error(`No edit contract for ${to}`);
   }

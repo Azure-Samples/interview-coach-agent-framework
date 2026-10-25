@@ -62,6 +62,53 @@ test('teaching comments preserve the source instructions and executable agent bo
   }
 });
 
+test('the shared language policy is preserved and introduced by learner edits in chapter 12', () => {
+  const original = get(standaloneReference, paths.factory);
+  const packaged = get(reference, paths.factory);
+  const modeOne = anchors.handoff.replace('MODE 2:', 'MODE 1:');
+  assert.equal(
+    sourceSlice(packaged, anchors.languagePolicy, '    public static IHostedAgentBuilder AddAIAgent('),
+    sourceSlice(original, anchors.languagePolicy, '    public static IHostedAgentBuilder AddAIAgent('),
+  );
+  assert.equal(
+    sourceSlice(packaged, anchors.languageHelper, modeOne),
+    sourceSlice(original, anchors.languageHelper, '    internal static AIAgent CreateCopilotRunAgent('),
+  );
+  assert.doesNotMatch(packaged, /System\.Runtime\.CompilerServices/);
+  for (const id of stageIds) {
+    const factory = get(makeStage(reference, id), paths.factory);
+    if (stageIds.indexOf(id) < stageIds.indexOf('07-handoffs')) {
+      assert.doesNotMatch(factory, /ResponseLanguageInstructions|Response language:/, id);
+    } else {
+      assert.ok(factory.includes(anchors.languagePolicy), id);
+      assert.ok(factory.includes(anchors.languageHelper), id);
+      const provider = sourceSlice(factory, anchors.provider, anchors.languageHelper);
+      assert.equal(provider.split(anchors.languageCall).length - 1, 1, id);
+      assert.ok(provider.indexOf(anchors.languageCall) < provider.indexOf('return new ChatClientAgent('), id);
+    }
+  }
+  const steps = contract.transitions.find(item => item.to === '07-handoffs').steps.slice(-3);
+  assert.deepEqual(steps.map(step => step.id),
+    ['handoffs-language-policy', 'handoffs-language-helper', 'handoffs-language-apply']);
+  assert.ok(steps.every(step => step.ownership === 'learner' && step.file === paths.factory));
+  const chapter = readFileSync(new URL('../src/content/docs/workshop/12-handoffs.mdx', import.meta.url), 'utf8');
+  let previousIndex = -1;
+  for (const step of steps) {
+    const index = chapter.indexOf(`<CodeStep id="${step.id}" />`);
+    assert.ok(index > previousIndex, step.id);
+    previousIndex = index;
+  }
+  assert.match(chapter, /Neither English nor Korean has a special role/);
+  assert.match(chapter, /languages reversed/);
+  assert.match(chapter, /language-ambiguous acknowledgement/);
+  assert.match(chapter, /different from both the conversation and the documents/);
+  assert.match(chapter, /Source text is preserved/);
+  const drifted = new Map(standaloneReference);
+  drifted.set(paths.factory, Buffer.from(replaceOnce(original, anchors.languageCall, '')));
+  assert.throws(() => createWorkshopReference(drifted, manifest.packageVersions),
+    /no longer applies the shared response-language policy first/);
+});
+
 test('handoff diagrams distinguish permitted returns from normal turn endings', () => {
   const diagrams = readFileSync(new URL('../src/components/ConceptDiagram.astro', import.meta.url), 'utf8');
   const first = sourceSlice(diagrams, "  'first-handoff': {", '  interviewers: {');
@@ -203,7 +250,8 @@ test('first-coach teaches the real Foundry agent branch and reaches DevUI before
   assert.doesNotMatch(program, /AGUIServer/);
   const branch = source => sourceSlice(source,
     anchors.provider, '    // ============================================================================\n    // MODE 1:');
-  assert.equal(branch(get(stage, paths.factory)), branch(get(reference, paths.factory)));
+  assert.equal(branch(get(stage, paths.factory)),
+    sourceSlice(get(reference, paths.factory), anchors.provider, anchors.languageHelper).replace(anchors.languageCall, ''));
   assert.match(branch(get(stage, paths.factory)), /new ChatClientAgent/);
 });
 
@@ -221,13 +269,15 @@ test('the first agent has five focused edits and every checkpoint retains the su
   }
 });
 
-test('all later checkpoints retain the provider helper implemented in the first-agent lesson', () => {
+test('later checkpoints retain the provider constructor and add the language policy only in chapter 12', () => {
   const step = contract.transitions.find(item => item.to === '03-first-coach').steps
     .find(step => step.id === 'coach-foundry-agent');
   for (const id of stageIds.slice(1)) {
     const factory = get(makeStage(reference, id), paths.factory);
     assert.equal(factory.split(anchors.provider).length - 1, 1, id);
-    assert.equal(sourceSlice(factory, anchors.provider, '    // ==='), step.after, id);
+    const hasPolicy = stageIds.indexOf(id) >= stageIds.indexOf('07-handoffs');
+    const provider = sourceSlice(factory, anchors.provider, hasPolicy ? anchors.languageHelper : '    // ===');
+    assert.equal(hasPolicy ? replaceOnce(provider, anchors.languageCall, '') : provider, step.after, id);
   }
 });
 
@@ -255,7 +305,7 @@ test('MCP server exposure is runnable before agent-side discovery is connected',
   const server = makeStage(reference, '05-mcp-server');
   assert.equal(get(server, paths.tools), get(reference, paths.tools));
   assert.equal(get(server, paths.server), get(reference, paths.server));
-  assert.match(get(server, paths.hosts[0]), /RunAsPreviewEmulator/);
+  assert.match(get(server, paths.hosts[0]), /RunAsEmulator\(/);
   assert.doesNotMatch(get(server, paths.program), /AddKeyedSingleton<McpClient>/);
   assert.match(get(server, paths.factory), /GetPracticeGuidance/);
   assert.doesNotMatch(get(server, paths.hosts[0]), /\.WaitFor\(mcpInterviewData\)/);
@@ -268,7 +318,7 @@ test('MCP discovery arrives in the client lesson without lifecycle automation', 
   assert.match(get(stage, paths.program), /AddHttpClient\("mcp-interview-data"/);
   assert.doesNotMatch(get(stage, paths.program), /AddHttpClient\("mcp-markitdown"/);
   for (const host of [paths.hosts[0]]) {
-    assert.match(get(stage, host), /RunAsPreviewEmulator/);
+    assert.match(get(stage, host), /RunAsEmulator\(/);
     assert.match(get(stage, host), /\.WaitFor\(mcpInterviewData\)/);
     assert.doesNotMatch(get(stage, host), /mcpMarkItDown/);
   }
