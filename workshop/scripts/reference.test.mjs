@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
@@ -80,7 +80,16 @@ test('workflow rejects invalid tags before checking or fetching refs', () => {
   }
 });
 
-test('release and legacy workshop tags retain exact revision and source-drift checks', t => {
+test('application CI builds and runs tests independently of workshop generation', () => {
+  const appJob = workflow.match(/^  app:\n([\s\S]*?)(?=^  build:)/m);
+  assert.ok(appJob, 'The latest application needs its own CI job.');
+  assert.match(appJob[1], /dotnet build InterviewCoach\.slnx/);
+  assert.match(appJob[1], /dotnet run --project tests\/InterviewCoach\.Agent\.Tests\/InterviewCoach\.Agent\.Tests\.csproj --no-build/);
+  assert.doesNotMatch(appJob[1], /sourceRevision|checkpoints|npm/);
+  assert.match(workflow, /needs: \[build, app\]/);
+});
+
+test('pinned references ignore application changes while retaining opt-in drift checks', t => {
   const root = mkdtempSync(join(tmpdir(), 'workshop-reference-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
@@ -114,6 +123,20 @@ test('release and legacy workshop tags retain exact revision and source-drift ch
 
   writeFileSync(file, 'class ChangedReference {}\n');
   for (const sourceTag of validTags) {
-    assert.throws(() => readReference(root, { sourceRevision, sourceTag }), /Reference drift/);
+    assert.equal(readReference(root, { sourceRevision, sourceTag }).get('src/Reference.cs').toString('utf8'), contents);
+    assert.throws(() => readReference(root, { sourceRevision, sourceTag }, { verifyWorktree: true }), /Reference drift/);
   }
+
+  unlinkSync(file);
+  const manifest = { sourceRevision, sourceTag: validTags[0] };
+  assert.equal(readReference(root, manifest).get('src/Reference.cs').toString('utf8'), contents);
+  assert.throws(() => readReference(root, manifest, { verifyWorktree: true }), /Reference drift/);
+
+  writeFileSync(file, contents);
+  writeFileSync(join(root, 'src', 'New.cs'), 'class New {}\n');
+  const reference = readReference(root, manifest);
+  assert.deepEqual([...reference.keys()], ['src/Reference.cs']);
+  assert.throws(() => readReference(root, manifest, { verifyWorktree: true }), /Unpinned reference files/);
+  assert.throws(() => readReference(root, { ...manifest, sourceOverrides: [] }), /Source overrides/);
+  assert.throws(() => readReference(root, { ...manifest, sourceRevision: 'HEAD' }), /exact commit SHA/);
 });

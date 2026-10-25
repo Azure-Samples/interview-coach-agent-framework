@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 using GitHub.Copilot;
 using GitHub.Copilot.Rpc;
@@ -26,6 +27,17 @@ public enum LlmProvider
 
 public static class AgentDelegateFactory
 {
+    internal const string ResponseLanguageInstructions = """
+        Response language:
+        - Follow the user's explicit response-language request when one is provided.
+        - Otherwise, respond in the primary language of the user's own conversational messages.
+        - Do not infer the user's preferred language from documents, URLs, quotations, or tool results.
+        - For short or language-ambiguous messages, retain the response language established in the conversation.
+        - Preserve the user's language preference across handoffs to other interview specialists.
+        - Product names, code, and necessary source quotations may remain in their original language.
+        - Apply these rules to user-facing responses, not tool names, structured arguments, or stored source documents.
+        """;
+
     public static IHostedAgentBuilder AddAIAgent(this IHostApplicationBuilder builder, string name)
     {
         var provider = Enum.TryParse<LlmProvider>(builder.Configuration[Constants.LlmProvider], ignoreCase: true, out var parsedProvider)
@@ -69,6 +81,8 @@ public static class AgentDelegateFactory
         string instructions,
         IList<AITool>? tools = null)
     {
+        instructions = WithResponseLanguageInstructions(instructions);
+
         var config = services.GetRequiredService<IConfiguration>();
         var provider = Enum.TryParse<LlmProvider>(config[Constants.LlmProvider], ignoreCase: true, out var parsedProvider)
             ? parsedProvider
@@ -119,7 +133,10 @@ public static class AgentDelegateFactory
             .Build();
     }
 
-    private static AIAgent CreateCopilotRunAgent(
+    internal static string WithResponseLanguageInstructions(string instructions)
+        => $"{instructions}{Environment.NewLine}{Environment.NewLine}{ResponseLanguageInstructions}";
+
+    internal static AIAgent CreateCopilotRunAgent(
         CopilotClient client,
         string name,
         string description,
@@ -127,11 +144,69 @@ public static class AgentDelegateFactory
         string instructions,
         IList<AITool>? tools)
     {
-        return client.AsAIAgent(
+        var agent = client.AsAIAgent(
             CreateCopilotSessionConfig(model, instructions, tools),
             ownsClient: false,
+            id: name,
             name: name,
             description: description);
+
+        var handoffToolNames = (tools ?? [])
+            .Where(tool => tool is AIFunctionDeclaration and not AIFunction &&
+                tool.Name.StartsWith(HandoffWorkflowBuilder.FunctionPrefix, StringComparison.Ordinal))
+            .Select(tool => tool.Name)
+            .ToHashSet(StringComparer.Ordinal);
+
+        if (handoffToolNames.Count == 0)
+        {
+            return agent;
+        }
+
+        return new AIAgentBuilder(agent)
+            .Use(
+                runFunc: async (messages, session, options, inner, cancellationToken) =>
+                {
+                    var updates = new List<AgentResponseUpdate>();
+                    await foreach (var update in PreserveCopilotHandoffAsync(
+                        inner.RunStreamingAsync(messages, session, options, cancellationToken),
+                        handoffToolNames,
+                        cancellationToken))
+                    {
+                        updates.Add(update);
+                    }
+
+                    return updates.ToAgentResponse();
+                },
+                runStreamingFunc: (messages, session, options, inner, cancellationToken) =>
+                    PreserveCopilotHandoffAsync(
+                        inner.RunStreamingAsync(messages, session, options, cancellationToken),
+                        handoffToolNames,
+                        cancellationToken))
+            .Build();
+    }
+
+    internal static async IAsyncEnumerable<AgentResponseUpdate> PreserveCopilotHandoffAsync(
+        IAsyncEnumerable<AgentResponseUpdate> updates,
+        IReadOnlySet<string> handoffToolNames,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var handoffRequested = false;
+        await foreach (var update in updates.WithCancellation(cancellationToken))
+        {
+            // The workflow routes only unresolved transfer calls. Copilot executes our
+            // placeholder locally, so leave its result and post-transfer reply out of the
+            // workflow stream. Drain the SDK turn so its session is idle before reuse.
+            if (handoffRequested)
+            {
+                continue;
+            }
+
+            handoffRequested = update.Role == ChatRole.Assistant &&
+                update.Contents.OfType<FunctionCallContent>().Any(call =>
+                    !string.IsNullOrWhiteSpace(call.CallId) && handoffToolNames.Contains(call.Name));
+
+            yield return update;
+        }
     }
 
     internal static SessionConfig CreateCopilotSessionConfig(
