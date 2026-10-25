@@ -1,4 +1,4 @@
-#:sdk Aspire.AppHost.Sdk@13.4.6
+#:sdk Aspire.AppHost.Sdk@13.6.4
 #:package Aspire.Hosting.Azure.CosmosDB
 #:project ./src/InterviewCoach.Agent/InterviewCoach.Agent.csproj
 #:project ./src/InterviewCoach.AppHost.Core/InterviewCoach.AppHost.Core.csproj
