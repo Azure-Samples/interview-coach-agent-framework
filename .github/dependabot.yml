@@ -44,6 +44,11 @@ updates:
     groups:
       npm:
         patterns: ["*"]
+    # Revisit by 2027-06-30; Dependabot ignore rules do not have an expiry date.
+    ignore:
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
     schedule:
       interval: "weekly"
     cooldown:
