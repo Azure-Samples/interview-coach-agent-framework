@@ -22,12 +22,10 @@ var mcpMarkItDown = builder.AddContainer(ResourceConstants.McpMarkItDown, "mcp/m
 // account when published. Aspire creates the database and container as resources, so no
 // runtime resource creation is required (see the EnsureCreatedAsync note in the MCP server).
 var cosmos = builder.AddAzureCosmosDB(ResourceConstants.Cosmos);
-#pragma warning disable ASPIRECOSMOSDB001
 if (builder.ExecutionContext.IsRunMode)
 {
     cosmos.RunAsEmulator(emulator => emulator.WithDataExplorer());
 }
-#pragma warning restore ASPIRECOSMOSDB001
 
 var cosmosDb = cosmos.AddCosmosDatabase(ResourceConstants.CosmosDatabase);
 cosmosDb.AddContainer(ResourceConstants.CosmosContainer, "/id");

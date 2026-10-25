@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <NoWarn>$(NoWarn);ASPIRECOSMOSDB001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
