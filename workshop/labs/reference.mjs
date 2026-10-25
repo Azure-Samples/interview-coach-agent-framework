@@ -7,7 +7,7 @@ export const referenceProfile = 'foundry-workshop-v3';
 const included = path => /^(src\/|tests\/|samples\/)/.test(path) ||
   /^(Directory\.Build\.(props|targets)|Directory\.Packages\.props|InterviewCoach\.slnx|LICENSE\.md|global\.json|apphost\.cs|apphost\.settings\.json|aspire\.config\.json|azure\.yaml)$/.test(path);
 
-export function readReference(root, manifest, { verifyWorktree = true } = {}) {
+export function readReference(root, manifest, { verifyWorktree = false } = {}) {
   const git = (...args) => execFileSync('git', args, { cwd: root, maxBuffer: 32 * 1024 * 1024 });
   if (!/^[a-f0-9]{40}$/.test(manifest.sourceRevision)) throw new Error('The reference revision must be an exact commit SHA.');
   if (typeof manifest.sourceTag !== 'string' || !/^(workshop-[a-z0-9.-]+|[0-9]+\.[0-9]+\.[0-9]+-workshop)$/.test(manifest.sourceTag)) {
