@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { anchors, paths, replaceOnce, sessionIdDisplay, sourceSlice } from './recipes.mjs';
 
-export const referenceProfile = 'foundry-workshop-v4';
+export const referenceProfile = 'foundry-workshop-3.1.1';
 const included = path => /^(src\/|tests\/|samples\/)/.test(path) ||
   /^(Directory\.Build\.(props|targets)|Directory\.Packages\.props|InterviewCoach\.slnx|LICENSE\.md|global\.json|apphost\.cs|apphost\.settings\.json|aspire\.config\.json|azure\.yaml)$/.test(path);
 
