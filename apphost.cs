@@ -1,4 +1,5 @@
-#:sdk Aspire.AppHost.Sdk@13.4.6
+#:sdk Aspire.AppHost.Sdk@13.6.4
+#:property NoWarn=$(NoWarn);ASPIRE010
 #:package Aspire.Hosting.Azure.CosmosDB
 #:project ./src/InterviewCoach.Agent/InterviewCoach.Agent.csproj
 #:project ./src/InterviewCoach.AppHost.Core/InterviewCoach.AppHost.Core.csproj
@@ -22,12 +23,10 @@ var mcpMarkItDown = builder.AddContainer(ResourceConstants.McpMarkItDown, "mcp/m
 // account when published. Aspire creates the database and container as resources, so no
 // runtime resource creation is required (see the EnsureCreatedAsync note in the MCP server).
 var cosmos = builder.AddAzureCosmosDB(ResourceConstants.Cosmos);
-#pragma warning disable ASPIRECOSMOSDB001
 if (builder.ExecutionContext.IsRunMode)
 {
-    cosmos.RunAsPreviewEmulator(emulator => emulator.WithDataExplorer());
+    cosmos.RunAsEmulator(emulator => emulator.WithDataExplorer());
 }
-#pragma warning restore ASPIRECOSMOSDB001
 
 var cosmosDb = cosmos.AddCosmosDatabase(ResourceConstants.CosmosDatabase);
 cosmosDb.AddContainer(ResourceConstants.CosmosContainer, "/id");

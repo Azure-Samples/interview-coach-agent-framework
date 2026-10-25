@@ -41,7 +41,7 @@ The quick start uses the root [file-based AppHost](../apphost.cs). It loads `app
 
 In the completed source, both describe the full service topology. Each entry point loads its own configuration; review the settings for the one you run. The project-based host also explicitly forwards `AZURE_TENANT_ID`. See [configuration](CONFIGURATION.md#entry-points-and-precedence).
 
-In local run mode, Cosmos uses a preview emulator container. Foundry resources can still be provisioned in Azure during a local run. The final app also starts MarkItDown using the reference's `latest` image tag. Record its image digest when comparing runtime results.
+In local run mode, Cosmos uses the Linux-based (vNext) emulator container. Foundry resources can still be provisioned in Azure during a local run. The final app also starts MarkItDown using the reference's `latest` image tag. Record its image digest when comparing runtime results.
 
 ## Workshop startup helpers
 

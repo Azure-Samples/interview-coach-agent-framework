@@ -12,7 +12,7 @@ var mcpMarkItDown = builder.AddContainer(ResourceConstants.McpMarkItDown, "mcp/m
 var cosmos = builder.AddAzureCosmosDB(ResourceConstants.Cosmos);
 if (builder.ExecutionContext.IsRunMode)
 {
-    cosmos.RunAsPreviewEmulator(emulator => emulator.WithDataExplorer());
+    cosmos.RunAsEmulator(emulator => emulator.WithDataExplorer());
 }
 
 var cosmosDb = cosmos.AddCosmosDatabase(ResourceConstants.CosmosDatabase);
