@@ -9,7 +9,7 @@
     <PackageVersion Include="Aspire.Hosting.Azure" Version="13.*" />
     <PackageVersion Include="Aspire.Hosting.Azure.CosmosDB" Version="13.*" />
     <PackageVersion Include="Aspire.Hosting.Foundry" Version="13.*-*" />
-    <PackageVersion Include="Aspire.Microsoft.EntityFrameworkCore.Cosmos" Version="13.*" />
+    <PackageVersion Include="Aspire.Microsoft.EntityFrameworkCore.Cosmos" Version="17.*" />
     <PackageVersion Include="Azure.Identity" Version="1.*" />
     <PackageVersion Include="GitHub.Copilot.SDK" Version="1.*" />
     <PackageVersion Include="Microsoft.Agents.AI" Version="1.*" />
@@ -25,7 +25,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.*" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.*" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.*" />
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="1.*" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.*" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.*" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.*" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.*" />
